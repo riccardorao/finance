@@ -131,6 +131,29 @@ function treemap(items, W, H) {
   return rects;
 }
 
+
+/* ---------- time- and money-weighted returns from a valuation history ----------
+   points: [{t, v}] sorted, valuations; flows: [[t, amt]] external cash flows (+ in, − out). */
+function twrIndex(points, flows) {
+  const idx = [1], sub = [];
+  for (let k = 1; k < points.length; k++) {
+    const a = points[k - 1], b = points[k], T = b.t - a.t;
+    const fl = flows.filter((f) => f[0] > a.t && f[0] <= b.t);
+    const F = sum(fl.map((f) => f[1])), W = sum(fl.map((f) => (f[1] * (b.t - f[0])) / T));
+    const base = a.v + W;
+    const r = base > 1 ? (b.v - a.v - F) / base : 0;
+    sub.push(r); idx.push(idx[k - 1] * (1 + r));
+  }
+  return { idx, sub };
+}
+/** Money-weighted rate (XIRR) over [t0, t1]: start value invested at t0, flows in between, end value out. */
+function mwrWindow(v0, t0, v1, t1, flows) {
+  const cfs = [{ t: t0, amt: -v0 }].concat(flows.filter((f) => f[0] > t0 && f[0] <= t1).map((f) => ({ t: f[0], amt: -f[1] }))).concat([{ t: t1, amt: v1 }]).filter((c) => Math.abs(c.amt) > 1e-9).sort((a, b) => a.t - b.t);
+  return cfs.length > 1 ? xirr(cfs) : null;
+}
+/** Converts an annual rate to the holding-period return over [t0, t1]. */
+const periodFromAnnual = (r, t0, t1) => (r == null ? null : Math.pow(1 + r, (t1 - t0) / (365 * 864e5)) - 1);
+
 /* ---------- formatting ---------- */
 const nfEUR = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' });
 const nfEUR0 = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
@@ -142,5 +165,5 @@ const fmtSignedPct = (x, d = 1) => (x == null || !isFinite(x) ? '–' : (x > 0 ?
 const fmtNum = (x, d = 2) => (x == null || !isFinite(x) ? '–' : new Intl.NumberFormat('en-GB', { minimumFractionDigits: d, maximumFractionDigits: d }).format(x));
 
 if (typeof module !== 'undefined') {
-  module.exports = { OBS_PER_YEAR, sum, mean, std, cov, corr, beta, rets, annVol, maxDrawdown, underwater, backcast, riskContrib, modifiedDietz, xirr, treemap, fmtEUR, fmtEUR0, fmtSignedEUR, fmtPct, fmtSignedPct, fmtNum };
+  module.exports = { twrIndex, mwrWindow, periodFromAnnual, OBS_PER_YEAR, sum, mean, std, cov, corr, beta, rets, annVol, maxDrawdown, underwater, backcast, riskContrib, modifiedDietz, xirr, treemap, fmtEUR, fmtEUR0, fmtSignedEUR, fmtPct, fmtSignedPct, fmtNum };
 }

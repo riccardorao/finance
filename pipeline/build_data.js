@@ -1,5 +1,6 @@
 // Assembles the page's data object from a data directory and the shared research notes.
-// Inputs  (in the data dir): snapshot.json, ledger.json (from ledger.js), series.json, bench_monthly.json, profile.json
+// Inputs  (in the data dir): snapshot.json, ledger.json (from ledger.js), history.json (from history.js),
+//                            series.json, prices_monthly.json, profile.json
 // Inputs  (shared):          research/stocks.js, research/comments.js
 // Output: <data dir>/data.json
 // Usage:  node pipeline/build_data.js [data dir, default data/private]
@@ -10,7 +11,16 @@ const rd = (f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
 const SNAP = rd('snapshot.json');
 const L = rd('ledger.json');
 const S = rd('series.json');
-const BM = rd('bench_monthly.json');
+const PM = rd('prices_monthly.json');
+const HIST = rd('history.json');
+// Indices offered on the Track record tab (accumulating ETFs in euro). The first three also have daily prices.
+const INDICES = [
+  { id: 'MSCI', name: 'MSCI World', isin: 'IE00B4L5Y983', etf: 'iShares Core MSCI World' },
+  { id: 'ACWI', name: 'MSCI ACWI', isin: 'IE00B6R52259', etf: 'iShares MSCI ACWI' },
+  { id: 'SPX', name: 'S&P 500', isin: 'IE00B5BMR087', etf: 'iShares Core S&P 500' },
+  { id: 'NDX', name: 'Nasdaq-100', isin: 'IE00B53SZB19', etf: 'iShares Nasdaq 100' },
+  { id: 'STOXX', name: 'STOXX Europe 600', isin: 'DE000A2QP4B6', etf: 'iShares STOXX Europe 600 (Acc)' },
+].filter((x) => PM[x.isin]);
 const PROFILE = rd('profile.json');
 const STOCKS = require('../research/stocks.js');
 const COMMENTS = require('../research/comments.js');
@@ -49,7 +59,9 @@ const DATA = {
   total: SNAP.total, cash: SNAP.cash, pl: SNAP.pl,
   holdings, benches: SNAP.benches,
   series: { dates: S.dates, ref: S.ref, p: S.p },
-  benchMonthly: { dates: BM.dates, p: BM.p },
+  indices: INDICES,
+  benchMonthly: Object.fromEntries(INDICES.map((x) => [x.isin, PM[x.isin]])),
+  history: { points: HIST.points.map((p) => [p.t, p.v, p.net]), external: HIST.external, check: HIST.check },
   flows: L.flows.map((f) => ({ d: f.date.slice(0, 16), a: +f.amt.toFixed(2), k: f.kind })),
   ledger: {
     summary: Object.fromEntries(Object.entries(L.summary).map(([k, v]) => [k, +(+v).toFixed(2)])),

@@ -7,10 +7,10 @@ The page answers four questions, one per tab:
 
 | Tab | Question it answers | What is on it |
 |---|---|---|
-| **Track record** | Has the manager made money, and would the index have done better with the same money? | Since-inception money-weighted return, excess return by period, a *same money in the index* comparison against MSCI World, S&P 500 and Nasdaq-100, and a bridge from capital invested to today's value |
+| **Track record** | Has the manager made money, measured the way an allocator would, and against which index? | Time-weighted (TWR) and money-weighted (MWR) returns for 1M, 3M, 6M, YTD, 1Y, 2025, 2024 and since inception; a chart for any of those periods against any of five indices (MSCI World, MSCI ACWI, S&P 500, Nasdaq-100, STOXX Europe 600); monthly returns calendar; consistency statistics; a bridge from capital invested to today's value; defining trades |
 | **Philosophy** | How does the manager decide? | Mandate, the three edges (patience, informational, catalyst), the six-step process, the five criteria, the two-axis valuation screen, names passed on, and lessons turned into rules |
 | **Book and conviction** | What is owned, why, and what would end it? | Every position with its weight against target, declared edge, gain since bought, the analysts' bear-to-bull range and the expected return. Each opens to the thesis, the written kill-switch, bull and bear cases, industry and competitors, and the latest news |
-| **Risk and outlook** | What could happen next? | Expected 12-month return under three sets of scenario odds, a range-of-outcomes chart, stress tests, and where the risk sits by theme |
+| **Risk and outlook** | What could happen next, and how risky is the book? | Expected 12-month return under three sets of scenario odds, a range-of-outcomes chart, where the expectation comes from per stock, stress tests, falls from the peak, comparison with the indices, weight against share of risk, and correlations |
 
 ![Track record tab, built from the synthetic sample](docs/sample-record.png)
 
@@ -26,8 +26,9 @@ describes a real account lives in `data/private/`, which `.gitignore` excludes:
 |---|---|
 | Pipeline, page code, tests | `tx.csv`: every deposit, withdrawal, trade, dividend and fee |
 | Research notes on listed companies (`research/`) | `snapshot.json`: positions, quantities, prices, account value and gains |
+| | `history.json`: the rebuilt month-by-month account value |
 | A fully synthetic sample account (`data/sample/`) | `profile.json`: mandate, target weights, theses and kill-switches |
-| Screenshots of the synthetic sample | `names.json`, `series.json`, `bench_monthly.json`: the instrument history and the price data pulled for the account |
+| Screenshots of the synthetic sample | `names.json`, `types.json`, `splits.json`, `series.json`, `prices_monthly.json`: the instrument history and the price data pulled for the account |
 | | `dist/`: the built page, which embeds all of the above |
 
 To build the real page you need a copy of `data/private/` on your machine. To try the project without it,
@@ -42,7 +43,7 @@ Requirements: Node 18 or later. Playwright is needed only for the tests.
 npm run sample          # writes data/sample/*, then dist/sample.html
 
 # Build the real page from data/private/
-npm run build           # ledger -> data -> page, writes dist/portfolio.html
+npm run build           # ledger -> history -> data -> page, writes dist/portfolio.html
 
 # Tests: render every tab at desktop, dark and phone widths, then exercise live refresh
 npm install             # installs Playwright
@@ -62,7 +63,7 @@ the browser filling in the missing tags.
 │   │                        volatility, beta, drawdown, back-cast, risk contribution, formatters
 │   └── page/
 │       ├── style.css        The page's design tokens and styles (light and dark)
-│       ├── model.js         State, the derived model (returns, risk, scenarios, index equivalent)
+│       ├── model.js         State, the derived model (TWR/MWR by period, risk, scenarios)
 │       │                    and the chart toolkit (line chart, fan chart, sparkline, tooltip)
 │       ├── views.js         The four tabs, the masthead and the method notes
 │       └── live.js          Live refresh from the Scalable Capital connector, the research
@@ -70,7 +71,11 @@ the browser filling in the missing tags.
 ├── pipeline/
 │   ├── ledger.js            tx.csv -> ledger.json: FIFO cost basis by custody account, realised P&L,
 │   │                        income, cash flows, and a reconciliation against the broker
-│   ├── build_data.js        snapshot + ledger + prices + profile + research -> data.json
+│   ├── holdings_history.js  Replays tx.csv into holdings and cash at any date (shared helper)
+│   ├── history.js           Rebuilds the account value at every month end and period start from the
+│   │                        replay and market prices, and checks it against the broker's own figures
+│   ├── add_prices.js        Appends month-end prices for one instrument to prices_monthly.json
+│   ├── build_data.js        snapshot + ledger + history + prices + profile + research -> data.json
 │   ├── build_page.js        data.json + src/ -> one self-contained HTML page
 │   ├── make_sample.js       Writes the synthetic sample account in data/sample/
 │   └── profile.template.json  Template for profile.json (mandate, edges, positions)
@@ -101,8 +106,10 @@ Every data directory, private or sample, holds the same files:
 | `types.json` (optional) | By hand | ISIN to instrument type, overriding the default classification (crypto, `DE000BB` issuer prefix for leveraged products, `IE`/`LU` for ETFs, otherwise shares) |
 | `snapshot.json` | Scalable connector: `get_portfolio_holdings`, `get_portfolio_overview`, `get_portfolio_cash_breakdown`, `get_security_quote`, `get_security_news` | Valuation time, total, cash, the broker's gain by period, each position (quantity, price, per-period performance, sector and theme) and the benchmark ETFs |
 | `series.json` | `get_security_chart`, one year | Prices every second trading day for each holding and benchmark |
-| `bench_monthly.json` | `get_security_chart`, max | Month-end benchmark prices back to the first deposit |
-| `profile.json` | By hand, from `pipeline/profile.template.json` | Manager name, mandate, edges, process, lessons, rejected names, pipeline, and per position: edge, target weight, one-sentence thesis, kill-switch |
+| `prices_monthly.json` | `get_security_chart`, max, stored with `pipeline/add_prices.js` | Month-end prices for every index and for each instrument held at a month end, from the first deposit |
+| `splits.json` (optional) | By hand | Share splits, `{ISIN: [[YYYY-MM-DD, ratio]]}`. Chart prices are split-adjusted; ledger quantities before a split are not |
+| `history.json` | `pipeline/history.js` | Derived: the account value at every month end and period start |
+| `profile.json` | By hand, from `pipeline/profile.template.json` | Manager name, mandate, edges, process, lessons, rejected names, and per position: edge, target weight, one-sentence thesis, kill-switch |
 | `ledger.json`, `data.json` | The pipeline | Derived, never edited |
 
 To refresh the snapshot, pull the connector responses again (a Claude session with the Scalable Capital

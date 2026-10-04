@@ -13,24 +13,23 @@ const manager = JSON.parse(data).profile.manager;
 const scripts = ['src/core.js', 'src/page/model.js', 'src/page/views.js', 'src/page/live.js'].map(rd).join('\n');
 
 const body = `
-<header class="mast"><div class="wrap">
-  <div class="who"><p class="role" id="mh-strategy"></p><h1 id="mh-name"></h1><p class="tag" id="mh-tag"></p></div>
-  <div class="book"><div class="aum" id="mh-aum"></div>
-    <div class="status" id="status" data-mode="snapshot" role="status"><span class="dot"></span><span id="status-text"></span><button class="btn" id="btn-refresh" hidden>Refresh</button></div></div>
-</div></header>
-<div class="tabbar"><div class="wrap"><nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav></div></div>
-<main class="wrap">
+<div class="app">
+  <header class="top">
+    <div class="brand"><h1 id="mh-name"></h1><p><span id="mh-strategy"></span> · <span id="mh-tag"></span></p></div>
+    <div class="status" id="status" data-mode="snapshot" role="status"><span class="dot"></span><span id="status-text"></span><button class="btn" id="btn-refresh" hidden>Refresh</button></div>
+  </header>
+  <div class="bar"><nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav><span class="muted" id="mh-aum" style="margin-left:auto;font-size:13px"></span></div>
   <section class="tabpage" id="t-record" role="tabpanel" aria-labelledby="tab-record"></section>
   <section class="tabpage" id="t-philosophy" role="tabpanel" aria-labelledby="tab-philosophy" hidden></section>
   <section class="tabpage" id="t-book" role="tabpanel" aria-labelledby="tab-book" hidden></section>
   <section class="tabpage" id="t-risk" role="tabpanel" aria-labelledby="tab-risk" hidden></section>
   <div id="notes"></div>
-</main>
+</div>
 <div id="tip" role="tooltip"></div>`;
 
 const json = data.replace(/<\//g, '<\\/').replace(/<!--/g, '<\\!--');
 const html = `<title>${manager.replace(/[<&]/g, '')} Track Record</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 ${rd('src/page/style.css')}
 </style>

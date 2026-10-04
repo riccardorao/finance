@@ -17,7 +17,7 @@ const dayMs = (s) => Date.parse(s.length === 10 ? s + 'T12:00:00Z' : s.length ==
 
 /* ---------- state ---------- */
 const TABS = [['record', 'Track record'], ['philosophy', 'Philosophy'], ['book', 'Book and conviction'], ['risk', 'Risk and outlook']];
-const state = { tab: 'record', bench: 'MSCI', open: null, preset: 'analyst', mode: 'snapshot', statusMsg: '', tableView: {}, commentary: {}, dbReady: false };
+const state = { tab: 'record', bench: 'MSCI', tf: '1Y', measure: 'twr', idxSel: ['MSCI', 'SPX', 'NDX'], open: null, preset: 'analyst', mode: 'snapshot', statusMsg: '', tableView: {}, commentary: {}, dbReady: false };
 /* scenario probabilities: bull, base, bear */
 const PRESETS = { analyst: { label: 'Analyst view', p: [0.25, 0.5, 0.25] }, cautious: { label: 'Cautious', p: [0.15, 0.45, 0.4] }, stress: { label: 'Stress', p: [0.05, 0.35, 0.6] } };
 const REF_MU = 0.07; // assumed long-run annual return for the benchmark reference
@@ -122,41 +122,76 @@ function buildModel(D) {
   const hhi = C_sum(H.map((h) => (h.value / secValue) ** 2));
   H.forEach((h) => { h.sc = scenarios(h, risk); });
   const lev = C_sum(D.ledger.realised.filter((r) => r.type === 'Leveraged & certificates').map((r) => r.pl));
-  const pme = pmeModel(D, flows, asOf, total, lev);
-  return { D, asOf, H, total, lev, pme, cash: D.cash, secValue, flows, firstFlow, risk, rows, irr, anchors, deposited, withdrawn, net: deposited - withdrawn, unreal, realised: L.realisedTotal + L.realisedCrypto, incomeDiv, hhi, effN: 1 / hhi };
+  const perf = perfModel(D, asOf, total);
+  return { D, asOf, H, total, lev, perf, cash: D.cash, secValue, flows, firstFlow, risk, rows, irr, anchors, deposited, withdrawn, net: deposited - withdrawn, unreal, realised: L.realisedTotal + L.realisedCrypto, incomeDiv, hhi, effN: 1 / hhi };
 }
 const C_sum = (a) => a.reduce((s, x) => s + x, 0);
 
-/* "Same money in the index" (public market equivalent): every deposit and withdrawal is mirrored into a
-   benchmark ETF on the same day; the result is what that money would be worth now and its money-weighted rate.
-   Prices: daily points where the 12-month series covers the date, month-end points before that,
-   interpolated geometrically in between. */
-function benchPriceFn(D, isin) {
+/* ---------- track record: time- and money-weighted returns ----------
+   The valuation history is rebuilt from the ledger and market prices (pipeline/history.js); the last point is
+   replaced by the current value so a live refresh moves it. Index prices: daily where the 12-month series
+   covers the date, month-end before that, interpolated geometrically in between. */
+const TF = [['1M', '1 month'], ['3M', '3 months'], ['6M', '6 months'], ['YTD', 'Year to date'], ['1Y', '1 year'], ['Y2025', '2025'], ['Y2024', '2024'], ['SI', 'Since inception']];
+const TFL = Object.fromEntries(TF);
+function indexPriceFn(D, isin) {
   const daily = D.ser[isin] ? D.ser[isin].d.map((d, i) => [Date.parse(d + 'T21:00:00Z'), D.ser[isin].p[i]]) : [];
   const first = daily.length ? daily[0][0] : Infinity;
-  const BM = D.benchMonthly;
-  const pts = BM.dates.map((d, i) => [Date.parse(d + 'T21:00:00Z'), BM.p[isin][i]]).filter((p) => p[0] < first).concat(daily);
+  const m = D.benchMonthly[isin];
+  let pts = [];
+  if (m) { const [y, mo] = m.start.split('-').map(Number); pts = m.p.map((p, k) => [Date.UTC(y, mo - 1 + k + 1, 0, 21), p]).filter((x) => x[0] < first); }
+  pts = pts.concat(daily);
   return (t) => {
     if (t <= pts[0][0]) return pts[0][1];
     for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) { const [t0, p0] = pts[i - 1], [t1, p1] = pts[i]; return Math.exp(Math.log(p0) + ((t - t0) / (t1 - t0)) * (Math.log(p1) - Math.log(p0))); }
     return pts[pts.length - 1][1];
   };
 }
-function pmeModel(D, flows, asOf, total, lev) {
-  const irrOf = (V) => xirr(flows.map((f) => ({ t: f.t, amt: -f.amt })).concat([{ t: asOf, amt: V }]));
-  const out = { you: { value: total, irr: irrOf(total) }, exLev: { value: total - lev, irr: irrOf(total - lev) }, bench: {}, months: [] };
-  const d0 = new Date(flows[0].t);
-  for (let y = d0.getUTCFullYear(), m = d0.getUTCMonth() + 1; ; m++) { const t = Date.UTC(y, m, 0, 21); if (t >= asOf) break; if (t > flows[0].t) out.months.push(t); }
-  out.months.push(asOf);
-  D.benches.forEach((b) => {
-    if (!D.benchMonthly || !D.benchMonthly.p[b.isin]) return;
-    const P = benchPriceFn(D, b.isin);
-    const unitsAt = (t) => C_sum(flows.filter((f) => f.t <= t).map((f) => f.amt / P(f.t)));
-    const V = unitsAt(asOf) * P(asOf);
-    out.bench[b.id] = { value: V, irr: irrOf(V), at: (t) => unitsAt(t) * P(t) };
-  });
-  out.netAt = (t) => C_sum(flows.filter((f) => f.t <= t).map((f) => f.amt));
-  return out;
+function perfModel(D, asOf, total) {
+  const pts = D.history.points.map(([t, v, net]) => ({ t, v, net }));
+  const fl = D.history.external;
+  const last = pts[pts.length - 1];
+  if (Math.abs(last.t - asOf) < 2 * MS) { last.t = Math.max(last.t, asOf); last.v = total; } else pts.push({ t: asOf, v: total, net: last.net });
+  const T = twrIndex(pts, fl);
+  pts.forEach((p, i) => { p.i = T.idx[i]; });
+  const P = Object.fromEntries(D.indices.map((x) => [x.id, indexPriceFn(D, x.isin)]));
+  const first = pts[1] ? pts[0].t : asOf;
+  const ye = (y) => Date.UTC(y, 11, 31, 21);
+  const at = (t) => { let best = pts[0]; for (const p of pts) { if (p.t <= t + 6 * 36e5) best = p; else break; } return best; };
+  const win = (k) => {
+    const t1 = asOf;
+    switch (k) {
+      case 'Y2024': return [first, ye(2024)];
+      case 'Y2025': return [ye(2024), ye(2025)];
+      case 'SI': return [first, t1];
+      default: return [periodStart(k, asOf, first), t1];
+    }
+  };
+  const flowsIn = (t0, t1) => fl.filter((f) => f[0] > t0 && f[0] <= t1);
+  function stats(k) {
+    const [t0, t1] = win(k), a = at(t0), b = at(t1);
+    const years = (b.t - a.t) / (365 * MS);
+    const twr = b.i / a.i - 1;
+    const mwr = mwrWindow(a.v, a.t, b.v, b.t, fl);
+    const gain = b.v - a.v - C_sum(flowsIn(a.t, b.t).map((f) => f[1]));
+    const idx = {};
+    D.indices.forEach((x) => {
+      const p = P[x.id], p0 = p(a.t), p1 = p(b.t);
+      let units = a.v / p0; flowsIn(a.t, b.t).forEach((f) => { units += f[1] / p(f[0]); });
+      const vEnd = units * p1;
+      idx[x.id] = { twr: p1 / p0 - 1, mwr: mwrWindow(a.v, a.t, vEnd, b.t, fl), value: vEnd };
+    });
+    return { k, a, b, years, twr, twrAnn: years > 1.05 ? Math.pow(1 + twr, 1 / years) - 1 : null, mwr, mwrPeriod: years > 1.05 ? null : periodFromAnnual(mwr, a.t, b.t), gain, idx };
+  }
+  // month-end returns for the calendar table and the consistency statistics
+  const months = [];
+  const isME = (t) => new Date(t + MS).getUTCDate() === 1;
+  const seen = new Set();
+  const meU = [pts[0]].concat(pts.filter((p) => isME(p.t)), [pts[pts.length - 1]]).filter((p) => { const key = p === pts[0] ? 'start' : new Date(p.t).toISOString().slice(0, 7); if (seen.has(key)) return false; seen.add(key); return true; });
+  for (let j = 1; j < meU.length; j++) {
+    const a = meU[j - 1], b = meU[j];
+    months.push({ t: b.t, ym: new Date(b.t).toISOString().slice(0, 7), r: b.i / a.i - 1, idx: Object.fromEntries(D.indices.map((x) => [x.id, P[x.id](b.t) / P[x.id](a.t) - 1])), partial: !isME(b.t) });
+  }
+  return { pts, fl, P, win, stats, at, months, first };
 }
 
 /* 12-month scenarios per holding from sell-side targets. Targets are in dollars; they are converted at the

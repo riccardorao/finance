@@ -120,13 +120,6 @@
    "Return on capital below the cost of capital once goodwill is included."
   ]
  ],
- "pipeline": [
-  [
-   "Example pipeline name",
-   8,
-   "Patience"
-  ]
- ],
  "positions": {
   "US8740391003": {
    "edge": "Patience",

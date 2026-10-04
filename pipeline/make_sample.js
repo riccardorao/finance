@@ -73,7 +73,14 @@ const SIGN = { dep: 1, wdr: -1, buy: -1, sell: 1, div: 1, fee: -1 };
 const cash = +tx.reduce((s, l) => { const [, , k, , , a] = l.split(','); return s + (SIGN[k] || 0) * +a; }, 0).toFixed(2);
 const net = tx.reduce((s, l) => { const [, , k, , , a] = l.split(','); return s + (k === 'dep' ? +a : k === 'wdr' ? -a : 0); }, 0);
 const total = +(sec + cash).toFixed(2);
-const pl = Object.fromEntries(Object.keys(startOf).filter((k) => k !== 'MAX').map((k) => [k, +holdings.reduce((s, h) => s + h.qty * (h.price - at(h.isin, startOf[k])), 0).toFixed(2)]));
+// period gains consistent with a replay of the synthetic ledger: value now − value at start − net money in
+const { loadTx, replay } = require('./holdings_history.js');
+const stx = loadTx(out), st = replay(stx);
+const tradePx = {}; stx.forEach((r) => { if (r.qty && r.amt) tradePx[r.isin] = r.amt / r.qty; });
+const valueAt = (d) => { const t = Date.parse(d + 'T20:00:00Z'), x = st(t); return x.cash + Object.entries(x.qty).reduce((a, [i, q]) => a + q * (META[i] ? at(i, d) : tradePx[i]), 0); };
+const netIn = (d) => stx.filter((r) => r.t <= Date.parse(d + 'T20:00:00Z') && (r.kind === 'dep' || r.kind === 'wdr')).reduce((a, r) => a + (r.kind === 'dep' ? r.amt : -r.amt), 0);
+const vNow = sec + cash, nNow = netIn('2026-10-01');
+const pl = Object.fromEntries(Object.keys(startOf).filter((k) => k !== 'MAX').map((k) => [k, +(vNow - nNow - (valueAt(startOf[k]) - netIn(startOf[k]))).toFixed(2)]));
 pl.MAX = +(total - net).toFixed(2);
 // research targets are anchored to the sample prices so upside percentages stay as in the notes
 holdings.forEach((h) => { if (STOCKS[h.isin]) h.quoteMid = h.price; });
@@ -84,8 +91,9 @@ const snapshot = {
 };
 fs.writeFileSync(path.join(out, 'snapshot.json'), JSON.stringify(snapshot, null, 1));
 fs.writeFileSync(path.join(out, 'series.json'), JSON.stringify({ dates: daily, ref: 'synthetic', p: Object.fromEntries(isins.map((i) => [i, daily.map((d) => at(i, d))])) }));
-const bm = monthly.filter((d) => d < daily[0]).concat(['2026-10-01']);
-fs.writeFileSync(path.join(out, 'bench_monthly.json'), JSON.stringify({ source: 'synthetic sample', dates: bm, p: Object.fromEntries(BENCH.map((b) => [b[2], bm.map((d) => at(b[2], d))])) }));
+// month-end index prices from Dec 2023 (the value-history step and the Track record tab use them)
+const me = monthly.filter((d) => d !== '2026-10-01');
+fs.writeFileSync(path.join(out, 'prices_monthly.json'), JSON.stringify(Object.fromEntries(BENCH.map((b) => [b[2], { start: me[0].slice(0, 7), p: me.map((d) => +at(b[2], d).toFixed(4)) }]))));
 
 const profile = JSON.parse(fs.readFileSync(path.join(__dirname, 'profile.template.json'), 'utf8'));
 fs.writeFileSync(path.join(out, 'profile.json'), JSON.stringify(profile, null, 1));
