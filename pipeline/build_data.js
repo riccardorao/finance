@@ -1,6 +1,6 @@
 // Assembles the page's data object from a data directory and the shared research notes.
 // Inputs  (in the data dir): snapshot.json, ledger.json (from ledger.js), history.json (from history.js),
-//                            series.json, prices_monthly.json, profile.json
+//                            prices_daily.json (or series.json), prices_monthly.json, profile.json
 // Inputs  (shared):          research/stocks.js, research/comments.js
 // Output: <data dir>/data.json
 // Usage:  node pipeline/build_data.js [data dir, default data/private]
@@ -10,8 +10,23 @@ const dir = path.resolve(process.argv[2] || path.join(__dirname, '..', 'data', '
 const rd = (f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
 const SNAP = rd('snapshot.json');
 const L = rd('ledger.json');
-const S = rd('series.json');
-const PM = rd('prices_monthly.json');
+const PD = fs.existsSync(path.join(dir, 'prices_daily.json')) ? rd('prices_daily.json') : null;
+// Daily price series for the last 12 months (holdings and the risk benchmarks), carried forward over holidays.
+function dailySeries(isins, asOfDay) {
+  const from = new Date(Date.parse(asOfDay) - 366 * 864e5).toISOString().slice(0, 10);
+  const dates = Array.from(new Set(isins.flatMap((i) => (PD[i] ? PD[i].d : [])).filter((d) => d >= from && d <= asOfDay))).sort();
+  const p = {};
+  isins.forEach((i) => {
+    if (!PD[i]) return;
+    const m = new Map(PD[i].d.map((d, k) => [d, PD[i].p[k]]));
+    let last = null; const before = PD[i].d.filter((d) => d < from); if (before.length) last = m.get(before[before.length - 1]);
+    p[i] = dates.map((d) => { if (m.has(d)) last = m.get(d); return last; });
+    if (p[i].some((x) => x == null)) delete p[i];
+  });
+  return { dates, ref: 'daily closes (Yahoo Finance), euro', p };
+}
+const S = PD ? dailySeries(SNAP.holdings.map((h) => h.isin).concat(SNAP.benches.map((b) => b.isin)), SNAP.meta.asOf.slice(0, 10)) : rd('series.json');
+const PM = fs.existsSync(path.join(dir, 'prices_monthly.json')) ? rd('prices_monthly.json') : {};
 const HIST = rd('history.json');
 // Indices offered on the Track record tab (accumulating ETFs in euro). The first three also have daily prices.
 const INDICES = [
@@ -20,7 +35,7 @@ const INDICES = [
   { id: 'SPX', name: 'S&P 500', isin: 'IE00B5BMR087', etf: 'iShares Core S&P 500' },
   { id: 'NDX', name: 'Nasdaq-100', isin: 'IE00B53SZB19', etf: 'iShares Nasdaq 100' },
   { id: 'STOXX', name: 'STOXX Europe 600', isin: 'DE000A2QP4B6', etf: 'iShares STOXX Europe 600 (Acc)' },
-].filter((x) => PM[x.isin]);
+].filter((x) => PM[x.isin] || (PD && PD[x.isin]));
 const PROFILE = rd('profile.json');
 const STOCKS = require('../research/stocks.js');
 const COMMENTS = require('../research/comments.js');
@@ -61,6 +76,7 @@ const DATA = {
   series: { dates: S.dates, ref: S.ref, p: S.p },
   indices: INDICES,
   benchMonthly: Object.fromEntries(INDICES.map((x) => [x.isin, PM[x.isin]])),
+  indexDaily: PD ? Object.fromEntries(INDICES.filter((x) => PD[x.isin]).map((x) => [x.isin, { d: PD[x.isin].d, p: PD[x.isin].p }])) : {},
   history: { points: HIST.points.map((p) => [p.t, p.v, p.net]), external: HIST.external, check: HIST.check },
   flows: L.flows.map((f) => ({ d: f.date.slice(0, 16), a: +f.amt.toFixed(2), k: f.kind })),
   ledger: {

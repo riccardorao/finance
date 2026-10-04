@@ -498,3 +498,40 @@ ul.criteria li span, ul.rejected li span { color: var(--ink2); }
 .st .t i { display: block; height: 7px; border-radius: 3px; background: var(--neg-fill); }
 .st > b { text-align: right; font-variant-numeric: tabular-nums; line-height: 1.25; }
 .st > b small { display: block; font-weight: 500; font-size: 12px; }
+
+/* ---------- at-a-glance components ---------- */
+.kpis4 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (min-width: 900px) { .kpis4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; min-width: 0; }
+.kpi .k { font: 500 11px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink3); }
+.kpi .v { font-size: clamp(22px, 3vw, 30px); font-weight: 500; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.kpi .v small { font-size: 13px; font-weight: 500; color: var(--ink3); margin-left: 4px; }
+.kpi .n { font-size: 12.5px; color: var(--ink2); margin-top: 2px; }
+.lede .seg { align-self: center; }
+.ctrls { justify-content: space-between; }
+.headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin: 14px 0 6px; }
+.big2 { font-size: 30px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.idxv { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.pbars { display: grid; }
+.pb { display: grid; grid-template-columns: minmax(96px, 130px) minmax(0, 1fr) 64px 52px; gap: 12px; align-items: center; border: 0; background: none; padding: 7px 6px; border-bottom: 1px solid var(--line); text-align: left; border-radius: 4px; }
+.pb:last-child { border-bottom: 0; }
+.pb:hover { background: var(--inset); }
+.pb.on { background: var(--accent-soft); }
+.pb .pl { font-size: 13px; color: var(--ink2); }
+.pb .pt { position: relative; height: 18px; }
+.pb .pt .z { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line2); }
+.pb .pt .b { position: absolute; height: 7px; border-radius: 2px; }
+.pb .pt .you { top: 1px; background: var(--accent); }
+.pb .pt .idx { top: 10px; opacity: 0.85; }
+.pb .pv { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; font-size: 13.5px; }
+.pb .pe { text-align: right; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.mchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.mchips span { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font-size: 13px; color: var(--ink2); }
+.mchips b { display: block; font: 500 10.5px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink3); }
+.edge .kv { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 6px 0; border-top: 1px solid var(--line); }
+.edge .kv span { color: var(--ink3); }
+ol.flow { counter-reset: f; list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 6px; }
+ol.flow li { counter-increment: f; display: flex; gap: 10px; align-items: center; font-size: 14px; }
+ol.flow li::before { content: counter(f); display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font: 600 12px var(--mono); flex: none; }
+ul.rules { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14px; }
+.st { grid-template-columns: minmax(0, 1fr) 70px 76px; }

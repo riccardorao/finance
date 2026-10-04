@@ -134,16 +134,19 @@ const C_sum = (a) => a.reduce((s, x) => s + x, 0);
 const TF = [['1M', '1 month'], ['3M', '3 months'], ['6M', '6 months'], ['YTD', 'Year to date'], ['1Y', '1 year'], ['Y2025', '2025'], ['Y2024', '2024'], ['SI', 'Since inception']];
 const TFL = Object.fromEntries(TF);
 function indexPriceFn(D, isin) {
-  const daily = D.ser[isin] ? D.ser[isin].d.map((d, i) => [Date.parse(d + 'T21:00:00Z'), D.ser[isin].p[i]]) : [];
+  const dd = D.indexDaily && D.indexDaily[isin];
+  const daily = dd ? dd.d.map((d, i) => [Date.parse(d + 'T21:00:00Z'), dd.p[i]]) : D.ser[isin] ? D.ser[isin].d.map((d, i) => [Date.parse(d + 'T21:00:00Z'), D.ser[isin].p[i]]) : [];
   const first = daily.length ? daily[0][0] : Infinity;
   const m = D.benchMonthly[isin];
   let pts = [];
   if (m) { const [y, mo] = m.start.split('-').map(Number); pts = m.p.map((p, k) => [Date.UTC(y, mo - 1 + k + 1, 0, 21), p]).filter((x) => x[0] < first); }
   pts = pts.concat(daily);
+  // last close on or before t (binary search)
   return (t) => {
     if (t <= pts[0][0]) return pts[0][1];
-    for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) { const [t0, p0] = pts[i - 1], [t1, p1] = pts[i]; return Math.exp(Math.log(p0) + ((t - t0) / (t1 - t0)) * (Math.log(p1) - Math.log(p0))); }
-    return pts[pts.length - 1][1];
+    let lo = 0, hi = pts.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (pts[mid][0] <= t + 36e5) lo = mid; else hi = mid - 1; }
+    return pts[lo][1];
   };
 }
 function perfModel(D, asOf, total) {

@@ -39,9 +39,9 @@ function chart(isin) {
   await page.exposeFunction('__call', async (server, tool, input) => {
     if (scenario === 'denied') throw { code: 'not_in_manifest' };
     if (server !== 'Scalable Capital') throw { code: 'server_not_connected' };
-    if (tool === 'get_security_news') return { payload: { summary: input.isin === FIRST ? { short: 'LIVE NEWS SHORT', long: 'Long text', lastUpdatedAt: '2026-10-02T08:00:00Z' } : {}, sources: [] } };
+    if (tool === 'get_security_news') { if (scenario === 'partial' && input.isin === LAST) throw { code: 'server_unavailable' }; return { payload: { summary: input.isin === FIRST ? { short: 'LIVE NEWS SHORT', long: 'Long text', lastUpdatedAt: '2026-10-02T08:00:00Z' } : {}, sources: [] } }; }
     if (tool === 'get_security_quote') return { payload: quote(input.isin) };
-    if (tool === 'get_security_chart') { if (scenario === 'partial' && input.isin === LAST) throw { code: 'server_unavailable' }; return { payload: chart(input.isin) }; }
+    if (tool === 'get_security_chart') return { payload: chart(input.isin) };
     if (payloads[tool]) return { payload: payloads[tool]() };
     throw { code: 'bad_request' };
   });

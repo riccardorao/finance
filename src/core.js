@@ -1,5 +1,5 @@
 /* Pure analytics + formatting helpers. Shared by the page and the Node checks. */
-const OBS_PER_YEAR = 126; // chart points are every second trading day
+const OBS_PER_YEAR = 252; // daily closes
 
 const sum = (a) => a.reduce((s, x) => s + x, 0);
 const mean = (a) => (a.length ? sum(a) / a.length : 0);

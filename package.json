@@ -5,6 +5,7 @@
   "description": "Builds a single-page portfolio manager track record from Scalable Capital data: index-equivalent returns, conviction book, scenarios and risk.",
   "scripts": {
     "ledger": "node pipeline/ledger.js data/private",
+    "prices": "node pipeline/fetch_daily.js data/private",
     "history": "node pipeline/history.js data/private",
     "data": "node pipeline/build_data.js data/private",
     "page": "node pipeline/build_page.js data/private dist/portfolio.html",

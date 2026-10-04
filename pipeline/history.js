@@ -1,6 +1,7 @@
 // Rebuilds the account's value history from the transaction ledger and market prices, then validates it
 // against the period-start values implied by the broker's own gains.
-// Inputs (data dir): tx.csv, snapshot.json, series.json (daily, last year), prices_monthly.json (month ends),
+// Inputs (data dir): tx.csv, snapshot.json, prices_daily.json (daily closes, from fetch_daily.js),
+//                    series.json (daily, last year), prices_monthly.json (month ends),
 //                    splits.json (optional)
 // Output: <data dir>/history.json  { points: [{ t, v, cash, net, src }], check: [...] }
 // Usage: node pipeline/history.js [data dir, default data/private]
@@ -11,6 +12,7 @@ const dir = path.resolve(process.argv[2] || path.join(__dirname, '..', 'data', '
 const rd = (f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
 const SNAP = rd('snapshot.json'), S = rd('series.json');
 const PM = fs.existsSync(path.join(dir, 'prices_monthly.json')) ? rd('prices_monthly.json') : {};
+const PD = fs.existsSync(path.join(dir, 'prices_daily.json')) ? rd('prices_daily.json') : {};
 const tx = loadTx(dir), state = replay(tx);
 // Chart prices are split-adjusted; ledger quantities before a split are not. splits.json: {isin: [[YYYY-MM-DD, ratio]]}
 const SPLITS = fs.existsSync(path.join(dir, 'splits.json')) ? rd('splits.json') : {};
@@ -20,8 +22,17 @@ const DAY = 864e5;
 const monthEnd = (y, m) => Date.UTC(y, m + 1, 0, 21); // m: 0-based
 
 // price sources ---------------------------------------------------------------
+// daily closes: the full-history daily file first, then the 12-month series from the broker
 const daily = {};
 for (const [isin, p] of Object.entries(S.p)) daily[isin] = S.dates.map((d, i) => [Date.parse(d + 'T21:00:00Z'), p[i]]);
+for (const [isin, o] of Object.entries(PD)) daily[isin] = o.d.map((d, i) => [Date.parse(d + 'T21:00:00Z'), o.p[i]]);
+// last close on or before t (no look-ahead), within a week
+const lastClose = (pts, t) => {
+  if (!pts || !pts.length || t < pts[0][0] - 3 * DAY || t > pts[pts.length - 1][0] + 7 * DAY) return null;
+  let lo = 0, hi = pts.length - 1; if (t < pts[0][0]) return pts[0][1];
+  while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (pts[mid][0] <= t + 36e5) lo = mid; else hi = mid - 1; }
+  return t - pts[lo][0] > 7 * DAY ? null : pts[lo][1];
+};
 const monthly = {};
 for (const [isin, o] of Object.entries(PM)) {
   const [y, m] = o.start.split('-').map(Number);
@@ -44,7 +55,7 @@ const nearTrade = (isin, t) => {
 };
 const used = {};
 function price(isin, t) {
-  let p = geo(daily[isin], t), src = 'daily';
+  let p = lastClose(daily[isin], t), src = 'daily';
   if (p == null) { p = geo(monthly[isin], t); src = 'monthly'; }
   if (p != null) p *= splitFactor(isin, t);
   if (p == null) { p = nearTrade(isin, t); src = 'trades'; }
@@ -67,6 +78,7 @@ const netAt = (t) => external.filter((f) => f.t <= t).reduce((s, f) => s + f.a, 
 const first = external[0].t;
 const dates = new Set();
 for (let y = new Date(first).getUTCFullYear(), m = new Date(first).getUTCMonth(); ; m++) { const t = monthEnd(y, m); if (t >= asOf) break; dates.add(t); }
+for (let t = Date.UTC(new Date(first).getUTCFullYear(), new Date(first).getUTCMonth(), new Date(first).getUTCDate(), 21); t < asOf; t += DAY) { const wd = new Date(t).getUTCDay(); if (wd > 0 && wd < 6) dates.add(t); }
 const d = new Date(asOf), at = (yy, mm, dd) => Date.UTC(yy, mm, dd, 20);
 const starts = { '1W': at(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - 7), '1M': at(d.getUTCFullYear(), d.getUTCMonth() - 1, d.getUTCDate()), '3M': at(d.getUTCFullYear(), d.getUTCMonth() - 3, d.getUTCDate()), '6M': at(d.getUTCFullYear(), d.getUTCMonth() - 6, d.getUTCDate()), YTD: at(d.getUTCFullYear() - 1, 11, 31), '1Y': at(d.getUTCFullYear() - 1, d.getUTCMonth(), d.getUTCDate() - 1) };
 Object.values(starts).forEach((t) => dates.add(t));
@@ -83,6 +95,6 @@ check.push({ period: 'now', date: SNAP.meta.asOf.slice(0, 10), broker: SNAP.tota
 fs.writeFileSync(path.join(dir, 'history.json'), JSON.stringify({ points, check, external: external.map((f) => [f.t, +f.a.toFixed(2)]) }));
 console.table(check);
 console.log('price sources used:', used);
-const approxMonths = points.filter((p) => p.approx);
+const approxMonths = points.filter((p) => p.approx && new Date(p.t + DAY).getUTCDate() === 1);
 console.log('valuations with trade-price fallbacks:', approxMonths.length, 'e.g.', approxMonths.slice(0, 4).map((p) => new Date(p.t).toISOString().slice(0, 7) + ' ' + p.approx.join('/')).join(' | '));
 console.log('min cash', Math.min(...points.map((p) => p.cash)).toFixed(0));

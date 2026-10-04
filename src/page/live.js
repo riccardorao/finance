@@ -34,13 +34,10 @@ async function liveRefresh() {
     const benchIsins = DATA_SNAP.benches.map((b) => b.isin);
     const holdIsins = feed.map((f) => f.isin);
     const all = holdIsins.concat(benchIsins);
-    const [qs, cs, ns] = await Promise.all([Promise.allSettled(all.map((i) => callRead('get_security_quote', { isin: i }))), Promise.allSettled(all.map((i) => callRead('get_security_chart', { isin: i, timeframe: 'one_year' }))), Promise.allSettled(holdIsins.map((i) => callRead('get_security_news', { isin: i, locale: 'en_US' })))]);
+    const [qs, ns] = await Promise.all([Promise.allSettled(all.map((i) => callRead('get_security_quote', { isin: i }))), Promise.allSettled(holdIsins.map((i) => callRead('get_security_news', { isin: i, locale: 'en_US' })))]);
     let failed = [o, c].filter((x) => x.status !== 'fulfilled').length;
-    const quotes = {}, charts = {};
-    all.forEach((i, k) => {
-      if (qs[k].status === 'fulfilled' && qs[k].value && qs[k].value.security && qs[k].value.security.quote) quotes[i] = qs[k].value.security.quote; else failed++;
-      if (cs[k].status === 'fulfilled' && cs[k].value && Array.isArray(cs[k].value.dataPoints) && cs[k].value.dataPoints.length > 20) charts[i] = cs[k].value; else failed++;
-    });
+    const quotes = {};
+    all.forEach((i, k) => { if (qs[k].status === 'fulfilled' && qs[k].value && qs[k].value.security && qs[k].value.security.quote) quotes[i] = qs[k].value.security.quote; else failed++; });
     const news = {};
     holdIsins.forEach((i, k) => { if (ns[k].status === 'fulfilled' && ns[k].value) news[i] = ns[k].value; else failed++; });
     const D2 = JSON.parse(JSON.stringify(DATA_SNAP));
@@ -72,14 +69,6 @@ async function liveRefresh() {
     } else D2.total = secValue + D2.cash;
     // benchmarks
     D2.benches.forEach((b) => { const q = quotes[b.isin]; if (q) b.perf = mapPerf(q.performances); });
-    // price history: all-or-nothing so every series shares one date grid
-    if (all.every((i) => charts[i])) {
-      all.forEach((i) => {
-        const m = new Map(); charts[i].dataPoints.forEach((p) => m.set(p.timestampUtc.slice(0, 10), p.midPrice));
-        const d = Array.from(m.keys()).sort();
-        D2.ser[i] = { d, p: d.map((k) => m.get(k)) };
-      });
-    }
     DATA_ACTIVE = D2;
     state.mode = 'live'; state.statusMsg = failed ? `${failed} ${failed === 1 ? 'item' : 'items'} kept from the snapshot` : '';
     render();
