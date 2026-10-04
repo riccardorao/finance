@@ -1,0 +1,21 @@
+{
+  "name": "pm-track-record",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Builds a single-page portfolio manager track record from Scalable Capital data: index-equivalent returns, conviction book, scenarios and risk.",
+  "scripts": {
+    "ledger": "node pipeline/ledger.js data/private",
+    "data": "node pipeline/build_data.js data/private",
+    "page": "node pipeline/build_page.js data/private dist/portfolio.html",
+    "build": "npm run ledger && npm run data && npm run page",
+    "sample": "node pipeline/make_sample.js data/sample && node pipeline/ledger.js data/sample && node pipeline/build_data.js data/sample && node pipeline/build_page.js data/sample dist/sample.html",
+    "test": "node tests/render.js dist/portfolio.html test-output && node tests/live.js ok && node tests/live.js partial && node tests/live.js denied",
+    "test:sample": "node tests/render.js dist/sample.html test-output/sample && node tests/live.js ok data/sample test-output/sample/_wrapped.html"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

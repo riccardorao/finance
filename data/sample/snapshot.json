@@ -1,0 +1,569 @@
+{
+ "meta": {
+  "asOf": "2026-10-01T20:15:00Z",
+  "ledgerFrom": "2024-02-06",
+  "ledgerTo": "2026-10-01",
+  "account": "Sample account",
+  "ccy": "EUR"
+ },
+ "total": 25370.75,
+ "cash": 512.03,
+ "pl": {
+  "1D": 125.04,
+  "1W": 427.98,
+  "1M": -676.59,
+  "3M": -1890.14,
+  "6M": -467.24,
+  "YTD": 54.94,
+  "1Y": -734.35,
+  "MAX": 7570.75
+ },
+ "holdings": [
+  {
+   "isin": "US67066G1040",
+   "qty": 62,
+   "price": 86.885,
+   "quoteMid": 86.885,
+   "perf": {
+    "1D": [
+     0.0122,
+     1.043
+    ],
+    "1W": [
+     0.0464,
+     3.852
+    ],
+    "1M": [
+     0.0699,
+     5.675
+    ],
+    "3M": [
+     -0.1013,
+     -9.796
+    ],
+    "6M": [
+     -0.0238,
+     -2.116
+    ],
+    "YTD": [
+     -0.0173,
+     -1.53
+    ],
+    "1Y": [
+     0.5077,
+     29.256
+    ],
+    "MAX": [
+     0.4885,
+     28.516
+    ],
+    "SB": [
+     0.5489,
+     1909.08
+    ]
+   },
+   "name": "NVIDIA",
+   "long": "NVIDIA",
+   "ticker": "NVDA",
+   "sector": "Information Technology",
+   "industry": "Semiconductors",
+   "theme": "AI chips & memory",
+   "region": "United States",
+   "ccy": "USD",
+   "scalableNews": null
+  },
+  {
+   "isin": "US8740391003",
+   "qty": 19,
+   "price": 204.268,
+   "quoteMid": 204.268,
+   "perf": {
+    "1D": [
+     -0.0073,
+     -1.507
+    ],
+    "1W": [
+     -0.0604,
+     -13.126
+    ],
+    "1M": [
+     -0.094,
+     -21.191
+    ],
+    "3M": [
+     -0.1191,
+     -27.619
+    ],
+    "6M": [
+     -0.141,
+     -33.521
+    ],
+    "YTD": [
+     0.104,
+     19.25
+    ],
+    "1Y": [
+     0.1231,
+     22.392
+    ],
+    "MAX": [
+     0.1509,
+     26.78
+    ],
+    "SB": [
+     0.2978,
+     890.68
+    ]
+   },
+   "name": "TSMC",
+   "long": "TSMC",
+   "ticker": "TSM",
+   "sector": "Information Technology",
+   "industry": "Semiconductor foundry",
+   "theme": "AI chips & memory",
+   "region": "United States",
+   "ccy": "USD",
+   "scalableNews": null
+  },
+  {
+   "isin": "US02079K3059",
+   "qty": 20,
+   "price": 319.267,
+   "quoteMid": 319.267,
+   "perf": {
+    "1D": [
+     0.0268,
+     8.344
+    ],
+    "1W": [
+     0.094,
+     27.44
+    ],
+    "1M": [
+     -0.0815,
+     -28.32
+    ],
+    "3M": [
+     0.0261,
+     8.112
+    ],
+    "6M": [
+     0.2665,
+     67.18
+    ],
+    "YTD": [
+     0.3114,
+     75.808
+    ],
+    "1Y": [
+     0.2761,
+     69.068
+    ],
+    "MAX": [
+     0.2899,
+     71.754
+    ],
+    "SB": [
+     1.1532,
+     3419.76
+    ]
+   },
+   "name": "Alphabet",
+   "long": "Alphabet",
+   "ticker": "GOOGL",
+   "sector": "Communication Services",
+   "industry": "Internet & cloud",
+   "theme": "AI platforms & infrastructure",
+   "region": "United States",
+   "ccy": "USD",
+   "scalableNews": null
+  },
+  {
+   "isin": "US5324571083",
+   "qty": 43,
+   "price": 103.824,
+   "quoteMid": 103.824,
+   "perf": {
+    "1D": [
+     0.0012,
+     0.12
+    ],
+    "1W": [
+     -0.0022,
+     -0.224
+    ],
+    "1M": [
+     0.023,
+     2.338
+    ],
+    "3M": [
+     -0.0699,
+     -7.801
+    ],
+    "6M": [
+     -0.0797,
+     -8.994
+    ],
+    "YTD": [
+     0.1411,
+     12.836
+    ],
+    "1Y": [
+     0.1119,
+     10.448
+    ],
+    "MAX": [
+     0.0914,
+     8.693
+    ],
+    "SB": [
+     0.77,
+     1942.22
+    ]
+   },
+   "name": "Eli Lilly",
+   "long": "Eli Lilly",
+   "ticker": "LLY",
+   "sector": "Health Care",
+   "industry": "Pharmaceuticals",
+   "theme": "Healthcare",
+   "region": "United States",
+   "ccy": "USD",
+   "scalableNews": null
+  },
+  {
+   "isin": "US5951121038",
+   "qty": 70,
+   "price": 26.399,
+   "quoteMid": 26.399,
+   "perf": {
+    "1D": [
+     -0.0005,
+     -0.014
+    ],
+    "1W": [
+     0.0093,
+     0.242
+    ],
+    "1M": [
+     -0.0131,
+     -0.35
+    ],
+    "3M": [
+     -0.0419,
+     -1.155
+    ],
+    "6M": [
+     -0.0139,
+     -0.372
+    ],
+    "YTD": [
+     -0.3089,
+     -11.802
+    ],
+    "1Y": [
+     -0.5836,
+     -37
+    ],
+    "MAX": [
+     -0.5861,
+     -37.38
+    ],
+    "SB": [
+     0.0286,
+     51.38
+    ]
+   },
+   "name": "Micron",
+   "long": "Micron",
+   "ticker": "MU",
+   "sector": "Information Technology",
+   "industry": "Memory semiconductors",
+   "theme": "AI chips & memory",
+   "region": "United States",
+   "ccy": "USD",
+   "scalableNews": null
+  },
+  {
+   "isin": "US92537N1081",
+   "qty": 10,
+   "price": 158.212,
+   "quoteMid": 158.212,
+   "perf": {
+    "1D": [
+     -0.0297,
+     -4.848
+    ],
+    "1W": [
+     -0.0031,
+     -0.492
+    ],
+    "1M": [
+     0.0665,
+     9.867
+    ],
+    "3M": [
+     0.4632,
+     50.082
+    ],
+    "6M": [
+     0.1257,
+     17.663
+    ],
+    "YTD": [
+     0.2966,
+     36.187
+    ],
+    "1Y": [
+     -0.0347,
+     -5.694
+    ],
+    "MAX": [
+     -0.0126,
+     -2.024
+    ],
+    "SB": [
+     0.1264,
+     177.6
+    ]
+   },
+   "name": "Vertiv",
+   "long": "Vertiv",
+   "ticker": "VRT",
+   "sector": "Industrials",
+   "industry": "Data-centre power & cooling",
+   "theme": "AI platforms & infrastructure",
+   "region": "United States",
+   "ccy": "USD",
+   "scalableNews": null
+  },
+  {
+   "isin": "CA2926717083",
+   "qty": 119,
+   "price": 6.067,
+   "quoteMid": 6.067,
+   "perf": {
+    "1D": [
+     -0.0297,
+     -0.186
+    ],
+    "1W": [
+     -0.1007,
+     -0.679
+    ],
+    "1M": [
+     -0.2476,
+     -1.997
+    ],
+    "3M": [
+     -0.5082,
+     -6.27
+    ],
+    "6M": [
+     -0.3851,
+     -3.799
+    ],
+    "YTD": [
+     -0.6895,
+     -13.47
+    ],
+    "1Y": [
+     -0.7018,
+     -14.278
+    ],
+    "MAX": [
+     -0.6708,
+     -12.363
+    ],
+    "SB": [
+     -0.396,
+     -473.39
+    ]
+   },
+   "name": "Energy Fuels",
+   "long": "Energy Fuels",
+   "ticker": "UUUU",
+   "sector": "Energy",
+   "industry": "Uranium & rare earths",
+   "theme": "Critical minerals",
+   "region": "United States",
+   "ccy": "USD",
+   "scalableNews": null
+  },
+  {
+   "isin": "US5533681012",
+   "qty": 11,
+   "price": 53.542,
+   "quoteMid": 53.542,
+   "perf": {
+    "1D": [
+     -0.0191,
+     -1.04
+    ],
+    "1W": [
+     -0.0513,
+     -2.894
+    ],
+    "1M": [
+     0.006,
+     0.321
+    ],
+    "3M": [
+     -0.3052,
+     -23.515
+    ],
+    "6M": [
+     -0.3758,
+     -32.229
+    ],
+    "YTD": [
+     -0.2691,
+     -19.714
+    ],
+    "1Y": [
+     -0.4376,
+     -41.661
+    ],
+    "MAX": [
+     -0.4367,
+     -41.508
+    ],
+    "SB": [
+     -0.0393,
+     -24.1
+    ]
+   },
+   "name": "MP Materials",
+   "long": "MP Materials",
+   "ticker": "MP",
+   "sector": "Materials",
+   "industry": "Rare earths",
+   "theme": "Critical minerals",
+   "region": "United States",
+   "ccy": "USD",
+   "scalableNews": null
+  }
+ ],
+ "benches": [
+  {
+   "id": "MSCI",
+   "name": "MSCI World",
+   "isin": "IE00B4L5Y983",
+   "etf": "iShares Core MSCI World (Acc)",
+   "perf": {
+    "1D": [
+     -0.0054,
+     -0.718
+    ],
+    "1W": [
+     -0.0108,
+     -1.455
+    ],
+    "1M": [
+     0.0115,
+     1.521
+    ],
+    "3M": [
+     0.038,
+     4.879
+    ],
+    "6M": [
+     -0.0063,
+     -0.849
+    ],
+    "YTD": [
+     -0.055,
+     -7.758
+    ],
+    "1Y": [
+     -0.1515,
+     -23.817
+    ],
+    "MAX": [
+     -0.1606,
+     -25.523
+    ]
+   }
+  },
+  {
+   "id": "SPX",
+   "name": "S&P 500",
+   "isin": "IE00B5BMR087",
+   "etf": "iShares Core S&P 500 (Acc)",
+   "perf": {
+    "1D": [
+     0.0051,
+     0.67
+    ],
+    "1W": [
+     0.0041,
+     0.546
+    ],
+    "1M": [
+     0.0117,
+     1.545
+    ],
+    "3M": [
+     0.1613,
+     18.492
+    ],
+    "6M": [
+     0.0847,
+     10.395
+    ],
+    "YTD": [
+     0.1893,
+     21.191
+    ],
+    "1Y": [
+     0.0581,
+     7.307
+    ],
+    "MAX": [
+     0.0702,
+     8.734
+    ]
+   }
+  },
+  {
+   "id": "NDX",
+   "name": "Nasdaq-100",
+   "isin": "IE00B53SZB19",
+   "etf": "iShares Nasdaq 100 (Acc)",
+   "perf": {
+    "1D": [
+     0.0207,
+     2.644
+    ],
+    "1W": [
+     -0.0174,
+     -2.309
+    ],
+    "1M": [
+     -0.1331,
+     -19.997
+    ],
+    "3M": [
+     -0.0769,
+     -10.847
+    ],
+    "6M": [
+     0.0389,
+     4.882
+    ],
+    "YTD": [
+     0.0445,
+     5.552
+    ],
+    "1Y": [
+     0.1236,
+     14.331
+    ],
+    "MAX": [
+     0.1208,
+     14.039
+    ]
+   }
+  }
+ ]
+}

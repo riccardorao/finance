@@ -1,0 +1,10 @@
+# Personal account data never leaves this machine
+data/private/
+# Build and test output
+dist/
+test-output/
+node_modules/
+# Derived files inside the sample are rebuilt by `npm run sample`
+data/sample/ledger.json
+data/sample/data.json
+.DS_Store

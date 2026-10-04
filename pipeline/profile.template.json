@@ -1,0 +1,188 @@
+{
+ "manager": "Example Manager",
+ "strategy": "Concentrated global equities",
+ "tagline": "Long-only · 8–12 positions · each held for a declared edge, each with a written exit",
+ "mandate": [
+  [
+   "Positions",
+   "8–12 single stocks"
+  ],
+  [
+   "Instruments",
+   "Long-only equities. No leverage, no structured products"
+  ],
+  [
+   "Return target",
+   "About 20% a year over a 30-year horizon"
+  ],
+  [
+   "Holding period",
+   "6 months to 10 years, set by the edge the position relies on"
+  ],
+  [
+   "Liquidity",
+   "Risk capital: no income or short-term liquidity needed"
+  ],
+  [
+   "Fresh capital",
+   "A fixed monthly contribution"
+  ]
+ ],
+ "edges": {
+  "Patience": {
+   "master": "Buffett",
+   "source": "A durable moat the market has temporarily mispriced, held for longer than 95% of participants will wait",
+   "horizon": "Years to a decade",
+   "broken": "The moat erodes or return on capital falls structurally"
+  },
+  "Informational": {
+   "master": "Lynch",
+   "source": "A business explainable in one sentence, under-followed by professional capital, with the narrative still undeveloped",
+   "horizon": "Medium term",
+   "broken": "The narrative arrives and the price re-rates"
+  },
+  "Catalyst": {
+   "master": "Ackman",
+   "source": "A specific, dated event that forces a re-rating within a defined window",
+   "horizon": "Short and defined",
+   "broken": "The catalyst fires, or the window slips indefinitely"
+  }
+ },
+ "criteria": [
+  [
+   "Return on capital",
+   "ROIC of 15–20% or more over several years, measured all-in, including goodwill actually paid"
+  ],
+  [
+   "One-sentence test",
+   "The business fits in one sentence and the market narrative is still underdeveloped"
+  ],
+  [
+   "Catalyst",
+   "An identifiable catalyst on a visible horizon"
+  ],
+  [
+   "Ownership",
+   "Founder-led, or a substantial insider stake"
+  ],
+  [
+   "Not priced in",
+   "A reverse-DCF shows the catalyst is not already in the price"
+  ]
+ ],
+ "process": [
+  [
+   "Declare the edge",
+   "Patience, informational or catalyst. If none can be declared, the answer is pass."
+  ],
+  [
+   "Score the five criteria",
+   "Three passes or fewer is a pass unless the failure is explicitly justified."
+  ],
+  [
+   "Falsify with a reverse-DCF",
+   "Ten years explicit plus a terminal value at an 8% cost of capital: what growth does the price require? Then the two-axis screen against forward return on capital."
+  ],
+  [
+   "Check portfolio fit",
+   "Which cluster it joins, what that cluster becomes as a share of risk, and whether it shares a kill-switch with anything held."
+  ],
+  [
+   "Decide the funding",
+   "Trim a broken or overweight thesis, use fresh capital, or wait for a dated event. Never sell a live winner to fund a new idea."
+  ],
+  [
+   "Write the kill-switch",
+   "A specific, checkable event. No kill-switch, no buy."
+  ]
+ ],
+ "lessons": [
+  {
+   "finding": "Example: winners were sold early, before the thesis had paid.",
+   "rule": "The holding period follows the declared edge, and reviews run on a schedule rather than on price moves."
+  },
+  {
+   "finding": "Example: a short burst of leveraged trading produced the largest single loss.",
+   "rule": "Leverage and structured products are closed. Long-only equities only."
+  },
+  {
+   "finding": "Example: cheap valuations pointed to value traps more often than to mispricing.",
+   "rule": "A reverse-DCF is used to falsify, never to rank."
+  }
+ ],
+ "rejected": [
+  [
+   "Example Co",
+   "No declarable edge."
+  ],
+  [
+   "Another Co",
+   "Return on capital below the cost of capital once goodwill is included."
+  ]
+ ],
+ "pipeline": [
+  [
+   "Example pipeline name",
+   8,
+   "Patience"
+  ]
+ ],
+ "positions": {
+  "US8740391003": {
+   "edge": "Patience",
+   "target": 13,
+   "thesis": "The only foundry that can make leading-edge AI chips at scale, and its lead widens with every capex cycle.",
+   "kill": "Gross margin below 53% for two consecutive quarters, or a blockade or embargo of Taiwan.",
+   "killDraft": true
+  },
+  "US02079K3059": {
+   "edge": "Patience",
+   "target": 13,
+   "thesis": "Search cash flows fund a full AI stack (TPUs, Gemini, Cloud) that the market still values like an advertising company.",
+   "kill": "Search revenue falls year on year for two consecutive quarters, or Cloud growth drops below 20%.",
+   "killDraft": true
+  },
+  "US5324571083": {
+   "edge": "Catalyst",
+   "target": 11,
+   "thesis": "Leader in the fastest-growing drug class, with the oral pill and retatrutide as the next dated catalysts.",
+   "kill": "Mounjaro and Zepbound revenue falls quarter on quarter, or the retatrutide filing slips beyond 2027.",
+   "killDraft": true
+  },
+  "US67066G1040": {
+   "edge": "Catalyst",
+   "target": 9,
+   "thesis": "Sells the picks and shovels of AI with a software moat, while a record buyback supports the share count.",
+   "kill": "Gross margin below 71% for a full quarter, or a sequential fall in data-centre revenue.",
+   "killDraft": true
+  },
+  "CA2926717083": {
+   "edge": "Informational",
+   "target": 6,
+   "thesis": "The only US mill that processes both uranium and rare earths, still narrated as a small uranium miner.",
+   "kill": "Uranium term price below $70/lb, or no commercial rare-earth oxide sales by the end of 2027.",
+   "killDraft": true
+  },
+  "US5951121038": {
+   "edge": null,
+   "target": null,
+   "thesis": "Sold-out high-bandwidth memory with most of 2027 contracted at higher prices.",
+   "kill": "Next-quarter guidance cut below consensus, or HBM contract prices fall.",
+   "killDraft": true
+  },
+  "US92537N1081": {
+   "edge": null,
+   "target": null,
+   "thesis": "Power and liquid cooling scale with every GPU generation.",
+   "kill": "A second consecutive revenue miss, or book-to-bill below 1.0.",
+   "killDraft": true
+  },
+  "US5533681012": {
+   "edge": null,
+   "target": null,
+   "thesis": "The West's integrated rare-earth and magnet producer, starting shipments to GM.",
+   "kill": "Magnet shipments to GM not started by Q2 2027, or China lifts its export curbs.",
+   "killDraft": true
+  }
+ }
+}
