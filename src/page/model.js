@@ -16,7 +16,7 @@ const px = (x) => (x >= 100 ? fmtNum(x, 2) : x >= 10 ? fmtNum(x, 2) : fmtNum(x, 
 const dayMs = (s) => Date.parse(s.length === 10 ? s + 'T12:00:00Z' : s.length === 16 ? s + ':00Z' : s);
 
 /* ---------- state ---------- */
-const TABS = [['record', 'Track record'], ['philosophy', 'Philosophy'], ['book', 'Book and conviction'], ['risk', 'Risk and outlook']];
+const TABS = [['record', 'Performance'], ['philosophy', 'How I invest'], ['book', 'Portfolio'], ['risk', 'Outlook']];
 const state = { tab: 'record', bench: 'MSCI', tf: '1Y', measure: 'twr', idxSel: ['MSCI', 'SPX', 'NDX'], open: null, preset: 'analyst', mode: 'snapshot', statusMsg: '', tableView: {}, commentary: {}, dbReady: false };
 /* scenario probabilities: bull, base, bear */
 const PRESETS = { analyst: { label: 'Analyst view', p: [0.25, 0.5, 0.25] }, cautious: { label: 'Cautious', p: [0.15, 0.45, 0.4] }, stress: { label: 'Stress', p: [0.05, 0.35, 0.6] } };
@@ -122,7 +122,7 @@ function buildModel(D) {
   const hhi = C_sum(H.map((h) => (h.value / secValue) ** 2));
   H.forEach((h) => { h.sc = scenarios(h, risk); });
   const lev = C_sum(D.ledger.realised.filter((r) => r.type === 'Leveraged & certificates').map((r) => r.pl));
-  const perf = perfModel(D, asOf, total);
+  const perf = perfModel(D, asOf, D.history.scope === 'stocks' ? secValue : total);
   return { D, asOf, H, total, lev, perf, cash: D.cash, secValue, flows, firstFlow, risk, rows, irr, anchors, deposited, withdrawn, net: deposited - withdrawn, unreal, realised: L.realisedTotal + L.realisedCrypto, incomeDiv, hhi, effN: 1 / hhi };
 }
 const C_sum = (a) => a.reduce((s, x) => s + x, 0);

@@ -7,7 +7,7 @@
 // Usage: node pipeline/history.js [data dir, default data/private]
 const fs = require('fs');
 const path = require('path');
-const { loadTx, replay } = require('./holdings_history.js');
+const { loadTx, replay, instrumentType } = require('./holdings_history.js');
 const dir = path.resolve(process.argv[2] || path.join(__dirname, '..', 'data', 'private'));
 const rd = (f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
 const SNAP = rd('snapshot.json'), S = rd('series.json');
@@ -92,7 +92,22 @@ const check = Object.entries(starts).map(([k, t]) => {
   return { period: k, date: new Date(t).toISOString().slice(0, 10), broker: +broker.toFixed(0), rebuilt: +rebuilt.toFixed(0), diff: +(rebuilt - broker).toFixed(0), pct: +((rebuilt / broker - 1) * 100).toFixed(2) };
 });
 check.push({ period: 'now', date: SNAP.meta.asOf.slice(0, 10), broker: SNAP.total, rebuilt: points[points.length - 1].v, diff: +(points[points.length - 1].v - SNAP.total).toFixed(0), pct: +((points[points.length - 1].v / SNAP.total - 1) * 100).toFixed(2) });
-fs.writeFileSync(path.join(dir, 'history.json'), JSON.stringify({ points, check, external: external.map((f) => [f.t, +f.a.toFixed(2)]) }));
+// ---- stock book (carve-out): individual shares only. Crypto, ETFs/ETCs and leveraged products are left out;
+// money moving between the stock book and the rest of the account counts as an external flow, and stock
+// dividends count as income paid out of the book. Cash is not part of the book.
+const TYPES = fs.existsSync(path.join(dir, 'types.json')) ? rd('types.json') : {};
+const isStock = (isin) => isin && instrumentType(isin, TYPES) === 'Shares';
+const sleeveFlows = tx.filter((r) => isStock(r.isin) && ['buy', 'sell', 'div'].includes(r.kind)).map((r) => [r.t, +((r.kind === 'buy' ? 1 : -1) * r.amt).toFixed(2)]);
+function stockValueAt(t) {
+  const s = state(t); let v = 0;
+  for (const [isin, q] of Object.entries(s.qty)) { if (!isStock(isin)) continue; const { p } = price(isin, t); if (p != null) v += q * p; }
+  return v;
+}
+let cumF = 0, fi = 0;
+const sleevePoints = points.map((p) => { while (fi < sleeveFlows.length && sleeveFlows[fi][0] <= p.t) cumF += sleeveFlows[fi++][1]; return [p.t, +stockValueAt(p.t).toFixed(2), +cumF.toFixed(2)]; });
+const stockNow = SNAP.holdings.filter((h) => isStock(h.isin)).reduce((a, h) => a + h.qty * h.price, 0);
+console.log('stock book now: rebuilt', sleevePoints[sleevePoints.length - 1][1].toFixed(0), 'broker', stockNow.toFixed(0));
+fs.writeFileSync(path.join(dir, 'history.json'), JSON.stringify({ points, check, external: external.map((f) => [f.t, +f.a.toFixed(2)]), stocks: { points: sleevePoints, external: sleeveFlows } }));
 console.table(check);
 console.log('price sources used:', used);
 const approxMonths = points.filter((p) => p.approx && new Date(p.t + DAY).getUTCDate() === 1);

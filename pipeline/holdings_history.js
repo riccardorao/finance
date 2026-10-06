@@ -19,4 +19,6 @@ function replay(tx) {
     return { cash, qty };
   };
 }
-module.exports = { loadTx, replay, CASH, QTY };
+/** Instrument class used to carve the stock book out of the account. types: optional {isin: type} overrides. */
+const instrumentType = (isin, types = {}) => types[isin] || (['BTC', 'ETH', 'ADA', 'SOL'].includes(isin) ? 'Crypto' : /^DE000BB/.test(isin) ? 'Leveraged & certificates' : /^(IE|LU)/.test(isin) ? 'ETFs & ETCs' : 'Shares');
+module.exports = { loadTx, replay, instrumentType, CASH, QTY };

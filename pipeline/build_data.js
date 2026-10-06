@@ -44,7 +44,8 @@ const d10 = (s) => s.slice(0, 10);
 // Instrument type for the realised-results bridge. Optional <data>/types.json overrides by ISIN
 // (for leveraged ETPs that do not carry an issuer prefix, for example).
 const TYPES = fs.existsSync(path.join(dir, 'types.json')) ? rd('types.json') : {};
-const type = (isin) => TYPES[isin] || (['BTC', 'ETH', 'ADA', 'SOL'].includes(isin) ? 'Crypto' : /^DE000BB/.test(isin) ? 'Leveraged & certificates' : /^(IE|LU)/.test(isin) ? 'ETFs & ETCs' : 'Shares');
+const { instrumentType } = require('./holdings_history.js');
+const type = (isin) => instrumentType(isin, TYPES);
 
 const holdings = SNAP.holdings.map((f) => {
   const pos = L.positions[f.isin] || { cost: null, lots: [] };
@@ -77,7 +78,8 @@ const DATA = {
   indices: INDICES,
   benchMonthly: Object.fromEntries(INDICES.map((x) => [x.isin, PM[x.isin]])),
   indexDaily: PD ? Object.fromEntries(INDICES.filter((x) => PD[x.isin]).map((x) => [x.isin, { d: PD[x.isin].d, p: PD[x.isin].p }])) : {},
-  history: { points: HIST.points.map((p) => [p.t, p.v, p.net]), external: HIST.external, check: HIST.check },
+  // the Track record uses the stock book only; the whole-account history is kept for the reconciliation note
+  history: HIST.stocks ? { points: HIST.stocks.points, external: HIST.stocks.external, check: HIST.check, scope: 'stocks' } : { points: HIST.points.map((p) => [p.t, p.v, p.net]), external: HIST.external, check: HIST.check, scope: 'account' },
   flows: L.flows.map((f) => ({ d: f.date.slice(0, 16), a: +f.amt.toFixed(2), k: f.kind })),
   ledger: {
     summary: Object.fromEntries(Object.entries(L.summary).map(([k, v]) => [k, +(+v).toFixed(2)])),

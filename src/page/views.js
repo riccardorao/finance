@@ -18,10 +18,10 @@ function portOutlook(pr) {
 /* ---------- masthead and tabs ---------- */
 function renderHeader() {
   const D = M.D, pr = D.profile;
-  $('#mh-name').textContent = pr.manager;
-  $('#mh-strategy').textContent = pr.strategy;
+  $('#mh-name').textContent = 'Equity Portfolio Dashboard';
+  $('#mh-strategy').textContent = pr.manager;
   $('#mh-tag').textContent = pr.tagline;
-  $('#mh-aum').textContent = `${fmtEUR0(M.total)} · ${M.H.length} positions`;
+  $('#mh-aum').textContent = `${fmtEUR0(M.secValue)} in ${M.H.length} stocks`;
   const st = $('#status'); st.dataset.mode = state.mode;
   const txt = { snapshot: `Snapshot ${tfmt(D.meta.asOf)}`, loading: 'Refreshing from Scalable…', live: `Live ${tfmt(D.meta.asOf)}`, error: `Snapshot ${tfmt(D.meta.asOf)}` }[state.mode];
   $('#status-text').textContent = txt + (state.statusMsg ? ' · ' + state.statusMsg : '');
@@ -65,14 +65,15 @@ function renderRecord() {
   const g = (k) => all.find((s) => s.k === k);
   const y1 = g('1Y'), ytd = g('YTD'), si = g('SI');
   const twr = state.measure === 'twr';
+  const closedStocks = D.ledger.realised.filter((r) => r.type === 'Shares' && r.last), wins = closedStocks.filter((r) => r.pl > 0).length;
 
   root.innerHTML = `
-  <div class="lede"><div><p class="kicker">Track record</p><h2>${fmtSignedPct(y1.twr, 1)} over the last 12 months, ${fmtSignedPct(ytd.twr, 1)} this year</h2></div></div>
+  <div class="lede"><div><p class="kicker">Performance · stocks only</p><h2>My stock picks are ${y1.twr >= 0 ? 'up' : 'down'} ${fmtPct(Math.abs(y1.twr), 1)} over the last 12 months, ${Math.abs((y1.twr - y1.idx[primary].twr) * 100).toFixed(1)} points ${y1.twr >= y1.idx[primary].twr ? 'ahead of' : 'behind'} ${esc(pName)}</h2></div></div>
   <div class="kpis4">
-    ${kpi('Value today', fmtEUR0(M.total), '', `${D.pl.MAX >= 0 ? '+' : ''}${fmtEUR0(D.pl.MAX)} gained since ${esc(dfmt(isoDay(PF.first), { day: undefined }))}`)}
     ${kpi('Last 12 months', fmtSignedPct(y1.twr, 1), cls(y1.twr), vsIdx(y1.twr, y1.idx[primary].twr, pName))}
-    ${kpi('Year to date', fmtSignedPct(ytd.twr, 1), cls(ytd.twr), vsIdx(ytd.twr, ytd.idx[primary].twr, pName))}
-    ${kpi('Money-weighted, since start', fmtSignedPct(si.mwr, 1) + '<small> a year</small>', cls(si.mwr), `same money in ${esc(pName)}: ${fmtSignedPct(si.idx[primary].mwr, 1)} a year`)}
+    ${kpi('This year', fmtSignedPct(ytd.twr, 1), cls(ytd.twr), vsIdx(ytd.twr, ytd.idx[primary].twr, pName))}
+    ${kpi('Every euro since I started', fmtSignedPct(si.mwr, 1) + '<small> a year</small>', cls(si.mwr), `the same money in ${esc(pName)}: ${fmtSignedPct(si.idx[primary].mwr, 1)} a year`)}
+    ${kpi('Winning calls', `${wins}<small> of ${closedStocks.length}</small>`, '', `closed stock positions sold at a profit`)}
   </div>
 
   <div class="panel" style="margin-top:14px">
@@ -84,16 +85,16 @@ function renderRecord() {
     <div class="headline"><span class="big2 ${cls(twr ? st.twr : st.gain)}">${twr ? fmtSignedPct(st.twr, 1) : fmtSignedEUR(st.gain)}</span><span class="muted">${twr ? 'time-weighted' : `money-weighted ${st.years > 1.05 ? fmtSignedPct(st.mwr, 1) + ' a year' : fmtSignedPct(st.mwrPeriod, 1)}`} · ${esc(TFL[state.tf])}</span>
       ${sel.map((id) => `<span class="idxv"><i class="sw line" style="background:${IDX_COLOR[id]}"></i>${esc(idxName(id))} ${twr ? fmtSignedPct(st.idx[id].twr, 1) : fmtSignedEUR(st.idx[id].value - st.b.v + st.gain)}</span>`).join('')}</div>
     <div id="perfchart" class="chart"></div>
-    <div class="row-between" style="margin-top:6px"><span class="muted small">${twr ? 'Cumulative return. Deposits and withdrawals do not affect it.' : 'Portfolio value against the same deposits and withdrawals invested in each index.'}</span><button class="tablink" id="tv-perf">${state.tableView.perf ? 'Show chart' : 'View as table'}</button></div>
+    <div class="row-between" style="margin-top:6px"><span class="muted small">${twr ? 'Time-weighted: the return on my picks, however much money was in at the time.' : 'Money-weighted: what my actual money is worth, against putting the same money in each index on the same days.'}</span><button class="tablink" id="tv-perf">${state.tableView.perf ? 'Show chart' : 'View as table'}</button></div>
   </div>
 
   <div class="panel" style="margin-top:14px">
-    <h3>By period</h3><p class="sub">Time-weighted return against ${esc(pName)}</p>
+    <h3>Every period at a glance</h3><p class="sub">My stocks (blue) against ${esc(pName)}. Click a row to chart it.</p>
     <div class="pbars">${all.map((s) => { const e = s.twr - s.idx[primary].twr; const mx = Math.max(...all.map((q) => Math.max(Math.abs(q.twr), Math.abs(q.idx[primary].twr)))) || 1; const w = (x) => (Math.abs(x) / mx) * 50;
       return `<button class="pb${s.k === state.tf ? ' on' : ''}" data-tf="${s.k}"><span class="pl">${esc(TFL[s.k])}</span>
         <span class="pt"><i class="z"></i><i class="b you ${s.twr < 0 ? 'neg' : ''}" style="${s.twr < 0 ? `right:50%;width:${w(s.twr)}%` : `left:50%;width:${w(s.twr)}%`}"></i><i class="b idx" style="background:${IDX_COLOR[primary]};${s.idx[primary].twr < 0 ? `right:50%;width:${w(s.idx[primary].twr)}%` : `left:50%;width:${w(s.idx[primary].twr)}%`}"></i></span>
         <span class="pv ${cls(s.twr)}">${fmtSignedPct(s.twr, 1)}</span><span class="pe ${cls(e)}">${e >= 0 ? '+' : '−'}${Math.abs(e * 100).toFixed(1)}</span></button>`; }).join('')}</div>
-    <div class="legend" style="margin:10px 0 0"><span><i class="sw" style="background:var(--accent)"></i>Portfolio</span><span><i class="sw" style="background:${IDX_COLOR[primary]}"></i>${esc(pName)}</span><span class="muted">Right column: points ahead (+) or behind (−)</span></div>
+    <div class="legend" style="margin:10px 0 0"><span><i class="sw" style="background:var(--accent)"></i>My stocks</span><span><i class="sw" style="background:${IDX_COLOR[primary]}"></i>${esc(pName)}</span><span class="muted">Right column: points ahead (+) or behind (−)</span></div>
   </div>`;
 
   $$('#t-record [data-tf]').forEach((b) => b.addEventListener('click', () => { state.tf = b.dataset.tf; renderRecord(); }));
@@ -111,7 +112,7 @@ function renderRecord() {
   const fl = PF.fl.filter((f) => f[0] > a.t && f[0] <= b.t);
   let series, yFmt, tipVal;
   if (twr) {
-    series = [{ v: pp.map((p) => (p.i / a.i - 1) * 100), color: 'var(--accent)', width: 2.25, label: 'Portfolio', fill: true, fillTo: 0, fillOpacity: 0.08 }]
+    series = [{ v: pp.map((p) => (p.i / a.i - 1) * 100), color: 'var(--accent)', width: 2.25, label: 'My stocks', fill: true, fillTo: 0, fillOpacity: 0.08 }]
       .concat(sel.map((id) => ({ v: xs.map((t) => (PF.P[id](t) / PF.P[id](a.t) - 1) * 100), color: IDX_COLOR[id], width: 1.5, label: idxName(id) })));
     yFmt = (v) => Math.round(v) + '%'; tipVal = (v) => fmtSignedPct(v / 100, 1);
   } else {
@@ -119,7 +120,7 @@ function renderRecord() {
     const idxV = Object.fromEntries(sel.map((id) => [id, []])), money = [];
     let m = a.v;
     xs.forEach((t) => { while (k < fl.length && fl[k][0] <= t) { sel.forEach((id) => { unitsCum[id] += fl[k][1] / PF.P[id](fl[k][0]); }); m += fl[k][1]; k++; } sel.forEach((id) => idxV[id].push(unitsCum[id] * PF.P[id](t))); money.push(m); });
-    series = [{ v: pp.map((p) => p.v), color: 'var(--accent)', width: 2.25, label: 'Portfolio' }]
+    series = [{ v: pp.map((p) => p.v), color: 'var(--accent)', width: 2.25, label: 'My stocks' }]
       .concat(sel.map((id) => ({ v: idxV[id], color: IDX_COLOR[id], width: 1.5, label: 'Same money in ' + idxName(id) })))
       .concat([{ v: money, color: 'var(--ink3)', width: 1.25, dash: '4 4', label: 'Money in' }]);
     yFmt = (v) => (Math.abs(v) >= 1000 ? Math.round(v / 1000) + 'k' : String(Math.round(v))); tipVal = (v) => fmtEUR0(v);
@@ -141,15 +142,15 @@ function renderPhilosophy() {
   const pr = M.D.profile;
   const inBook = (edge) => M.H.filter((h) => h.conviction && h.conviction.edge === edge);
   root.innerHTML = `
-  <div class="lede"><div><p class="kicker">Philosophy</p><h2>Eight to twelve stocks, each owned for a declared reason, each with a written exit</h2></div></div>
+  <div class="lede"><div><p class="kicker">How I invest</p><h2>Eight to twelve stocks. Each one needs a reason to be in, and a written reason to get out.</h2></div></div>
   <div class="mchips">${pr.mandate.map((m) => `<span><b>${esc(m[0])}</b>${esc(m[1])}</span>`).join('')}</div>
   <div class="grid" style="margin-top:14px">
     ${Object.entries(pr.edges).map(([k, e]) => { const hs = inBook(k); return `<div class="panel s-4 edge">
       <div class="who">${esc(e.master)}</div><div class="nm">${esc(k)}</div><p>${esc(e.source)}.</p>
       <div class="kv"><span>Holding period</span><b>${esc(e.horizon)}</b></div>
       <div class="inbook">${hs.length ? hs.map((h) => `<span class="chip">${esc(h.ticker)} <b>${(h.weight * 100).toFixed(0)}%</b></span>`).join('') : '<span class="muted">none held</span>'}</div></div>`; }).join('')}
-    <div class="panel s-6"><h3>Process</h3><ol class="flow">${pr.process.map((s) => `<li>${esc(s[0])}</li>`).join('')}</ol></div>
-    <div class="panel s-6"><h3>Rules from the record</h3><ul class="rules">${pr.lessons.map((l) => `<li>${esc(l.rule)}</li>`).join('')}</ul></div>
+    <div class="panel s-6"><h3>How a stock gets in</h3><ol class="flow">${pr.process.map((s) => `<li>${esc(s[0])}</li>`).join('')}</ol></div>
+    <div class="panel s-6"><h3>Lessons I paid for</h3><ul class="rules">${pr.lessons.map((l) => `<li>${esc(l.rule)}</li>`).join('')}</ul></div>
   </div>`;
 }
 
@@ -184,7 +185,7 @@ function renderBook() {
   if (state.open && !holdingBy(state.open)) state.open = null;
 
   root.innerHTML = `
-  <div class="lede"><div><p class="kicker">Book and conviction</p><h2>${M.H.length} positions · ${fmtSignedPct(O.exp, 0)} expected over 12 months</h2><p>Select a position for its thesis, its exit and the evidence.</p></div></div>
+  <div class="lede"><div><p class="kicker">Portfolio</p><h2>What I own and why: ${M.H.length} stocks</h2><p>Tap a stock to see why I own it, what would make me sell, and the bull and bear case.</p></div></div>
   <div class="panel flat">
     <div class="book-h"><span>Position</span><span>Weight</span><span class="hs">Since bought</span><span class="hs2">12-month range: bear, average target, bull</span><span>Expected</span></div>
     ${M.H.map((h) => {
@@ -261,7 +262,7 @@ function renderRisk() {
   ];
   const sMax = Math.max(...stress.map((s) => Math.abs(s[1])));
   root.innerHTML = `
-  <div class="lede"><div><p class="kicker">Risk and outlook</p><h2>${fmtSignedPct(O.exp, 0)} expected over 12 months, at ${(sigma / bVol).toFixed(1)}× the volatility of MSCI World</h2></div>
+  <div class="lede"><div><p class="kicker">Outlook</p><h2>Where the portfolio could be a year from now</h2><p>Built from analyst price targets, which tend to be optimistic, so try the Cautious and Stress settings too.</p></div>
     <div class="seg" role="group" aria-label="Scenario odds">${Object.entries(PRESETS).map(([k, v]) => `<button data-pre="${k}" aria-pressed="${k === state.preset}">${v.label}</button>`).join('')}</div></div>
   <div class="kpis4">
     ${kpi('Expected, 12 months', fmtSignedPct(O.exp, 0), cls(O.exp), `${O.exp >= 0 ? '+' : ''}${fmtEUR0(O.exp * V)} · odds ${pr.map((x) => Math.round(x * 100)).join('/')}`)}
@@ -288,6 +289,6 @@ function renderRisk() {
 function renderNotes() {
   const D = M.D;
   $('#notes').innerHTML = `<div class="foot">
-    <p><b>Method.</b> Scalable Capital account data, valued ${tfmt(D.meta.asOf)}, in euro and after fees. The daily account value is rebuilt from every transaction and daily closing prices, and agrees with Scalable's own figures to within about 2%. Time-weighted return chains daily returns so deposits and withdrawals do not affect it; money-weighted return is the internal rate of return on the money actually invested. Indices are accumulating iShares ETFs in euro. Outlook scenarios use sell-side 12-month targets collected on 1–2 October 2026. Not investment advice.</p>
+    <p><b>How the numbers work.</b> Only individual stocks count. Crypto, ETFs and leveraged products I traded are left out: money moving into or out of them is treated as if it left or joined the stock portfolio, so their gains and losses do not touch these figures. Stock dividends count as return; platform fees are left out. The daily value of the stock portfolio is rebuilt from every trade and daily closing prices in euro (Scalable Capital account, valued ${tfmt(D.meta.asOf)}). Time-weighted return measures the picks regardless of how much money was in; money-weighted return measures what the actual money earned. Indices are iShares ETFs in euro. Not investment advice.</p>
   </div>`;
 }

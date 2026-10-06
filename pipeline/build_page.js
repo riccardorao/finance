@@ -9,13 +9,12 @@ const out = path.resolve(process.argv[3] || path.join(root, 'dist', 'portfolio.h
 const rd = (f) => fs.readFileSync(path.join(root, f), 'utf8');
 
 const data = fs.readFileSync(path.join(dataDir, 'data.json'), 'utf8');
-const manager = JSON.parse(data).profile.manager;
 const scripts = ['src/core.js', 'src/page/model.js', 'src/page/views.js', 'src/page/live.js'].map(rd).join('\n');
 
 const body = `
 <div class="app">
   <header class="top">
-    <div class="brand"><h1 id="mh-name"></h1><p><span id="mh-strategy"></span> · <span id="mh-tag"></span></p></div>
+    <div class="brand"><h1 id="mh-name">Equity Portfolio Dashboard</h1><p><span id="mh-strategy"></span> · <span id="mh-tag"></span></p></div>
     <div class="status" id="status" data-mode="snapshot" role="status"><span class="dot"></span><span id="status-text"></span><button class="btn" id="btn-refresh" hidden>Refresh</button></div>
   </header>
   <div class="bar"><nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav><span class="muted" id="mh-aum" style="margin-left:auto;font-size:13px"></span></div>
@@ -28,7 +27,7 @@ const body = `
 <div id="tip" role="tooltip"></div>`;
 
 const json = data.replace(/<\//g, '<\\/').replace(/<!--/g, '<\\!--');
-const html = `<title>${manager.replace(/[<&]/g, '')} Track Record</title>
+const html = `<title>Equity Portfolio Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 ${rd('src/page/style.css')}

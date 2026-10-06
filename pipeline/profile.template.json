@@ -1,7 +1,7 @@
 {
  "manager": "Example Manager",
- "strategy": "Concentrated global equities",
- "tagline": "Long-only · 8–12 positions · each held for a declared edge, each with a written exit",
+ "strategy": "Concentrated stock picking",
+ "tagline": "8 to 12 stocks, each with a reason to own it and a reason to sell",
  "mandate": [
   [
    "Positions",
@@ -18,14 +18,6 @@
   [
    "Holding period",
    "6 months to 10 years, set by the edge the position relies on"
-  ],
-  [
-   "Liquidity",
-   "Risk capital: no income or short-term liquidity needed"
-  ],
-  [
-   "Fresh capital",
-   "A fixed monthly contribution"
   ]
  ],
  "edges": {

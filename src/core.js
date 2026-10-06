@@ -139,7 +139,10 @@ function twrIndex(points, flows) {
   for (let k = 1; k < points.length; k++) {
     const a = points[k - 1], b = points[k], T = b.t - a.t;
     const fl = flows.filter((f) => f[0] > a.t && f[0] <= b.t);
-    const F = sum(fl.map((f) => f[1])), W = sum(fl.map((f) => (f[1] * (b.t - f[0])) / T));
+    const F = sum(fl.map((f) => f[1]));
+    // daily periods: money in counts from the start of the day, money out from the end (robust when the book
+    // is empty at either end); longer periods use Modified Dietz time weights
+    const W = T <= 4 * 864e5 ? sum(fl.filter((f) => f[1] > 0).map((f) => f[1])) : sum(fl.map((f) => (f[1] * (b.t - f[0])) / T));
     const base = a.v + W;
     const r = base > 1 ? (b.v - a.v - F) / base : 0;
     sub.push(r); idx.push(idx[k - 1] * (1 + r));
