@@ -10,7 +10,7 @@ const outDir = path.resolve(process.argv[3] || path.join(root, 'test-output'));
 fs.mkdirSync(outDir, { recursive: true });
 const wrapped = path.join(outDir, '_wrapped.html');
 fs.writeFileSync(wrapped, `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif;background:#f9f9f7}img{max-width:100%}[hidden]{display:none!important}</style></head><body>${fs.readFileSync(page, 'utf8')}</body></html>`);
-const TABS = ['record', 'philosophy', 'book', 'risk'];
+const TABS = ['record', 'book', 'risk'];
 (async () => {
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
   let failed = 0;

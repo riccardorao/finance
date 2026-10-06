@@ -1,4 +1,4 @@
-/* ===== page part 2: the four tabs ===== */
+/* ===== page part 2: the three tabs ===== */
 const benchOf = () => M.D.benches.find((b) => b.id === state.bench) || M.D.benches[0];
 const holdingBy = (isin) => M.H.find((h) => h.isin === isin);
 const perfOf = (h, p) => (h.perf && h.perf[p] ? h.perf[p][0] : null);
@@ -20,8 +20,10 @@ function renderHeader() {
   const D = M.D, pr = D.profile;
   $('#mh-name').textContent = 'Equity Portfolio Dashboard';
   $('#mh-strategy').textContent = pr.manager;
-  $('#mh-tag').textContent = pr.tagline;
-  $('#mh-aum').textContent = `${fmtEUR0(M.secValue)} in ${M.H.length} stocks`;
+  const day = C_sum(M.H.map((h) => { const r = perfOf(h, '1D'); return r == null ? 0 : h.value - h.value / (1 + r); }));
+  const dayPct = day / (M.secValue - day);
+  $('#mh-value').textContent = fmtEUR0(M.secValue);
+  $('#mh-sub').innerHTML = `${M.H.length} positions · today <span class="${cls(day)}">${day >= 0 ? '+' : ''}${fmtEUR0(day)} (${fmtSignedPct(dayPct, 1)})</span>${M.unreal != null ? ` · unrealised <span class="${cls(M.unreal)}">${M.unreal >= 0 ? '+' : ''}${fmtEUR0(M.unreal)}</span>` : ''}`;
   const st = $('#status'); st.dataset.mode = state.mode;
   const txt = { snapshot: `Snapshot ${tfmt(D.meta.asOf)}`, loading: 'Refreshing from Scalable…', live: `Live ${tfmt(D.meta.asOf)}`, error: `Snapshot ${tfmt(D.meta.asOf)}` }[state.mode];
   $('#status-text').textContent = txt + (state.statusMsg ? ' · ' + state.statusMsg : '');
@@ -59,6 +61,7 @@ function renderRecord() {
   const root = $('#t-record'); unmountWithin(root);
   const D = M.D, PF = M.perf;
   const sel = state.idxSel.filter((id) => D.indices.some((x) => x.id === id));
+  const gsel = state.glSel.filter((id) => D.indices.some((x) => x.id === id));
   const primary = sel[0] || D.indices[0].id, pName = idxName(primary);
   const st = PF.stats(state.tf);
   const all = TF.map(([k]) => PF.stats(k));
@@ -89,12 +92,15 @@ function renderRecord() {
   </div>
 
   <div class="panel" style="margin-top:14px">
-    <h3>Every period at a glance</h3><p class="sub">My portfolio (blue) against ${esc(pName)}. Click a row to chart it.</p>
-    <div class="pbars">${all.map((s) => { const e = s.twr - s.idx[primary].twr; const mx = Math.max(...all.map((q) => Math.max(Math.abs(q.twr), Math.abs(q.idx[primary].twr)))) || 1; const w = (x) => (Math.abs(x) / mx) * 50;
+    <div class="row-between"><div><h3>Every period at a glance</h3><p class="sub">Time-weighted return for each period against the benchmarks you pick. Click a row to chart it.</p></div>
+      <div class="ichips" style="margin:0">${D.indices.map((x) => `<button data-gl="${x.id}" aria-pressed="${gsel.includes(x.id)}"><i class="sw" style="background:${IDX_COLOR[x.id]}"></i>${esc(x.name)}</button>`).join('')}</div></div>
+    <div class="pbars" style="--ni:${gsel.length}">
+      <div class="pb pb-h"><span class="pl"></span><span class="pt"></span><span class="pv">Me</span>${gsel.map((id) => `<span class="pi">${esc(BSHORT[id] || idxName(id))}</span>`).join('')}</div>
+      ${all.map((s) => { const mx = Math.max(...all.map((q) => Math.max(Math.abs(q.twr), ...gsel.map((id) => Math.abs(q.idx[id].twr))))) || 1; const bar = (x) => { const w = (Math.abs(x) / mx) * 50; return x < 0 ? `right:50%;width:${w}%` : `left:50%;width:${w}%`; };
       return `<button class="pb${s.k === state.tf ? ' on' : ''}" data-tf="${s.k}"><span class="pl">${esc(TFL[s.k])}</span>
-        <span class="pt"><i class="z"></i><i class="b you ${s.twr < 0 ? 'neg' : ''}" style="${s.twr < 0 ? `right:50%;width:${w(s.twr)}%` : `left:50%;width:${w(s.twr)}%`}"></i><i class="b idx" style="background:${IDX_COLOR[primary]};${s.idx[primary].twr < 0 ? `right:50%;width:${w(s.idx[primary].twr)}%` : `left:50%;width:${w(s.idx[primary].twr)}%`}"></i></span>
-        <span class="pv ${cls(s.twr)}">${fmtSignedPct(s.twr, 1)}</span><span class="pe ${cls(e)}">${e >= 0 ? '+' : '−'}${Math.abs(e * 100).toFixed(1)}</span></button>`; }).join('')}</div>
-    <div class="legend" style="margin:10px 0 0"><span><i class="sw" style="background:var(--accent)"></i>My portfolio</span><span><i class="sw" style="background:${IDX_COLOR[primary]}"></i>${esc(pName)}</span><span class="muted">Right column: points ahead (+) or behind (−)</span></div>
+        <span class="pt" style="height:${10 + gsel.length * 7}px"><i class="z"></i><i class="b you" style="top:0;${bar(s.twr)}"></i>${gsel.map((id, j) => `<i class="b idx" style="top:${10 + j * 7}px;background:${IDX_COLOR[id]};${bar(s.idx[id].twr)}"></i>`).join('')}</span>
+        <span class="pv ${cls(s.twr)}">${fmtSignedPct(s.twr, 1)}</span>${gsel.map((id) => { const e = s.twr - s.idx[id].twr; return `<span class="pi">${fmtSignedPct(s.idx[id].twr, 1)}<small class="${cls(e)}">${e >= 0 ? '+' : '−'}${Math.abs(e * 100).toFixed(1)} pts</small></span>`; }).join('')}</button>`; }).join('')}</div>
+    <div class="legend" style="margin:10px 0 0"><span><i class="sw" style="background:var(--accent)"></i>My portfolio</span>${gsel.map((id) => `<span><i class="sw" style="background:${IDX_COLOR[id]}"></i>${esc(idxName(id))}</span>`).join('')}<span class="muted">Under each index: points I am ahead (+) or behind (−)</span></div>
   </div>`;
 
   $$('#t-record [data-tf]').forEach((b) => b.addEventListener('click', () => { state.tf = b.dataset.tf; renderRecord(); }));
@@ -102,6 +108,11 @@ function renderRecord() {
   $$('#t-record [data-ix]').forEach((b) => b.addEventListener('click', () => {
     const id = b.dataset.ix; state.idxSel = state.idxSel.includes(id) ? state.idxSel.filter((x) => x !== id) : state.idxSel.concat([id]);
     if (!state.idxSel.length) state.idxSel = [id];
+    renderRecord();
+  }));
+  $$('#t-record [data-gl]').forEach((b) => b.addEventListener('click', () => {
+    const id = b.dataset.gl; state.glSel = state.glSel.includes(id) ? state.glSel.filter((x) => x !== id) : D.indices.map((x) => x.id).filter((x) => x === id || state.glSel.includes(x));
+    if (!state.glSel.length) state.glSel = [id];
     renderRecord();
   }));
   $('#tv-perf').addEventListener('click', () => { state.tableView.perf = !state.tableView.perf; renderRecord(); });
@@ -135,27 +146,6 @@ function renderRecord() {
 }
 
 /* =====================================================================
-   PHILOSOPHY AND PROCESS
-   ===================================================================== */
-function renderPhilosophy() {
-  const root = $('#t-philosophy');
-  const pr = M.D.profile;
-  const inBook = (edge) => M.H.filter((h) => h.conviction && h.conviction.edge === edge);
-  root.innerHTML = `
-  <div class="lede"><div><p class="kicker">How I invest</p><h2>Eight to twelve stocks. Each one needs a reason to be in, and a written reason to get out.</h2></div></div>
-  <div class="mchips">${pr.mandate.map((m) => `<span><b>${esc(m[0])}</b>${esc(m[1])}</span>`).join('')}</div>
-  <div class="grid" style="margin-top:14px">
-    ${Object.entries(pr.edges).map(([k, e]) => { const hs = inBook(k); return `<div class="panel s-4 edge">
-      <div class="who">${esc(e.master)}</div><div class="nm">${esc(k)}</div><p>${esc(e.source)}.</p>
-      <div class="kv"><span>Holding period</span><b>${esc(e.horizon)}</b></div>
-      <div class="inbook">${hs.length ? hs.map((h) => `<span class="chip">${esc(h.ticker)} <b>${(h.weight * 100).toFixed(0)}%</b></span>`).join('') : '<span class="muted">none held</span>'}</div></div>`; }).join('')}
-    <div class="panel s-6"><h3>How a stock gets in</h3><ol class="flow">${pr.process.map((s) => `<li>${esc(s[0])}</li>`).join('')}</ol></div>
-    <div class="panel s-6"><h3>Lessons I paid for</h3><ul class="rules">${pr.lessons.map((l) => `<li>${esc(l.rule)}</li>`).join('')}</ul></div>
-  </div>`;
-}
-
-
-/* =====================================================================
    BOOK AND CONVICTION
    ===================================================================== */
 const newsDate = (d) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? dfmt(d, { year: undefined }) : /^\d{4}-\d{2}$/.test(d) ? dfmt(d + '-15', { day: undefined }) : String(d || ''));
@@ -169,41 +159,41 @@ function liveResearch(h) {
     ${Array.isArray(c.watch) && c.watch.length ? `<h4>Watch next</h4><ul class="watch">${c.watch.slice(0, 3).map((w) => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
     <p class="foot-n">Web research ${esc(tfmt(c.updatedAt))}${age > 2 ? `, ${Math.floor(age)} days old` : ''}.</p>`;
 }
-const edgeChip = (cv) => (cv && cv.edge ? `<span class="edge-chip">${esc(cv.edge)}</span>` : `<span class="edge-chip todo">Edge to declare</span>`);
 
+const ratingCls = (r) => (/sell|under/i.test(r) ? 'neg' : /buy|outperform|overweight/i.test(r) ? 'pos' : 'hold');
 function renderBook() {
   const root = $('#t-book'); unmountWithin(root);
-  const pr = prOf(), O = portOutlook(pr), V = M.secValue;
-  const declared = M.H.filter((h) => h.conviction && h.conviction.edge).length;
-  const kills = M.H.filter((h) => h.conviction && h.conviction.kill).length;
-  const top3 = C_sum(M.H.slice(0, 3).map((h) => h.value)) / V;
-  const ai = C_sum(M.H.filter((h) => /AI/.test(h.theme || '')).map((h) => h.value)) / V;
-  const cov = O.rows.filter((r) => r.sc);
-  const dLo = Math.min(-0.2, ...cov.map((r) => r.sc.bear)), dHi = Math.max(0.2, ...cov.map((r) => r.sc.bull));
-  const PX = (v) => ((v - dLo) / (dHi - dLo)) * 100;
-  const wMax = Math.max(...M.H.map((h) => Math.max(h.weight, ((h.conviction && h.conviction.target) || 0) / 100)));
+  const V = M.secValue;
+  const cov = M.H.filter((h) => h.sc);
+  const dLo = Math.min(-0.2, ...cov.map((h) => h.sc.bear)), dHi = Math.max(0.2, ...cov.map((h) => h.sc.bull));
+  const PX = (v) => 19 + ((v - dLo) / (dHi - dLo)) * 62; // the outer fifths hold the bear and bull labels
+  const pc = (h, k) => { const r = perfOf(h, k); return r == null ? '<span class="muted">–</span>' : pctSpan(r, 1); };
+  const ytd = C_sum(M.H.map((h) => { const r = perfOf(h, 'YTD'); return r == null ? 0 : h.value - h.value / (1 + r); }));
   if (state.open && !holdingBy(state.open)) state.open = null;
 
   root.innerHTML = `
-  <div class="lede"><div><p class="kicker">Portfolio</p><h2>What I own and why: ${M.H.length} stocks</h2><p>Tap a stock to see why I own it, what would make me sell, and the bull and bear case.</p></div></div>
+  <div class="lede"><div><p class="kicker">Portfolio</p><h2>What I own: ${M.H.length} positions worth ${fmtEUR0(V)}, ${ytd >= 0 ? 'up' : 'down'} ${fmtEUR0(Math.abs(ytd))} this year</h2><p>Tap a stock to see why I own it, what would make me sell, and the bull and bear case.</p></div></div>
   <div class="panel flat">
-    <div class="book-h"><span>Position</span><span>Weight</span><span class="hs">Since bought</span><span class="hs2">12-month range: bear, average target, bull</span><span>Expected</span></div>
+    <div class="book-h"><span>Position</span><span>Weight</span><span class="c-d">Today</span><span class="c-d">This year</span><span>1 year</span><span class="c-m">Unrealised €</span><span>Unrealised %</span><span class="c-m c-rng">12-month range: bear, average target, bull</span><span class="c-m">Analysts</span><span></span></div>
     ${M.H.map((h) => {
-      const cv = h.conviction, sc = h.sc, e = expOf(sc, pr), open = state.open === h.isin;
-      const tgt = cv && cv.target ? cv.target / 100 : null;
+      const sc = h.sc, cons = h.research && h.research.cons, open = state.open === h.isin;
       return `<div class="posn${open ? ' open' : ''}" data-i="${h.isin}">
         <button class="pos-row" aria-expanded="${open}" aria-controls="pd-${h.isin}">
-          <span class="nm"><b>${esc(h.name)}</b><small>${esc(h.ticker || '')}</small>${edgeChip(cv)}</span>
-          <span class="wt"><b>${(h.weight * 100).toFixed(1)}%</b><span class="wbar"><i style="width:${(h.weight / wMax) * 100}%"></i>${tgt ? `<em style="left:${(tgt / wMax) * 100}%" title="Target ${cv.target}%"></em>` : ''}</span><small>${tgt ? `target ${cv.target}%` : 'no target'}</small></span>
-          <span class="hs">${h.pnl != null ? `${pctSpan(h.pnlPct, 0)}<small>${eur0Span(h.pnl)}</small>` : '–'}</span>
-          <span class="hs2">${sc ? `<span class="rng"><i class="z" style="left:${PX(0)}%"></i><i class="seg" style="left:${PX(sc.bear)}%;width:${PX(sc.bull) - PX(sc.bear)}%"></i><i class="d bear" style="left:${PX(sc.bear)}%"></i><i class="t" style="left:${PX(sc.base)}%"></i><i class="d bull" style="left:${PX(sc.bull)}%"></i></span><small class="rng-l"><span class="neg">${fmtSignedPct(sc.bear, 0)}</span><span>${fmtSignedPct(sc.base, 0)}</span><span class="pos">${fmtSignedPct(sc.bull, 0)}</span></small>` : '<small class="muted">no analyst coverage</small>'}</span>
-          <span class="ex">${e != null ? `<b class="${cls(e)}">${fmtSignedPct(e, 0)}</b><small>${eur0Span(e * h.value)}</small>` : '–'}</span>
+          <span class="nm"><b>${esc(h.name)}</b><small>${esc(h.ticker || '')}</small></span>
+          <span class="n"><b>${(h.weight * 100).toFixed(1)}%</b></span>
+          <span class="n c-d">${pc(h, '1D')}</span>
+          <span class="n c-d">${pc(h, 'YTD')}</span>
+          <span class="n">${pc(h, '1Y')}</span>
+          <span class="n c-m">${h.pnl != null ? eur0Span(h.pnl) : '–'}</span>
+          <span class="n">${h.pnl != null ? pctSpan(h.pnlPct, 1) : '–'}</span>
+          <span class="c-m c-rng">${sc ? `<span class="rng" role="img" aria-label="Bear ${fmtSignedPct(sc.bear, 0)}, average target ${fmtSignedPct(sc.base, 0)}, bull ${fmtSignedPct(sc.bull, 0)}"><i class="z" style="left:${PX(0)}%"></i><i class="seg" style="left:${PX(sc.bear)}%;width:${PX(sc.bull) - PX(sc.bear)}%"></i><i class="d bear" style="left:${PX(sc.bear)}%"></i><i class="t" style="left:${PX(sc.base)}%"></i><i class="d bull" style="left:${PX(sc.bull)}%"></i><em class="lb neg" style="right:calc(${100 - PX(sc.bear)}% + 7px)">${fmtSignedPct(sc.bear, 0)}</em><em class="lb bs" style="left:${PX(sc.base)}%">${fmtSignedPct(sc.base, 0)}</em><em class="lb pos" style="left:calc(${PX(sc.bull)}% + 7px)">${fmtSignedPct(sc.bull, 0)}</em></span>` : '<small class="muted">no analyst coverage</small>'}</span>
+          <span class="c-m cons">${cons && sc ? `<span class="rt ${ratingCls(cons.rating)}">${esc(cons.rating)}</span><small>target <b class="${cls(sc.base)}">${fmtSignedPct(sc.base, 0)}</b></small>` : '<small class="muted">–</small>'}</span>
           <span class="chev" aria-hidden="true"></span>
         </button>
         <div class="pos-d" id="pd-${h.isin}" ${open ? '' : 'hidden'}>${open ? positionDetail(h) : ''}</div>
       </div>`;
     }).join('')}
-    <div class="book-f"><span class="foot-n">Weight bar: today. Gold tick: target weight in the model book. Expected uses the ${esc(PRESETS[state.preset].label.toLowerCase())} odds set under Risk and outlook.</span></div>
+    <div class="book-f"><span class="foot-n">Weight: share of the portfolio today. Today, this year and 1 year: the share price in euro. Unrealised: gain or loss on what I still hold, against what I paid. Range: red dot the bear case, black tick the average analyst target, green dot the highest target, all against today's price. Analysts: consensus rating and the upside to the average 12-month target.</span></div>
   </div>`;
 
   $$('#t-book .pos-row').forEach((b) => b.addEventListener('click', () => {
@@ -221,7 +211,6 @@ function positionDetail(h) {
     <div class="pd-main">
       ${cv.thesis ? `<p class="pd-thesis">${esc(cv.thesis)}</p>` : c ? `<p class="pd-thesis">${esc(c.tagline)}</p>` : ''}
       <div class="kill"><span class="k">Kill-switch${cv.killDraft ? ' <em>draft</em>' : ''}</span><p>${cv.kill ? esc(cv.kill) : 'Not written yet.'}</p></div>
-      ${cv.note ? `<p class="flag">${esc(cv.note)}</p>` : ''}
       ${sc ? `<div class="cases">
         <div class="case bull"><div class="ch"><span>Bull</span><b class="pos">${fmtSignedPct(sc.bull, 0)} · €${px(sc.tBull)}</b></div><p>${rs ? esc(rs.bull) : ''}</p></div>
         <div class="case bear"><div class="ch"><span>Bear</span><b class="neg">${fmtSignedPct(sc.bear, 0)} · €${px(sc.tBear)}</b></div><p>${rs ? esc(rs.bear) : ''}${sc.bearFromDD ? ' <span class="muted">(Bear price is a repeat of the worst fall of the past year, which is lower than any analyst target.)</span>' : ''}</p></div>
@@ -247,48 +236,54 @@ function selectHolding(isin) {
 /* =====================================================================
    RISK AND OUTLOOK
    ===================================================================== */
+const HORIZONS = [[3, '3 months'], [6, '6 months'], [12, '1 year'], [18, '18 months'], [24, '2 years']];
+// standard normal distribution function (Abramowitz and Stegun 7.1.26)
+function normCdf(z) {
+  const t = 1 / (1 + 0.3275911 * Math.abs(z) / Math.SQRT2);
+  const e = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-(z * z) / 2);
+  return z >= 0 ? (1 + e) / 2 : (1 - e) / 2;
+}
 function renderRisk() {
   const root = $('#t-risk'); unmountWithin(root);
   const R = M.risk, pr = prOf(), O = portOutlook(pr), V = M.secValue;
   if (!R) { root.innerHTML = '<div class="panel empty">The outlook needs 12 months of prices for every position.</div>'; return; }
-  const bench = M.D.benches.find((b) => b.id === 'MSCI') || M.D.benches[0];
-  const sigma = R.vol, bVol = R.bVol[bench.id], beta = R.pBeta[bench.id];
-  const var95 = 1.645 * sigma * Math.sqrt(1 / 12) * V;
-  const stress = [
-    ['Every stock hits its bear case', O.bear],
-    [`MSCI World falls 20% (beta ${fmtNum(beta, 1)})`, -0.2 * beta],
-    ['Repeat of the worst fall of the past year', R.dd.dd],
-    ['A bad month, 1 in 20', -var95 / V],
-  ];
-  const sMax = Math.max(...stress.map((s) => Math.abs(s[1])));
+  const bench = M.D.benches.find((b) => b.id === state.obench) || M.D.benches[0];
+  const bName = BSHORT[bench.id] || bench.name;
+  const n = state.hz, t = n / 12, hzL = HORIZONS.find((x) => x[0] === n)[1];
+  const sigma = R.vol, bVol = R.bVol[bench.id], beta = R.pBeta[bench.id], rho = R.pCorr[bench.id];
+  const mP = Math.log(1 + O.exp) - sigma * sigma / 2, mB = Math.log(1 + REF_MU) - bVol * bVol / 2;
+  const exp = (1 + O.exp) ** t - 1, bExp = (1 + REF_MU) ** t - 1;
+  const q = (z) => Math.exp(mP * t + z * sigma * Math.sqrt(t)) - 1;
+  const sd = Math.sqrt(Math.max(1e-9, sigma * sigma + bVol * bVol - 2 * rho * sigma * bVol) * t);
+  const pBeat = normCdf(((mP - mB) * t) / sd);
   root.innerHTML = `
-  <div class="lede"><div><p class="kicker">Outlook</p><h2>Where the portfolio could be a year from now</h2><p>Built from analyst price targets, which tend to be optimistic, so try the Cautious and Stress settings too.</p></div>
-    <div class="seg" role="group" aria-label="Scenario odds">${Object.entries(PRESETS).map(([k, v]) => `<button data-pre="${k}" aria-pressed="${k === state.preset}">${v.label}</button>`).join('')}</div></div>
-  <div class="kpis4">
-    ${kpi('Expected, 12 months', fmtSignedPct(O.exp, 0), cls(O.exp), `${O.exp >= 0 ? '+' : ''}${fmtEUR0(O.exp * V)} · odds ${pr.map((x) => Math.round(x * 100)).join('/')}`)}
-    ${kpi('Bull · bear', `<span class="pos">${fmtSignedPct(O.bull, 0)}</span> <span class="muted">·</span> <span class="neg">${fmtSignedPct(O.bear, 0)}</span>`, '', 'if every stock hits its scenario')}
-    ${kpi('Volatility', (sigma * 100).toFixed(0) + '%', '', `MSCI World ${(bVol * 100).toFixed(0)}%`)}
-    ${kpi('Bad month, 1 in 20', fmtEUR0(-var95), 'neg', 'one-month value at risk, 95%')}
+  <div class="lede"><div><p class="kicker">Outlook</p><h2>Where the portfolio could be ${n === 12 ? 'a year' : 'in ' + hzL} from now</h2><p>Built from analyst price targets, which tend to be optimistic, so try the Cautious and Stress settings too.</p></div></div>
+  <div class="ctrls" style="margin-bottom:12px">
+    <div class="seg" role="group" aria-label="Horizon">${HORIZONS.map(([k, l]) => `<button data-hz="${k}" aria-pressed="${k === n}">${l}</button>`).join('')}</div>
+    <div class="seg" role="group" aria-label="Benchmark">${['SPX', 'NDX', 'MSCI'].filter((id) => M.D.benches.some((b) => b.id === id)).map((id) => `<button data-ob="${id}" aria-pressed="${id === bench.id}">${esc(BSHORT[id])}</button>`).join('')}</div>
+    <div class="seg" role="group" aria-label="Scenario odds">${Object.entries(PRESETS).map(([k, v]) => `<button data-pre="${k}" aria-pressed="${k === state.preset}">${v.label}</button>`).join('')}</div>
   </div>
-  <div class="grid" style="margin-top:14px">
-    <div class="panel s-7">
-      <h3>Range of outcomes, next 12 months</h3><p class="sub">Shares worth ${fmtEUR0(V)} today. Shaded: 9 in 10 outcomes and the middle half. Dashed: MSCI World at 7% a year.</p>
-      <div id="fan" class="chart"></div>
-    </div>
-    <div class="panel s-5">
-      <h3>Stress tests</h3><p class="sub">Loss on today's shares</p>
-      <div class="stress">${stress.map((s) => `<div class="st"><span class="l">${s[0]}</span><span class="t"><i style="width:${(Math.abs(s[1]) / sMax) * 100}%"></i></span><b class="neg">${fmtSignedPct(s[1], 0)}<small>${fmtEUR0(s[1] * V)}</small></b></div>`).join('')}</div>
-    </div>
+  <div class="kpis4">
+    ${kpi('Expected, ' + hzL, fmtSignedPct(exp, 0), cls(exp), `${exp >= 0 ? '+' : ''}${fmtEUR0(exp * V)} · ${esc(bName)} ${fmtSignedPct(bExp, 0)} assumed`)}
+    ${kpi('9 in 10 outcomes', `<span class="${cls(q(-1.645))}">${fmtSignedPct(q(-1.645), 0)}</span> <span class="muted">to</span> <span class="${cls(q(1.645))}">${fmtSignedPct(q(1.645), 0)}</span>`, '', `${fmtEUR0(V * (1 + q(-1.645)))} to ${fmtEUR0(V * (1 + q(1.645)))}`)}
+    ${kpi('Chance of beating ' + esc(bName), Math.round(pBeat * 100) + '%', pBeat >= 0.5 ? 'pos' : 'neg', `over ${hzL}, correlation ${fmtNum(rho, 2)}`)}
+    ${kpi('Volatility', (sigma * 100).toFixed(0) + '%', '', `${esc(bName)} ${(bVol * 100).toFixed(0)}% · beta ${fmtNum(beta, 2)}`)}
+  </div>
+  <div class="panel" style="margin-top:14px">
+    <h3>Range of outcomes, next ${hzL}</h3><p class="sub">Portfolio worth ${fmtEUR0(V)} today. Shaded: 9 in 10 outcomes and the middle half. Dashed: ${esc(bName)} at an assumed ${Math.round(REF_MU * 100)}% a year with its own volatility. Odds ${pr.map((x) => Math.round(x * 100)).join('/')} (bull/base/bear)${n > 12 ? '; beyond 12 months the expected return is assumed to repeat' : ''}.</p>
+    <div id="fan" class="chart"></div>
   </div>`;
-  $$('#t-risk [data-pre]').forEach((b) => b.addEventListener('click', () => { state.preset = b.dataset.pre; renderRisk(); renderBook(); }));
-  const fo = { V0: V, mu: O.exp, sigma, months: 12, t0: M.asOf, ref: { mu: REF_MU, sigma: bVol, label: 'MSCI World' }, aria: 'Range of outcomes over twelve months' };
-  mount($('#fan'), (host, w) => fanChart(host, w, Object.assign({ height: w < 520 ? 250 : 300 }, fo)));
+  $$('#t-risk [data-pre]').forEach((b) => b.addEventListener('click', () => { state.preset = b.dataset.pre; renderRisk(); }));
+  $$('#t-risk [data-hz]').forEach((b) => b.addEventListener('click', () => { state.hz = +b.dataset.hz; renderRisk(); }));
+  $$('#t-risk [data-ob]').forEach((b) => b.addEventListener('click', () => { state.obench = b.dataset.ob; renderRisk(); }));
+  const fo = { V0: V, mu: O.exp, sigma, months: n, t0: M.asOf, ref: { mu: REF_MU, sigma: bVol, label: bName }, aria: `Range of outcomes over ${hzL}` };
+  mount($('#fan'), (host, w) => fanChart(host, w, Object.assign({ height: w < 520 ? 260 : 340 }, fo)));
 }
 
 /* ---------- notes ---------- */
 function renderNotes() {
   const D = M.D;
   $('#notes').innerHTML = `<div class="foot">
-    <p><b>How the numbers work.</b> Only stocks and ETFs (including ETCs) count. Crypto and leveraged products I traded are left out: money moving into or out of them is treated as if it left or joined the portfolio, so their gains and losses do not touch these figures. Dividends count as return; platform fees are left out. The daily value of the portfolio is rebuilt from every trade and daily closing prices in euro (Scalable Capital account, valued ${tfmt(D.meta.asOf)}). Time-weighted return measures the picks regardless of how much money was in; money-weighted return measures what the actual money earned. Benchmarks are the iShares MSCI World, S&P 500 and Nasdaq-100 ETFs in euro. Not investment advice.</p>
+    <p><b>How the numbers work.</b> Only stocks and ETFs (including ETCs) count. Crypto and leveraged products I traded are left out: money moving into or out of them is treated as if it left or joined the portfolio, so their gains and losses do not touch these figures. Dividends count as return; platform fees are left out. The daily value of the portfolio is rebuilt from every trade and daily closing prices in euro (Scalable Capital account, valued ${tfmt(D.meta.asOf)}). Time-weighted return measures the picks regardless of how much money was in; money-weighted return measures what the actual money earned. GameStop is also left out: it was a one-off speculative trade, not a pick. Benchmarks are the iShares MSCI World, S&P 500 and Nasdaq-100 ETFs in euro. The outlook is a simple model built on analyst targets and past volatility, not a forecast. Not investment advice.</p>
   </div>`;
 }

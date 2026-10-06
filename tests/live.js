@@ -59,8 +59,8 @@ function chart(isin) {
     links: [...document.querySelectorAll('#t-book .news a')].map((a) => a.href),
     injected: document.querySelectorAll('#t-book .news script, #t-book .pd-side b b').length,
     status: document.getElementById('status-text').textContent,
-    book: document.getElementById('mh-aum').textContent,
-    rows: [...document.querySelectorAll('#t-book .pos-row')].map((r) => r.querySelector('.nm b').textContent + ' ' + r.querySelector('.wt b').textContent + ' exp ' + r.querySelector('.ex').textContent.trim()),
+    book: document.getElementById('mh-value').textContent,
+    rows: [...document.querySelectorAll('#t-book .pos-row')].map((r) => r.querySelector('.nm b').textContent + ' ' + r.querySelector('.n b').textContent + ' ' + r.querySelector('.cons').textContent.trim()),
   }));
   console.log(scenario, JSON.stringify(out, null, 1), errs.length ? '\nERRORS ' + errs.join('\n') : '\nno errors');
   const bad = errs.length || out.injected || out.links.some((l) => !l.startsWith('https:'));

@@ -92,7 +92,7 @@ async function watchResearch() {
 }
 function render() {
   M = buildModel(DATA_ACTIVE);
-  renderHeader(); renderTabs(); renderRecord(); renderPhilosophy(); renderBook(); renderRisk(); renderNotes();
+  renderHeader(); renderTabs(); renderRecord(); renderBook(); renderRisk(); renderNotes();
 }
 async function boot() {
   DATA_SNAP = prepare(DATA); DATA_ACTIVE = DATA_SNAP;

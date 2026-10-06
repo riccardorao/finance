@@ -14,12 +14,11 @@ const scripts = ['src/core.js', 'src/page/model.js', 'src/page/views.js', 'src/p
 const body = `
 <div class="app">
   <header class="top">
-    <div class="brand"><h1 id="mh-name">Equity Portfolio Dashboard</h1><p><span id="mh-strategy"></span> · <span id="mh-tag"></span></p></div>
+    <div class="brand"><h1 id="mh-name">Equity Portfolio Dashboard</h1><p id="mh-strategy"></p><div class="aum" id="mh-value"></div><p class="aum-sub" id="mh-sub"></p></div>
     <div class="status" id="status" data-mode="snapshot" role="status"><span class="dot"></span><span id="status-text"></span><button class="btn" id="btn-refresh" hidden>Refresh</button></div>
   </header>
-  <div class="bar"><nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav><span class="muted" id="mh-aum" style="margin-left:auto;font-size:13px"></span></div>
+  <div class="bar"><nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav></div>
   <section class="tabpage" id="t-record" role="tabpanel" aria-labelledby="tab-record"></section>
-  <section class="tabpage" id="t-philosophy" role="tabpanel" aria-labelledby="tab-philosophy" hidden></section>
   <section class="tabpage" id="t-book" role="tabpanel" aria-labelledby="tab-book" hidden></section>
   <section class="tabpage" id="t-risk" role="tabpanel" aria-labelledby="tab-risk" hidden></section>
   <div id="notes"></div>
