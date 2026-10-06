@@ -28,13 +28,11 @@ function dailySeries(isins, asOfDay) {
 const S = PD ? dailySeries(SNAP.holdings.map((h) => h.isin).concat(SNAP.benches.map((b) => b.isin)), SNAP.meta.asOf.slice(0, 10)) : rd('series.json');
 const PM = fs.existsSync(path.join(dir, 'prices_monthly.json')) ? rd('prices_monthly.json') : {};
 const HIST = rd('history.json');
-// Indices offered on the Track record tab (accumulating ETFs in euro). The first three also have daily prices.
+// Benchmarks offered on the Performance tab (accumulating iShares ETFs in euro).
 const INDICES = [
   { id: 'MSCI', name: 'MSCI World', isin: 'IE00B4L5Y983', etf: 'iShares Core MSCI World' },
-  { id: 'ACWI', name: 'MSCI ACWI', isin: 'IE00B6R52259', etf: 'iShares MSCI ACWI' },
   { id: 'SPX', name: 'S&P 500', isin: 'IE00B5BMR087', etf: 'iShares Core S&P 500' },
   { id: 'NDX', name: 'Nasdaq-100', isin: 'IE00B53SZB19', etf: 'iShares Nasdaq 100' },
-  { id: 'STOXX', name: 'STOXX Europe 600', isin: 'DE000A2QP4B6', etf: 'iShares STOXX Europe 600 (Acc)' },
 ].filter((x) => PM[x.isin] || (PD && PD[x.isin]));
 const PROFILE = rd('profile.json');
 const STOCKS = require('../research/stocks.js');

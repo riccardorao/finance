@@ -92,11 +92,12 @@ const check = Object.entries(starts).map(([k, t]) => {
   return { period: k, date: new Date(t).toISOString().slice(0, 10), broker: +broker.toFixed(0), rebuilt: +rebuilt.toFixed(0), diff: +(rebuilt - broker).toFixed(0), pct: +((rebuilt / broker - 1) * 100).toFixed(2) };
 });
 check.push({ period: 'now', date: SNAP.meta.asOf.slice(0, 10), broker: SNAP.total, rebuilt: points[points.length - 1].v, diff: +(points[points.length - 1].v - SNAP.total).toFixed(0), pct: +((points[points.length - 1].v / SNAP.total - 1) * 100).toFixed(2) });
-// ---- stock book (carve-out): individual shares only. Crypto, ETFs/ETCs and leveraged products are left out;
+// ---- equity book (carve-out): individual shares plus ETFs/ETCs. Crypto and leveraged products are left out;
 // money moving between the stock book and the rest of the account counts as an external flow, and stock
 // dividends count as income paid out of the book. Cash is not part of the book.
 const TYPES = fs.existsSync(path.join(dir, 'types.json')) ? rd('types.json') : {};
-const isStock = (isin) => isin && instrumentType(isin, TYPES) === 'Shares';
+const BOOK = ['Shares', 'ETFs & ETCs'];
+const isStock = (isin) => isin && BOOK.includes(instrumentType(isin, TYPES));
 const sleeveFlows = tx.filter((r) => isStock(r.isin) && ['buy', 'sell', 'div'].includes(r.kind)).map((r) => [r.t, +((r.kind === 'buy' ? 1 : -1) * r.amt).toFixed(2)]);
 function stockValueAt(t) {
   const s = state(t); let v = 0;

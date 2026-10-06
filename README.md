@@ -2,13 +2,13 @@
 
 A single-page dashboard of a concentrated stock-picking portfolio, built from a Scalable Capital account. It is
 written for peers: to show how the picks have done, how they are chosen, what is owned and why, and what could
-happen next. Only individual stocks count; see *Stocks only* below.
+happen next. Only stocks and ETFs count; see *Stocks and ETFs only* below.
 
 The page answers four questions, one per tab:
 
 | Tab | Question it answers | What is on it |
 |---|---|---|
-| **Performance** | Has the manager made money, measured the way an allocator would, and against which index? | Four headline figures; a daily chart of time-weighted (TWR) or money-weighted (MWR) performance for 1M, 3M, 6M, YTD, 1Y, 2025, 2024 or since inception against any of five indices (MSCI World, MSCI ACWI, S&P 500, Nasdaq-100, STOXX Europe 600); a bar comparison for every period |
+| **Performance** | Has the manager made money, measured the way an allocator would, and against which index? | Four headline figures; a daily chart of time-weighted (TWR) or money-weighted (MWR) performance for 1M, 3M, 6M, YTD, 1Y, 2025, 2024 or since inception against MSCI World, the S&P 500 and the Nasdaq-100; a bar comparison for every period |
 | **How I invest** | How does the manager decide? | Mandate, the three edges (patience, informational, catalyst) with the positions that rely on each, the six-step process, and the rules learned from the record |
 | **Portfolio** | What is owned, why, and what would end it? | Every position with its weight against target, declared edge, gain since bought, the analysts' bear-to-bull range and the expected return. Each opens to the thesis, the written kill-switch, bull and bear cases, industry and competitors, and the latest news |
 | **Outlook** | What could happen next, and how risky is the book? | Expected 12-month return under three sets of scenario odds, bull and bear outcomes, volatility, one-month value at risk, a range-of-outcomes chart and four stress tests |

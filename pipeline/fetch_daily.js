@@ -45,7 +45,7 @@ async function chart(sym, p1, p2) {
   const tx = loadTx(dir);
   const from = process.argv[3] || tx[0].date.slice(0, 10);
   const p1 = Math.floor(Date.parse(from + 'T00:00:00Z') / 1000) - 10 * 86400, p2 = Math.floor(Date.now() / 1000);
-  const INDEX = ['IE00B4L5Y983', 'IE00B6R52259', 'IE00B5BMR087', 'IE00B53SZB19', 'DE000A2QP4B6'];
+  const INDEX = ['IE00B4L5Y983', 'IE00B5BMR087', 'IE00B53SZB19'];
   const isins = Array.from(new Set(tx.filter((r) => r.isin && /buy|sell|exp/.test(r.kind)).map((r) => r.isin).concat(INDEX)));
   const fx = {};
   const toEur = async (ccy) => {
