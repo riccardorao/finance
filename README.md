@@ -76,7 +76,7 @@ the browser filling in the missing tags.
 │   │                        income, cash flows, and a reconciliation against the broker
 │   ├── holdings_history.js  Replays tx.csv into holdings and cash at any date (shared helper)
 │   ├── fetch_daily.js       Downloads daily closes in euro for every instrument held and every index
-│   ├── fetch_index_history.js  Long-run monthly history of the three index ETFs -> historical CAGR
+│   ├── fetch_index_history.js  Each index's annualised growth since January 1989 (historical CAGR)
 │   ├── history.js           Rebuilds the account value for every trading day from the
 │   │                        replay and market prices, and checks it against the broker's own figures
 │   ├── add_prices.js        Appends month-end prices for one instrument to prices_monthly.json
@@ -112,7 +112,7 @@ Every data directory, private or sample, holds the same files:
 | `snapshot.json` | Scalable connector: `get_portfolio_holdings`, `get_portfolio_overview`, `get_portfolio_cash_breakdown`, `get_security_quote`, `get_security_news` | Valuation time, total, cash, the broker's gain by period, each position (quantity, price, per-period performance, sector and theme) and the benchmark ETFs |
 | `series.json` | `get_security_chart`, one year | Fallback when `prices_daily.json` is absent (the synthetic sample uses it) |
 | `prices_daily.json`, `symbols.json` | `pipeline/fetch_daily.js` (Yahoo Finance chart data; `symbols.json` maps ISINs to tickers and can be edited) | Daily closing prices in euro for every instrument held and every index, from the first deposit |
-| `index_history.json` | `pipeline/fetch_index_history.js` (part of `npm run prices`) | Each benchmark ETF's annualised growth over the longest common window, used as its expected return on the Outlook tab |
+| `index_history.json` | `pipeline/fetch_index_history.js` (part of `npm run prices`) | Each benchmark index's annualised price growth since January 1989 (US dollars, excluding dividends), used as its expected return on the Outlook tab |
 | `prices_monthly.json` | `get_security_chart`, max, stored with `pipeline/add_prices.js` | Month-end prices for every index and for each instrument held at a month end, from the first deposit |
 | `splits.json` (optional) | By hand | Share splits, `{ISIN: [[YYYY-MM-DD, ratio]]}`. Chart prices are split-adjusted; ledger quantities before a split are not |
 | `history.json` | `pipeline/history.js` | Derived: the account value on every trading day |
@@ -174,8 +174,10 @@ average target, 25% bull. The three presets weight bull, base and bear at 25/50/
 **Range of outcomes.** A log-normal model: the median path is `V0 · exp((ln(1+μ) − σ²/2)·t)`, and the bands
 are the 5th, 25th, 75th and 95th percentiles. μ is the expected 12-month return under the chosen preset, assumed
 to repeat for horizons beyond a year, and σ the back-cast volatility. The selected benchmark is drawn at its own
-historical annualised growth (CAGR of its accumulating ETF in euro over the longest window all three share,
-from `index_history.json`) with its own volatility. *Chance of beating* compares the two log-normal outcomes using the
+historical annualised growth since January 1989 (from `index_history.json`) with its own volatility. The ETFs
+on the page only start in 2009 and 2010, so the long run uses the indices themselves: MSCI World, S&P 500 and
+Nasdaq-100 price indices in US dollars. Like the analyst price targets behind the portfolio's expected return,
+they exclude dividends. *Chance of beating* compares the two log-normal outcomes using the
 back-cast correlation between the portfolio and the benchmark. Real markets have fatter tails than this model.
 
 ## Editing theses and kill-switches

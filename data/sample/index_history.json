@@ -1,23 +1,26 @@
 {
  "IE00B4L5Y983": {
   "sym": "synthetic",
-  "from": "2010-06",
+  "from": "1989-01",
   "to": "2026-09",
-  "years": 16.25,
-  "cagr": 0.11
+  "years": 37.7,
+  "cagr": 0.06,
+  "basis": "price index in US dollars, excluding dividends"
  },
  "IE00B5BMR087": {
   "sym": "synthetic",
-  "from": "2010-06",
+  "from": "1989-01",
   "to": "2026-09",
-  "years": 16.25,
-  "cagr": 0.13
+  "years": 37.7,
+  "cagr": 0.09,
+  "basis": "price index in US dollars, excluding dividends"
  },
  "IE00B53SZB19": {
   "sym": "synthetic",
-  "from": "2010-06",
+  "from": "1989-01",
   "to": "2026-09",
-  "years": 16.25,
-  "cagr": 0.17
+  "years": 37.7,
+  "cagr": 0.14,
+  "basis": "price index in US dollars, excluding dividends"
  }
 }

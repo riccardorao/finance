@@ -36,7 +36,7 @@ const INDICES = [
 ].filter((x) => PM[x.isin] || (PD && PD[x.isin]));
 // Long-run annualised growth of each benchmark (pipeline/fetch_index_history.js), the Outlook's expected return.
 const IH = fs.existsSync(path.join(dir, 'index_history.json')) ? rd('index_history.json') : {};
-INDICES.forEach((x) => { const h = IH[x.isin]; if (h) Object.assign(x, { cagr: h.cagr, cagrFrom: h.from, cagrTo: h.to }); });
+INDICES.forEach((x) => { const h = IH[x.isin]; if (h) Object.assign(x, { cagr: h.cagr, cagrFrom: h.from, cagrTo: h.to, cagrBasis: h.basis }); });
 const PROFILE = rd('profile.json');
 const STOCKS = require('../research/stocks.js');
 const COMMENTS = require('../research/comments.js');

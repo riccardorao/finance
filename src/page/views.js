@@ -254,7 +254,7 @@ function renderRisk() {
   const sigma = R.vol, bVol = R.bVol[bench.id], beta = R.pBeta[bench.id], rho = R.pCorr[bench.id];
   const ix = M.D.indices.find((x) => x.id === bench.id) || {};
   const bMu = ix.cagr != null ? ix.cagr : REF_MU; // the benchmark's own historical annual growth
-  const bMuTxt = ix.cagr != null ? `its historical pace of ${fmtSignedPct(bMu, 1)} a year (${dfmt(ix.cagrFrom + '-15', { day: undefined })} to ${dfmt(ix.cagrTo + '-15', { day: undefined })})` : `an assumed ${fmtSignedPct(bMu, 0)} a year`;
+  const bMuTxt = ix.cagr != null ? `its historical pace of ${fmtSignedPct(bMu, 1)} a year from ${dfmt(ix.cagrFrom + '-15', { day: undefined })} to ${dfmt(ix.cagrTo + '-15', { day: undefined })}${ix.cagrBasis ? ` (${esc(ix.cagrBasis)}, like the analyst price targets)` : ''}` : `an assumed ${fmtSignedPct(bMu, 0)} a year`;
   const mP = Math.log(1 + O.exp) - sigma * sigma / 2, mB = Math.log(1 + bMu) - bVol * bVol / 2;
   const exp = (1 + O.exp) ** t - 1, bExp = (1 + bMu) ** t - 1;
   const q = (z) => Math.exp(mP * t + z * sigma * Math.sqrt(t)) - 1;
