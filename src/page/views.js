@@ -52,7 +52,8 @@ function setTab(id, push) {
 /* =====================================================================
    TRACK RECORD
    ===================================================================== */
-const IDX_COLOR = { MSCI: 'var(--c2)', SPX: 'var(--c7)', NDX: 'var(--c4)' };
+const IDX_COLOR = { MSCI: 'var(--msci)', SPX: 'var(--spx)', NDX: 'var(--ndx)' };
+const FUND = 'Freedom Fund';
 const idxName = (id) => (M.D.indices.find((x) => x.id === id) || { name: id }).name;
 const kpi = (k, v, c, n) => `<div class="kpi"><div class="k">${k}</div><div class="v ${c || ''}">${v}</div><div class="n">${n || ''}</div></div>`;
 const vsIdx = (you, idx, name) => { const e = you - idx; return `${esc(name)} ${fmtSignedPct(idx, 1)} · <b class="${cls(e)}">${e >= 0 ? '+' : '−'}${Math.abs(e * 100).toFixed(1)} pts</b>`; };
@@ -60,9 +61,8 @@ const vsIdx = (you, idx, name) => { const e = you - idx; return `${esc(name)} ${
 function renderRecord() {
   const root = $('#t-record'); unmountWithin(root);
   const D = M.D, PF = M.perf;
-  const sel = state.idxSel.filter((id) => D.indices.some((x) => x.id === id));
-  const gsel = state.glSel.filter((id) => D.indices.some((x) => x.id === id));
-  const primary = sel[0] || D.indices[0].id, pName = idxName(primary);
+  const sel = ['SPX', 'NDX', 'MSCI'].filter((id) => D.indices.some((x) => x.id === id)), gsel = sel; // every benchmark is always shown
+  const primary = sel[0], pName = idxName(primary); // statements always refer to the S&P 500
   const st = PF.stats(state.tf);
   const all = TF.map(([k]) => PF.stats(k));
   const g = (k) => all.find((s) => s.k === k);
@@ -71,7 +71,7 @@ function renderRecord() {
   const closedStocks = D.ledger.realised.filter((r) => (r.type === 'Shares' || r.type === 'ETFs & ETCs') && r.last), wins = closedStocks.filter((r) => r.pl > 0).length;
 
   root.innerHTML = `
-  <div class="lede"><div><p class="kicker">Performance · stocks and ETFs</p><h2>My portfolio is ${y1.twr >= 0 ? 'up' : 'down'} ${fmtPct(Math.abs(y1.twr), 1)} over the last 12 months, ${Math.abs((y1.twr - y1.idx[primary].twr) * 100).toFixed(1)} points ${y1.twr >= y1.idx[primary].twr ? 'ahead of' : 'behind'} ${esc(pName)}</h2></div></div>
+  <div class="lede"><div><p class="kicker">Performance · stocks and ETFs</p><h2>${FUND} is ${y1.twr >= 0 ? 'up' : 'down'} ${fmtPct(Math.abs(y1.twr), 1)} over the last 12 months, ${Math.abs((y1.twr - y1.idx[primary].twr) * 100).toFixed(1)} points ${y1.twr >= y1.idx[primary].twr ? 'ahead of' : 'behind'} ${esc(pName)}</h2></div></div>
   <div class="kpis4">
     ${kpi('Last 12 months', fmtSignedPct(y1.twr, 1), cls(y1.twr), vsIdx(y1.twr, y1.idx[primary].twr, pName))}
     ${kpi('This year', fmtSignedPct(ytd.twr, 1), cls(ytd.twr), vsIdx(ytd.twr, ytd.idx[primary].twr, pName))}
@@ -81,40 +81,28 @@ function renderRecord() {
 
   <div class="panel" style="margin-top:14px">
     <div class="ctrls">
-      <div class="seg" role="group" aria-label="Period">${TF.map(([k, l]) => `<button data-tf="${k}" aria-pressed="${k === state.tf}">${k === 'Y2025' || k === 'Y2024' ? l : k === 'SI' ? 'Since start' : k}</button>`).join('')}</div>
+      <div class="seg" role="group" aria-label="Period">${TF.map(([k, l]) => `<button data-tf="${k}" aria-pressed="${k === state.tf}">${k === 'Y2025' || k === 'Y2024' ? l : k === 'SI' ? 'Max' : k}</button>`).join('')}</div>
       <div class="seg" role="group" aria-label="Measure"><button data-ms="twr" aria-pressed="${twr}">Time-weighted</button><button data-ms="mwr" aria-pressed="${!twr}">Money-weighted</button></div>
     </div>
-    <div class="ichips">${D.indices.map((x) => `<button data-ix="${x.id}" aria-pressed="${sel.includes(x.id)}"><i class="sw line" style="background:${IDX_COLOR[x.id]}"></i>${esc(x.name)}</button>`).join('')}</div>
-    <div class="headline"><span class="big2 ${cls(twr ? st.twr : st.gain)}">${twr ? fmtSignedPct(st.twr, 1) : fmtSignedEUR(st.gain)}</span><span class="muted">${twr ? 'time-weighted' : `money-weighted ${st.years > 1.05 ? fmtSignedPct(st.mwr, 1) + ' a year' : fmtSignedPct(st.mwrPeriod, 1)}`} · ${esc(TFL[state.tf])}</span>
-      ${sel.map((id) => `<span class="idxv"><i class="sw line" style="background:${IDX_COLOR[id]}"></i>${esc(idxName(id))} ${twr ? fmtSignedPct(st.idx[id].twr, 1) : fmtSignedEUR(st.idx[id].value - st.b.v + st.gain)}</span>`).join('')}</div>
+    <div class="headline"><span class="big2 ${cls(twr ? st.twr : st.gain)}">${twr ? fmtSignedPct(st.twr, 1) : fmtSignedEUR(st.gain)}</span><span class="muted">${twr ? 'time-weighted' : `money-weighted ${st.years > 1.05 ? fmtSignedPct(st.mwr, 1) + ' a year' : fmtSignedPct(st.mwrPeriod, 1)}`} · ${state.tf === 'SI' ? 'Max, since I started' : esc(TFL[state.tf])}</span>
+      <span class="idxv"><i class="sw line" style="background:var(--fund)"></i>${FUND}</span>${sel.map((id) => `<span class="idxv"><i class="sw line" style="background:${IDX_COLOR[id]}"></i>${esc(idxName(id))} ${twr ? fmtSignedPct(st.idx[id].twr, 1) : fmtSignedEUR(st.idx[id].value - st.b.v + st.gain)}</span>`).join('')}</div>
     <div id="perfchart" class="chart"></div>
     <div class="row-between" style="margin-top:6px"><span class="muted small">${twr ? 'Time-weighted: the return on my picks, however much money was in at the time.' : 'Money-weighted: what my actual money is worth, against putting the same money in each index on the same days.'}</span><button class="tablink" id="tv-perf">${state.tableView.perf ? 'Show chart' : 'View as table'}</button></div>
   </div>
 
   <div class="panel" style="margin-top:14px">
-    <div class="row-between"><div><h3>Every period at a glance</h3><p class="sub">Time-weighted return for each period against the benchmarks you pick. Click a row to chart it.</p></div>
-      <div class="ichips" style="margin:0">${D.indices.map((x) => `<button data-gl="${x.id}" aria-pressed="${gsel.includes(x.id)}"><i class="sw" style="background:${IDX_COLOR[x.id]}"></i>${esc(x.name)}</button>`).join('')}</div></div>
+    <h3>Every period at a glance</h3><p class="sub">Time-weighted return for each period against the three indices. Click a row to chart it.</p>
     <div class="pbars" style="--ni:${gsel.length}">
-      <div class="pb pb-h"><span class="pl"></span><span class="pt"></span><span class="pv">Me</span>${gsel.map((id) => `<span class="pi">${esc(BSHORT[id] || idxName(id))}</span>`).join('')}</div>
+      <div class="pb pb-h"><span class="pl"></span><span class="pt"></span><span class="pv">${FUND}</span>${gsel.map((id) => `<span class="pi">${esc(BSHORT[id] || idxName(id))}</span>`).join('')}</div>
       ${all.map((s) => { const mx = Math.max(...all.map((q) => Math.max(Math.abs(q.twr), ...gsel.map((id) => Math.abs(q.idx[id].twr))))) || 1; const bar = (x) => { const w = (Math.abs(x) / mx) * 50; return x < 0 ? `right:50%;width:${w}%` : `left:50%;width:${w}%`; };
       return `<button class="pb${s.k === state.tf ? ' on' : ''}" data-tf="${s.k}"><span class="pl">${esc(TFL[s.k])}</span>
         <span class="pt" style="height:${10 + gsel.length * 7}px"><i class="z"></i><i class="b you" style="top:0;${bar(s.twr)}"></i>${gsel.map((id, j) => `<i class="b idx" style="top:${10 + j * 7}px;background:${IDX_COLOR[id]};${bar(s.idx[id].twr)}"></i>`).join('')}</span>
         <span class="pv ${cls(s.twr)}">${fmtSignedPct(s.twr, 1)}</span>${gsel.map((id) => { const e = s.twr - s.idx[id].twr; return `<span class="pi">${fmtSignedPct(s.idx[id].twr, 1)}<small class="${cls(e)}">${e >= 0 ? '+' : '−'}${Math.abs(e * 100).toFixed(1)} pts</small></span>`; }).join('')}</button>`; }).join('')}</div>
-    <div class="legend" style="margin:10px 0 0"><span><i class="sw" style="background:var(--accent)"></i>My portfolio</span>${gsel.map((id) => `<span><i class="sw" style="background:${IDX_COLOR[id]}"></i>${esc(idxName(id))}</span>`).join('')}<span class="muted">Under each index: points I am ahead (+) or behind (−)</span></div>
+    <div class="legend" style="margin:10px 0 0"><span><i class="sw" style="background:var(--fund)"></i>${FUND}</span>${gsel.map((id) => `<span><i class="sw" style="background:${IDX_COLOR[id]}"></i>${esc(idxName(id))}</span>`).join('')}<span class="muted">Under each index: points the fund is ahead (+) or behind (−)</span></div>
   </div>`;
 
   $$('#t-record [data-tf]').forEach((b) => b.addEventListener('click', () => { state.tf = b.dataset.tf; renderRecord(); }));
   $$('#t-record [data-ms]').forEach((b) => b.addEventListener('click', () => { state.measure = b.dataset.ms; renderRecord(); }));
-  $$('#t-record [data-ix]').forEach((b) => b.addEventListener('click', () => {
-    const id = b.dataset.ix; state.idxSel = state.idxSel.includes(id) ? state.idxSel.filter((x) => x !== id) : state.idxSel.concat([id]);
-    if (!state.idxSel.length) state.idxSel = [id];
-    renderRecord();
-  }));
-  $$('#t-record [data-gl]').forEach((b) => b.addEventListener('click', () => {
-    const id = b.dataset.gl; state.glSel = state.glSel.includes(id) ? state.glSel.filter((x) => x !== id) : D.indices.map((x) => x.id).filter((x) => x === id || state.glSel.includes(x));
-    if (!state.glSel.length) state.glSel = [id];
-    renderRecord();
-  }));
   $('#tv-perf').addEventListener('click', () => { state.tableView.perf = !state.tableView.perf; renderRecord(); });
 
   const a = st.a, b = st.b;
@@ -123,7 +111,7 @@ function renderRecord() {
   const fl = PF.fl.filter((f) => f[0] > a.t && f[0] <= b.t);
   let series, yFmt, tipVal;
   if (twr) {
-    series = [{ v: pp.map((p) => (p.i / a.i - 1) * 100), color: 'var(--accent)', width: 2.25, label: 'My portfolio', fill: true, fillTo: 0, fillOpacity: 0.08 }]
+    series = [{ v: pp.map((p) => (p.i / a.i - 1) * 100), color: 'var(--fund)', width: 2.25, label: FUND, fill: true, fillTo: 0, fillOpacity: 0.08 }]
       .concat(sel.map((id) => ({ v: xs.map((t) => (PF.P[id](t) / PF.P[id](a.t) - 1) * 100), color: IDX_COLOR[id], width: 1.5, label: idxName(id) })));
     yFmt = (v) => Math.round(v) + '%'; tipVal = (v) => fmtSignedPct(v / 100, 1);
   } else {
@@ -131,7 +119,7 @@ function renderRecord() {
     const idxV = Object.fromEntries(sel.map((id) => [id, []])), money = [];
     let m = a.v;
     xs.forEach((t) => { while (k < fl.length && fl[k][0] <= t) { sel.forEach((id) => { unitsCum[id] += fl[k][1] / PF.P[id](fl[k][0]); }); m += fl[k][1]; k++; } sel.forEach((id) => idxV[id].push(unitsCum[id] * PF.P[id](t))); money.push(m); });
-    series = [{ v: pp.map((p) => p.v), color: 'var(--accent)', width: 2.25, label: 'My portfolio' }]
+    series = [{ v: pp.map((p) => p.v), color: 'var(--fund)', width: 2.25, label: FUND }]
       .concat(sel.map((id) => ({ v: idxV[id], color: IDX_COLOR[id], width: 1.5, label: 'Same money in ' + idxName(id) })))
       .concat([{ v: money, color: 'var(--ink3)', width: 1.25, dash: '4 4', label: 'Money in' }]);
     yFmt = (v) => (Math.abs(v) >= 1000 ? Math.round(v / 1000) + 'k' : String(Math.round(v))); tipVal = (v) => fmtEUR0(v);
@@ -139,7 +127,7 @@ function renderRecord() {
   mount($('#perfchart'), (h, w) => {
     if (state.tableView.perf) { h.innerHTML = tableTwin(['Date'].concat(series.map((s) => s.label)), xs.map((t, i) => [dfmt(isoDay(t))].concat(series.map((s) => (s.v[i] == null ? '–' : tipVal(s.v[i])))))); return; }
     lineChart(h, w, {
-      x: xs, series, height: w < 520 ? 280 : 380, yFmt, zero: twr ? 0 : null, yMin: twr ? null : 0, aria: 'Portfolio against the selected indices',
+      x: xs, series, height: w < 520 ? 280 : 380, yFmt, zero: twr ? 0 : null, yMin: twr ? null : 0, aria: 'Freedom Fund against the S&P 500, Nasdaq-100 and MSCI World',
       tip: (i) => `<div class="th">${dfmt(isoDay(xs[i]))}</div>${series.map((s) => (s.v[i] == null ? '' : trow(s.color, s.label, tipVal(s.v[i]), 1))).join('')}`,
     });
   });
@@ -237,7 +225,7 @@ function selectHolding(isin) {
 /* =====================================================================
    RISK AND OUTLOOK
    ===================================================================== */
-const HORIZONS = [[3, '3 months'], [6, '6 months'], [12, '1 year'], [18, '18 months'], [24, '2 years']];
+const HORIZONS = [[3, '3M', '3 months'], [6, '6M', '6 months'], [12, '1Y', '1 year'], [24, '2Y', '2 years'], [36, '3Y', '3 years']];
 // standard normal distribution function (Abramowitz and Stegun 7.1.26)
 function normCdf(z) {
   const t = 1 / (1 + 0.3275911 * Math.abs(z) / Math.SQRT2);
@@ -250,7 +238,7 @@ function renderRisk() {
   if (!R) { root.innerHTML = '<div class="panel empty">The outlook needs 12 months of prices for every position.</div>'; return; }
   const bench = M.D.benches.find((b) => b.id === state.obench) || M.D.benches[0];
   const bName = BSHORT[bench.id] || bench.name;
-  const n = state.hz, t = n / 12, hzL = HORIZONS.find((x) => x[0] === n)[1];
+  const n = state.hz, t = n / 12, hzL = HORIZONS.find((x) => x[0] === n)[2];
   const sigma = R.vol, bVol = R.bVol[bench.id], beta = R.pBeta[bench.id], rho = R.pCorr[bench.id];
   const ix = M.D.indices.find((x) => x.id === bench.id) || {};
   const bMu = ix.cagr != null ? ix.cagr : REF_MU; // the benchmark's own historical annual growth
@@ -261,7 +249,7 @@ function renderRisk() {
   const sd = Math.sqrt(Math.max(1e-9, sigma * sigma + bVol * bVol - 2 * rho * sigma * bVol) * t);
   const pBeat = normCdf(((mP - mB) * t) / sd);
   root.innerHTML = `
-  <div class="lede"><div><p class="kicker">Outlook</p><h2>Where the portfolio could be ${n === 12 ? 'a year' : 'in ' + hzL} from now</h2><p>Built from analyst price targets, which tend to be optimistic, so try the Cautious and Stress settings too.</p></div></div>
+  <div class="lede"><div><p class="kicker">Outlook</p><h2>Where the ${FUND} could be ${n === 12 ? 'a year' : 'in ' + hzL} from now</h2></div></div>
   <div class="ctrls" style="margin-bottom:12px">
     <div class="seg" role="group" aria-label="Horizon">${HORIZONS.map(([k, l]) => `<button data-hz="${k}" aria-pressed="${k === n}">${l}</button>`).join('')}</div>
     <div class="seg" role="group" aria-label="Benchmark">${['SPX', 'NDX', 'MSCI'].filter((id) => M.D.benches.some((b) => b.id === id)).map((id) => `<button data-ob="${id}" aria-pressed="${id === bench.id}">${esc(BSHORT[id])}</button>`).join('')}</div>
@@ -274,13 +262,13 @@ function renderRisk() {
     ${kpi('Volatility', (sigma * 100).toFixed(0) + '%', '', `${esc(bName)} ${(bVol * 100).toFixed(0)}% · beta ${fmtNum(beta, 2)}`)}
   </div>
   <div class="panel" style="margin-top:14px">
-    <h3>Range of outcomes, next ${hzL}</h3><p class="sub">Portfolio worth ${fmtEUR0(V)} today. Shaded: 9 in 10 outcomes and the middle half. Dashed: ${esc(bName)} growing at ${bMuTxt}, with its own volatility. Odds ${pr.map((x) => Math.round(x * 100)).join('/')} (bull/base/bear)${n > 12 ? '; beyond 12 months the expected return is assumed to repeat' : ''}.</p>
+    <h3>Range of outcomes, next ${hzL}</h3><p class="sub">The fund is worth ${fmtEUR0(V)} today. Shaded: 9 in 10 outcomes and the middle half. Dashed: ${esc(bName)} growing at ${bMuTxt}, with its own volatility. Odds ${pr.map((x) => Math.round(x * 100)).join('/')} (bull/base/bear)${n > 12 ? '; beyond 12 months the expected return is assumed to repeat' : ''}.</p>
     <div id="fan" class="chart"></div>
   </div>`;
   $$('#t-risk [data-pre]').forEach((b) => b.addEventListener('click', () => { state.preset = b.dataset.pre; renderRisk(); }));
   $$('#t-risk [data-hz]').forEach((b) => b.addEventListener('click', () => { state.hz = +b.dataset.hz; renderRisk(); }));
   $$('#t-risk [data-ob]').forEach((b) => b.addEventListener('click', () => { state.obench = b.dataset.ob; renderRisk(); }));
-  const fo = { V0: V, mu: O.exp, sigma, months: n, t0: M.asOf, ref: { mu: bMu, sigma: bVol, label: bName }, aria: `Range of outcomes over ${hzL}` };
+  const fo = { V0: V, mu: O.exp, sigma, months: n, t0: M.asOf, color: 'var(--fund)', ref: { mu: bMu, sigma: bVol, label: bName, color: IDX_COLOR[bench.id] }, aria: `Range of outcomes over ${hzL}` };
   mount($('#fan'), (host, w) => fanChart(host, w, Object.assign({ height: w < 520 ? 260 : 340 }, fo)));
 }
 

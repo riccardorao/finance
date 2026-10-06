@@ -1,6 +1,6 @@
 # Equity Portfolio Dashboard
 
-A single-page dashboard of a concentrated stock-picking portfolio, built from a Scalable Capital account. It is
+A single-page dashboard of a concentrated stock-picking portfolio, called the Freedom Fund on the page, built from a Scalable Capital account. It is
 written for peers: to show how the picks have done, what is owned and how each position is doing, and what could
 happen next. Only stocks and ETFs count; crypto, leveraged products and the one-off GameStop trade are left out
 (see *Method*).
@@ -10,9 +10,9 @@ answers three questions, one per tab:
 
 | Tab | Question it answers | What is on it |
 |---|---|---|
-| **Performance** | Have the picks made money, and against which index? | Four headline figures; a daily chart of time-weighted (TWR) or money-weighted (MWR) performance for 1M, 3M, 6M, YTD, 1Y, 2025, 2024 or since inception against MSCI World, the S&P 500 and the Nasdaq-100; *Every period at a glance*, comparing every period with any or all of the three indices |
+| **Performance** | Have the picks made money, and against which index? | Four headline figures; a daily chart of time-weighted (TWR) or money-weighted (MWR) performance for 1M, 3M, 6M, YTD, 1Y, 2025, 2024 or Max (since inception) against the S&P 500, the Nasdaq-100 and MSCI World, which are always all shown; the headline statements refer to the S&P 500; *Every period at a glance* compares every period with all three indices |
 | **Portfolio** | What is owned and how is each position doing? | Per position: weight, share-price change over 1D, YTD and 1Y, unrealised gain in euro and in per cent, the 12-month target range (bear, weighted outcome, bull) and the consensus rating with the upside to the average target. Each opens to the thesis, the written kill-switch, bull and bear cases, industry and competitors, and the latest news |
-| **Outlook** | What could happen next? | A horizon toggle (3 months to 2 years), a benchmark toggle (S&P 500, Nasdaq-100, MSCI World) and three sets of scenario odds drive the expected return, the 9-in-10 range of outcomes, the chance of beating the benchmark, volatility and beta, and a range-of-outcomes chart |
+| **Outlook** | What could happen next? | A horizon toggle (3M, 6M, 1Y, 2Y, 3Y), a benchmark toggle (S&P 500, Nasdaq-100, MSCI World) and three sets of scenario odds (Consensus, Cautious, Stress) drive the expected return, the 9-in-10 range of outcomes, the chance of beating the benchmark, volatility and beta, and a range-of-outcomes chart |
 
 ![Performance tab, built from the synthetic sample](docs/sample-record.png)
 
@@ -168,7 +168,7 @@ daily, annualised with √252.
 of the lowest target and a repeat of the stock's worst fall of the past year. Dollar targets are converted at
 the euro rate implied on the day they were collected, so the upside is currency-neutral and is re-measured
 against the live price. On the Portfolio tab the black tick in the 12-month target range is the weighted outcome: 25% bear, 50%
-average target, 25% bull. The three presets weight bull, base and bear at 25/50/25 (*Analyst view*), 15/45/40
+average target, 25% bull. The three presets weight bull, base and bear at 25/50/25 (*Consensus*), 15/45/40
 (*Cautious*) and 5/35/60 (*Stress*).
 
 **Range of outcomes.** A log-normal model: the median path is `V0 · exp((ln(1+μ) − σ²/2)·t)`, and the bands

@@ -17,9 +17,9 @@ const dayMs = (s) => Date.parse(s.length === 10 ? s + 'T12:00:00Z' : s.length ==
 
 /* ---------- state ---------- */
 const TABS = [['record', 'Performance'], ['book', 'Portfolio'], ['risk', 'Outlook']];
-const state = { tab: 'record', bench: 'MSCI', tf: '1Y', measure: 'twr', idxSel: ['MSCI', 'SPX', 'NDX'], glSel: ['MSCI', 'SPX', 'NDX'], hz: 12, obench: 'SPX', open: null, preset: 'analyst', mode: 'snapshot', statusMsg: '', tableView: {}, commentary: {}, dbReady: false };
+const state = { tab: 'record', bench: 'MSCI', tf: '1Y', measure: 'twr', hz: 12, obench: 'SPX', open: null, preset: 'analyst', mode: 'snapshot', statusMsg: '', tableView: {}, commentary: {}, dbReady: false };
 /* scenario probabilities: bull, base, bear */
-const PRESETS = { analyst: { label: 'Analyst view', p: [0.25, 0.5, 0.25] }, cautious: { label: 'Cautious', p: [0.15, 0.45, 0.4] }, stress: { label: 'Stress', p: [0.05, 0.35, 0.6] } };
+const PRESETS = { analyst: { label: 'Consensus', p: [0.25, 0.5, 0.25] }, cautious: { label: 'Cautious', p: [0.15, 0.45, 0.4] }, stress: { label: 'Stress', p: [0.05, 0.35, 0.6] } };
 const REF_MU = 0.07; // assumed long-run annual return for the benchmark reference
 let DATA_ACTIVE = null; // snapshot or live-merged
 let M = null; // derived model
@@ -131,7 +131,7 @@ const C_sum = (a) => a.reduce((s, x) => s + x, 0);
    The valuation history is rebuilt from the ledger and market prices (pipeline/history.js); the last point is
    replaced by the current value so a live refresh moves it. Index prices: daily where the 12-month series
    covers the date, month-end before that, interpolated geometrically in between. */
-const TF = [['1M', '1 month'], ['3M', '3 months'], ['6M', '6 months'], ['YTD', 'Year to date'], ['1Y', '1 year'], ['Y2025', '2025'], ['Y2024', '2024'], ['SI', 'Since inception']];
+const TF = [['1M', '1 month'], ['3M', '3 months'], ['6M', '6 months'], ['YTD', 'Year to date'], ['1Y', '1 year'], ['Y2025', '2025'], ['Y2024', '2024'], ['SI', 'Max']];
 const TFL = Object.fromEntries(TF);
 function indexPriceFn(D, isin) {
   const dd = D.indexDaily && D.indexDaily[isin];
@@ -359,7 +359,7 @@ function fanPoints(V0, mu, sigma, steps, perYear = 12) {
   return Array.from({ length: steps + 1 }, (_, k) => { const t = k / perYear; return Zq.map((z) => V0 * Math.exp(m * t + z * sigma * Math.sqrt(t))); });
 }
 function fanChart(host, w, o) {
-  const h = o.height || 290, m = { l: 50, r: 16, t: 12, b: 26 };
+  const h = o.height || 290, m = { l: 50, r: 16, t: 12, b: 26 }, C = o.color || 'var(--accent)', RC = o.ref.color || 'var(--ink3)';
   const iw = w - m.l - m.r, ih = h - m.t - m.b, N = o.months;
   const F = fanPoints(o.V0, o.mu, o.sigma, N), Rf = fanPoints(o.V0, o.ref.mu, o.ref.sigma, N).map((q) => q[2]);
   // drawn on a finer grid than the monthly tooltip points, so short horizons curve smoothly
@@ -377,9 +377,9 @@ function fanChart(host, w, o) {
   for (let k = 0; k <= N; k += step) g += `<text x="${X(k)}" y="${h - 6}" text-anchor="middle">${k === 0 ? 'Today' : esc(mlabel(mt(k)))}</text>`;
   const yb = Math.round(Y(o.V0)) + 0.5;
   g += `<line class="base" x1="${m.l}" x2="${m.l + iw}" y1="${yb}" y2="${yb}" stroke-dasharray="2 3"/>`;
-  g += `<path d="${area(4, 0)}" fill="var(--accent)" opacity="0.11"/><path d="${area(3, 1)}" fill="var(--accent)" opacity="0.2"/>`;
-  g += `<path d="${path(RF)}" fill="none" stroke="var(--ink3)" stroke-width="1.75" stroke-dasharray="5 4"/>`;
-  g += `<path d="${path(FF.map((q) => q[2]))}" fill="none" stroke="var(--accent)" stroke-width="2.25"/>`;
+  g += `<path d="${area(4, 0)}" fill="${C}" opacity="0.11"/><path d="${area(3, 1)}" fill="${C}" opacity="0.2"/>`;
+  g += `<path d="${path(RF)}" fill="none" stroke="${RC}" stroke-width="1.75" stroke-dasharray="5 4"/>`;
+  g += `<path d="${path(FF.map((q) => q[2]))}" fill="none" stroke="${C}" stroke-width="2.25"/>`;
   [0, 2, 4].forEach((j) => { const v = F[N][j]; g += `<text x="${X(N) - 4}" y="${Y(v) + (j === 0 ? 14 : j === 4 ? -6 : -6)}" text-anchor="end" style="fill:var(--ink2);font-weight:600">${['5%', '', '95%'][j / 2]}${j === 2 ? '' : ' · '}${fmtEUR0(v)}</text>`; });
   g += `<line class="xh" id="fxh" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" style="display:none"/><rect id="fov" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" tabindex="0" role="img" aria-label="${esc(o.aria)}"/>`;
   host.innerHTML = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${g}</svg>`;
@@ -388,7 +388,7 @@ function fanChart(host, w, o) {
   const show = (k, cx, cy) => {
     cur = k; const xx = X(k); xh.setAttribute('x1', xx); xh.setAttribute('x2', xx); xh.style.display = '';
     const q = F[k], r = svg.getBoundingClientRect();
-    showTip(`<div class="th">${k === 0 ? 'Today' : dfmt(isoDay(mt(k))) + ` · ${k} month${k > 1 ? 's' : ''}`}</div>${trow('var(--accent)', '1 in 20 better than', fmtEUR0(q[4]))}${trow('var(--accent)', 'Middle half', `${fmtEUR0(q[1])} – ${fmtEUR0(q[3])}`)}${trow('var(--accent)', 'Median', fmtEUR0(q[2]), 1)}${trow('var(--accent)', '1 in 20 worse than', fmtEUR0(q[0]))}${trow('var(--ink3)', o.ref.label + ' median', fmtEUR0(Rf[k]), 1)}`, cx != null ? cx : r.left + xx, cy != null ? cy : r.top + m.t + 20);
+    showTip(`<div class="th">${k === 0 ? 'Today' : dfmt(isoDay(mt(k))) + ` · ${k} month${k > 1 ? 's' : ''}`}</div>${trow(C, '1 in 20 better than', fmtEUR0(q[4]))}${trow(C, 'Middle half', `${fmtEUR0(q[1])} – ${fmtEUR0(q[3])}`)}${trow(C, 'Median', fmtEUR0(q[2]), 1)}${trow(C, '1 in 20 worse than', fmtEUR0(q[0]))}${trow(RC, o.ref.label + ' median', fmtEUR0(Rf[k]), 1)}`, cx != null ? cx : r.left + xx, cy != null ? cy : r.top + m.t + 20);
   };
   const near = (cx) => { const r = svg.getBoundingClientRect(); return Math.max(0, Math.min(N, Math.round(((cx - r.left - m.l) / iw) * N))); };
   ov.addEventListener('pointermove', (e) => show(near(e.clientX), e.clientX, e.clientY));
