@@ -1,0 +1,23 @@
+{
+ "IE00B4L5Y983": {
+  "sym": "synthetic",
+  "from": "2010-06",
+  "to": "2026-09",
+  "years": 16.25,
+  "cagr": 0.11
+ },
+ "IE00B5BMR087": {
+  "sym": "synthetic",
+  "from": "2010-06",
+  "to": "2026-09",
+  "years": 16.25,
+  "cagr": 0.13
+ },
+ "IE00B53SZB19": {
+  "sym": "synthetic",
+  "from": "2010-06",
+  "to": "2026-09",
+  "years": 16.25,
+  "cagr": 0.17
+ }
+}

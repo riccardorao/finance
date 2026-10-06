@@ -174,9 +174,10 @@ function renderBook() {
   root.innerHTML = `
   <div class="lede"><div><p class="kicker">Portfolio</p><h2>What I own: ${M.H.length} positions worth ${fmtEUR0(V)}, ${ytd >= 0 ? 'up' : 'down'} ${fmtEUR0(Math.abs(ytd))} this year</h2><p>Tap a stock to see why I own it, what would make me sell, and the bull and bear case.</p></div></div>
   <div class="panel flat">
-    <div class="book-h"><span>Position</span><span>Weight</span><span class="c-d">Today</span><span class="c-d">This year</span><span>1 year</span><span class="c-m">Unrealised €</span><span>Unrealised %</span><span class="c-m c-rng">12-month range: bear, average target, bull</span><span class="c-m">Analysts</span><span></span></div>
+    <div class="book-h"><span>Position</span><span>Weight</span><span class="c-d">1D</span><span class="c-d">YTD</span><span>1Y</span><span class="c-m">Unrealised €</span><span>Unrealised %</span><span class="c-m c-rng">12-month target range</span><span class="c-m">Analysts</span><span></span></div>
     ${M.H.map((h) => {
       const sc = h.sc, cons = h.research && h.research.cons, open = state.open === h.isin;
+      const mid = sc ? expOf(sc, PRESETS.analyst.p) : null; // 25% bear, 50% average target, 25% bull
       return `<div class="posn${open ? ' open' : ''}" data-i="${h.isin}">
         <button class="pos-row" aria-expanded="${open}" aria-controls="pd-${h.isin}">
           <span class="nm"><b>${esc(h.name)}</b><small>${esc(h.ticker || '')}</small></span>
@@ -186,14 +187,14 @@ function renderBook() {
           <span class="n">${pc(h, '1Y')}</span>
           <span class="n c-m">${h.pnl != null ? eur0Span(h.pnl) : '–'}</span>
           <span class="n">${h.pnl != null ? pctSpan(h.pnlPct, 1) : '–'}</span>
-          <span class="c-m c-rng">${sc ? `<span class="rng" role="img" aria-label="Bear ${fmtSignedPct(sc.bear, 0)}, average target ${fmtSignedPct(sc.base, 0)}, bull ${fmtSignedPct(sc.bull, 0)}"><i class="z" style="left:${PX(0)}%"></i><i class="seg" style="left:${PX(sc.bear)}%;width:${PX(sc.bull) - PX(sc.bear)}%"></i><i class="d bear" style="left:${PX(sc.bear)}%"></i><i class="t" style="left:${PX(sc.base)}%"></i><i class="d bull" style="left:${PX(sc.bull)}%"></i><em class="lb neg" style="right:calc(${100 - PX(sc.bear)}% + 7px)">${fmtSignedPct(sc.bear, 0)}</em><em class="lb bs" style="left:${PX(sc.base)}%">${fmtSignedPct(sc.base, 0)}</em><em class="lb pos" style="left:calc(${PX(sc.bull)}% + 7px)">${fmtSignedPct(sc.bull, 0)}</em></span>` : '<small class="muted">no analyst coverage</small>'}</span>
+          <span class="c-m c-rng">${sc ? `<span class="rng" role="img" aria-label="Bear ${fmtSignedPct(sc.bear, 0)}, weighted ${fmtSignedPct(mid, 0)}, bull ${fmtSignedPct(sc.bull, 0)}"><i class="z" style="left:${PX(0)}%"></i><i class="seg" style="left:${PX(sc.bear)}%;width:${PX(sc.bull) - PX(sc.bear)}%"></i><i class="d bear" style="left:${PX(sc.bear)}%"></i><i class="t" style="left:${PX(mid)}%"></i><i class="d bull" style="left:${PX(sc.bull)}%"></i><em class="lb neg" style="right:calc(${100 - PX(sc.bear)}% + 7px)">${fmtSignedPct(sc.bear, 0)}</em><em class="lb bs" style="left:${PX(mid)}%">${fmtSignedPct(mid, 0)}</em><em class="lb pos" style="left:calc(${PX(sc.bull)}% + 7px)">${fmtSignedPct(sc.bull, 0)}</em></span>` : '<small class="muted">no analyst coverage</small>'}</span>
           <span class="c-m cons">${cons && sc ? `<span class="rt ${ratingCls(cons.rating)}">${esc(cons.rating)}</span><small>target <b class="${cls(sc.base)}">${fmtSignedPct(sc.base, 0)}</b></small>` : '<small class="muted">–</small>'}</span>
           <span class="chev" aria-hidden="true"></span>
         </button>
         <div class="pos-d" id="pd-${h.isin}" ${open ? '' : 'hidden'}>${open ? positionDetail(h) : ''}</div>
       </div>`;
     }).join('')}
-    <div class="book-f"><span class="foot-n">Weight: share of the portfolio today. Today, this year and 1 year: the share price in euro. Unrealised: gain or loss on what I still hold, against what I paid. Range: red dot the bear case, black tick the average analyst target, green dot the highest target, all against today's price. Analysts: consensus rating and the upside to the average 12-month target.</span></div>
+    <div class="book-f"><span class="foot-n">Weight: share of the portfolio today. 1D, YTD and 1Y: change in the share price in euro over one day, this year and one year. Unrealised: gain or loss on what I still hold, against what I paid. 12-month target range: red dot the bear case, green dot the bull case (the highest analyst target), black tick the weighted outcome (25% bear, 50% average analyst target, 25% bull), all against today's price. Analysts: consensus rating and the upside to the average 12-month target.</span></div>
   </div>`;
 
   $$('#t-book .pos-row').forEach((b) => b.addEventListener('click', () => {
@@ -251,8 +252,11 @@ function renderRisk() {
   const bName = BSHORT[bench.id] || bench.name;
   const n = state.hz, t = n / 12, hzL = HORIZONS.find((x) => x[0] === n)[1];
   const sigma = R.vol, bVol = R.bVol[bench.id], beta = R.pBeta[bench.id], rho = R.pCorr[bench.id];
-  const mP = Math.log(1 + O.exp) - sigma * sigma / 2, mB = Math.log(1 + REF_MU) - bVol * bVol / 2;
-  const exp = (1 + O.exp) ** t - 1, bExp = (1 + REF_MU) ** t - 1;
+  const ix = M.D.indices.find((x) => x.id === bench.id) || {};
+  const bMu = ix.cagr != null ? ix.cagr : REF_MU; // the benchmark's own historical annual growth
+  const bMuTxt = ix.cagr != null ? `its historical pace of ${fmtSignedPct(bMu, 1)} a year (${dfmt(ix.cagrFrom + '-15', { day: undefined })} to ${dfmt(ix.cagrTo + '-15', { day: undefined })})` : `an assumed ${fmtSignedPct(bMu, 0)} a year`;
+  const mP = Math.log(1 + O.exp) - sigma * sigma / 2, mB = Math.log(1 + bMu) - bVol * bVol / 2;
+  const exp = (1 + O.exp) ** t - 1, bExp = (1 + bMu) ** t - 1;
   const q = (z) => Math.exp(mP * t + z * sigma * Math.sqrt(t)) - 1;
   const sd = Math.sqrt(Math.max(1e-9, sigma * sigma + bVol * bVol - 2 * rho * sigma * bVol) * t);
   const pBeat = normCdf(((mP - mB) * t) / sd);
@@ -264,19 +268,19 @@ function renderRisk() {
     <div class="seg" role="group" aria-label="Scenario odds">${Object.entries(PRESETS).map(([k, v]) => `<button data-pre="${k}" aria-pressed="${k === state.preset}">${v.label}</button>`).join('')}</div>
   </div>
   <div class="kpis4">
-    ${kpi('Expected, ' + hzL, fmtSignedPct(exp, 0), cls(exp), `${exp >= 0 ? '+' : ''}${fmtEUR0(exp * V)} · ${esc(bName)} ${fmtSignedPct(bExp, 0)} assumed`)}
+    ${kpi('Expected, ' + hzL, fmtSignedPct(exp, 0), cls(exp), `${exp >= 0 ? '+' : ''}${fmtEUR0(exp * V)} · ${esc(bName)} ${fmtSignedPct(bExp, 0)} at its historical pace`)}
     ${kpi('9 in 10 outcomes', `<span class="${cls(q(-1.645))}">${fmtSignedPct(q(-1.645), 0)}</span> <span class="muted">to</span> <span class="${cls(q(1.645))}">${fmtSignedPct(q(1.645), 0)}</span>`, '', `${fmtEUR0(V * (1 + q(-1.645)))} to ${fmtEUR0(V * (1 + q(1.645)))}`)}
     ${kpi('Chance of beating ' + esc(bName), Math.round(pBeat * 100) + '%', pBeat >= 0.5 ? 'pos' : 'neg', `over ${hzL}, correlation ${fmtNum(rho, 2)}`)}
     ${kpi('Volatility', (sigma * 100).toFixed(0) + '%', '', `${esc(bName)} ${(bVol * 100).toFixed(0)}% · beta ${fmtNum(beta, 2)}`)}
   </div>
   <div class="panel" style="margin-top:14px">
-    <h3>Range of outcomes, next ${hzL}</h3><p class="sub">Portfolio worth ${fmtEUR0(V)} today. Shaded: 9 in 10 outcomes and the middle half. Dashed: ${esc(bName)} at an assumed ${Math.round(REF_MU * 100)}% a year with its own volatility. Odds ${pr.map((x) => Math.round(x * 100)).join('/')} (bull/base/bear)${n > 12 ? '; beyond 12 months the expected return is assumed to repeat' : ''}.</p>
+    <h3>Range of outcomes, next ${hzL}</h3><p class="sub">Portfolio worth ${fmtEUR0(V)} today. Shaded: 9 in 10 outcomes and the middle half. Dashed: ${esc(bName)} growing at ${bMuTxt}, with its own volatility. Odds ${pr.map((x) => Math.round(x * 100)).join('/')} (bull/base/bear)${n > 12 ? '; beyond 12 months the expected return is assumed to repeat' : ''}.</p>
     <div id="fan" class="chart"></div>
   </div>`;
   $$('#t-risk [data-pre]').forEach((b) => b.addEventListener('click', () => { state.preset = b.dataset.pre; renderRisk(); }));
   $$('#t-risk [data-hz]').forEach((b) => b.addEventListener('click', () => { state.hz = +b.dataset.hz; renderRisk(); }));
   $$('#t-risk [data-ob]').forEach((b) => b.addEventListener('click', () => { state.obench = b.dataset.ob; renderRisk(); }));
-  const fo = { V0: V, mu: O.exp, sigma, months: n, t0: M.asOf, ref: { mu: REF_MU, sigma: bVol, label: bName }, aria: `Range of outcomes over ${hzL}` };
+  const fo = { V0: V, mu: O.exp, sigma, months: n, t0: M.asOf, ref: { mu: bMu, sigma: bVol, label: bName }, aria: `Range of outcomes over ${hzL}` };
   mount($('#fan'), (host, w) => fanChart(host, w, Object.assign({ height: w < 520 ? 260 : 340 }, fo)));
 }
 

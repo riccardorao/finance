@@ -11,7 +11,7 @@ answers three questions, one per tab:
 | Tab | Question it answers | What is on it |
 |---|---|---|
 | **Performance** | Have the picks made money, and against which index? | Four headline figures; a daily chart of time-weighted (TWR) or money-weighted (MWR) performance for 1M, 3M, 6M, YTD, 1Y, 2025, 2024 or since inception against MSCI World, the S&P 500 and the Nasdaq-100; *Every period at a glance*, comparing every period with any or all of the three indices |
-| **Portfolio** | What is owned and how is each position doing? | Per position: weight, share-price change today, this year and over one year, unrealised gain in euro and in per cent, the analysts' 12-month range (bear, average target, bull) and the consensus rating with the upside to the average target. Each opens to the thesis, the written kill-switch, bull and bear cases, industry and competitors, and the latest news |
+| **Portfolio** | What is owned and how is each position doing? | Per position: weight, share-price change over 1D, YTD and 1Y, unrealised gain in euro and in per cent, the 12-month target range (bear, weighted outcome, bull) and the consensus rating with the upside to the average target. Each opens to the thesis, the written kill-switch, bull and bear cases, industry and competitors, and the latest news |
 | **Outlook** | What could happen next? | A horizon toggle (3 months to 2 years), a benchmark toggle (S&P 500, Nasdaq-100, MSCI World) and three sets of scenario odds drive the expected return, the 9-in-10 range of outcomes, the chance of beating the benchmark, volatility and beta, and a range-of-outcomes chart |
 
 ![Performance tab, built from the synthetic sample](docs/sample-record.png)
@@ -76,6 +76,7 @@ the browser filling in the missing tags.
 │   │                        income, cash flows, and a reconciliation against the broker
 │   ├── holdings_history.js  Replays tx.csv into holdings and cash at any date (shared helper)
 │   ├── fetch_daily.js       Downloads daily closes in euro for every instrument held and every index
+│   ├── fetch_index_history.js  Long-run monthly history of the three index ETFs -> historical CAGR
 │   ├── history.js           Rebuilds the account value for every trading day from the
 │   │                        replay and market prices, and checks it against the broker's own figures
 │   ├── add_prices.js        Appends month-end prices for one instrument to prices_monthly.json
@@ -111,6 +112,7 @@ Every data directory, private or sample, holds the same files:
 | `snapshot.json` | Scalable connector: `get_portfolio_holdings`, `get_portfolio_overview`, `get_portfolio_cash_breakdown`, `get_security_quote`, `get_security_news` | Valuation time, total, cash, the broker's gain by period, each position (quantity, price, per-period performance, sector and theme) and the benchmark ETFs |
 | `series.json` | `get_security_chart`, one year | Fallback when `prices_daily.json` is absent (the synthetic sample uses it) |
 | `prices_daily.json`, `symbols.json` | `pipeline/fetch_daily.js` (Yahoo Finance chart data; `symbols.json` maps ISINs to tickers and can be edited) | Daily closing prices in euro for every instrument held and every index, from the first deposit |
+| `index_history.json` | `pipeline/fetch_index_history.js` (part of `npm run prices`) | Each benchmark ETF's annualised growth over the longest common window, used as its expected return on the Outlook tab |
 | `prices_monthly.json` | `get_security_chart`, max, stored with `pipeline/add_prices.js` | Month-end prices for every index and for each instrument held at a month end, from the first deposit |
 | `splits.json` (optional) | By hand | Share splits, `{ISIN: [[YYYY-MM-DD, ratio]]}`. Chart prices are split-adjusted; ledger quantities before a split are not |
 | `history.json` | `pipeline/history.js` | Derived: the account value on every trading day |
@@ -165,13 +167,15 @@ daily, annualised with √252.
 **Scenarios.** Per stock, bull is the highest sell-side 12-month target, base the average, and bear the lower
 of the lowest target and a repeat of the stock's worst fall of the past year. Dollar targets are converted at
 the euro rate implied on the day they were collected, so the upside is currency-neutral and is re-measured
-against the live price. The three presets weight bull, base and bear at 25/50/25 (*Analyst view*), 15/45/40
+against the live price. On the Portfolio tab the black tick in the 12-month target range is the weighted outcome: 25% bear, 50%
+average target, 25% bull. The three presets weight bull, base and bear at 25/50/25 (*Analyst view*), 15/45/40
 (*Cautious*) and 5/35/60 (*Stress*).
 
 **Range of outcomes.** A log-normal model: the median path is `V0 · exp((ln(1+μ) − σ²/2)·t)`, and the bands
 are the 5th, 25th, 75th and 95th percentiles. μ is the expected 12-month return under the chosen preset, assumed
-to repeat for horizons beyond a year, and σ the back-cast volatility. The selected benchmark is drawn at an
-assumed 7% a year with its own volatility. *Chance of beating* compares the two log-normal outcomes using the
+to repeat for horizons beyond a year, and σ the back-cast volatility. The selected benchmark is drawn at its own
+historical annualised growth (CAGR of its accumulating ETF in euro over the longest window all three share,
+from `index_history.json`) with its own volatility. *Chance of beating* compares the two log-normal outcomes using the
 back-cast correlation between the portfolio and the benchmark. Real markets have fatter tails than this model.
 
 ## Editing theses and kill-switches
