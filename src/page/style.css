@@ -565,4 +565,4 @@ ul.rules { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 8px; font-si
 .pub-sec b { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink); }
 /* the 12-month range as text where the bar is hidden (phones) */
 .rng-m { display: none; }
-@media (max-width: 860px) { .pub-r .nm { flex-wrap: wrap; } .rng-m { display: block; flex-basis: 100%; font-size: 12.5px; color: var(--ink2); font-variant-numeric: tabular-nums; margin-top: 2px; } }
+@media (max-width: 860px) { .rng-m { display: block; grid-column: 1 / -1; font-size: 12.5px; color: var(--ink2); font-variant-numeric: tabular-nums; margin-top: -2px; } }
