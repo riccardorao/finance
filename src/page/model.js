@@ -17,7 +17,7 @@ const dayMs = (s) => Date.parse(s.length === 10 ? s + 'T12:00:00Z' : s.length ==
 
 /* ---------- state ---------- */
 const TABS = [['record', 'Performance'], ['book', 'Portfolio'], ['risk', 'Outlook']];
-const state = { tab: 'record', bench: 'MSCI', tf: '1Y', measure: 'twr', hz: 12, obench: 'SPX', open: null, preset: 'analyst', mode: 'snapshot', statusMsg: '', tableView: {}, commentary: {}, dbReady: false };
+const state = { tab: 'record', bench: 'SPX', tf: '1Y', measure: 'twr', hz: 12, open: null, preset: 'analyst', mode: 'snapshot', statusMsg: '', tableView: {}, commentary: {}, dbReady: false };
 /* scenario probabilities: bull, base, bear */
 const PRESETS = { analyst: { label: 'Consensus', p: [0.25, 0.5, 0.25] }, cautious: { label: 'Cautious', p: [0.15, 0.45, 0.4] }, stress: { label: 'Stress', p: [0.05, 0.35, 0.6] } };
 const REF_MU = 0.07; // assumed long-run annual return for the benchmark reference

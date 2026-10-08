@@ -4,7 +4,7 @@ const holdingBy = (isin) => M.H.find((h) => h.isin === isin);
 const perfOf = (h, p) => (h.perf && h.perf[p] ? h.perf[p][0] : null);
 const pctSpan = (x, d = 1) => `<span class="${cls(x)} num">${fmtSignedPct(x, d)}</span>`;
 const eur0Span = (x) => `<span class="${cls(x)} num">${x > 0 ? '+' : ''}${fmtEUR0(x)}</span>`;
-const BSHORT = { MSCI: 'MSCI World', SPX: 'S&P 500', NDX: 'Nasdaq-100' };
+const BSHORT = { SPX: 'S&P 500' };
 const prOf = () => PRESETS[state.preset].p;
 const pts = (x, d = 1) => (x == null ? '–' : `${x >= 0 ? '+' : '−'}${Math.abs(x * 100).toFixed(d)} pts`);
 
@@ -52,7 +52,7 @@ function setTab(id, push) {
 /* =====================================================================
    TRACK RECORD
    ===================================================================== */
-const IDX_COLOR = { MSCI: 'var(--msci)', SPX: 'var(--spx)', NDX: 'var(--ndx)' };
+const IDX_COLOR = { SPX: 'var(--spx)' };
 const FUND = 'Freedom Fund';
 const idxName = (id) => (M.D.indices.find((x) => x.id === id) || { name: id }).name;
 const kpi = (k, v, c, n) => `<div class="kpi"><div class="k">${k}</div><div class="v ${c || ''}">${v}</div><div class="n">${n || ''}</div></div>`;
@@ -61,7 +61,7 @@ const vsIdx = (you, idx, name) => { const e = you - idx; return `${esc(name)} ${
 function renderRecord() {
   const root = $('#t-record'); unmountWithin(root);
   const D = M.D, PF = M.perf;
-  const sel = ['SPX', 'NDX', 'MSCI'].filter((id) => D.indices.some((x) => x.id === id)), gsel = sel; // every benchmark is always shown
+  const sel = ['SPX'], gsel = sel; // the S&P 500 is the only benchmark
   const primary = sel[0], pName = idxName(primary); // statements always refer to the S&P 500
   const st = PF.stats(state.tf);
   const all = TF.map(([k]) => PF.stats(k));
@@ -91,14 +91,14 @@ function renderRecord() {
   </div>
 
   <div class="panel" style="margin-top:14px">
-    <h3>Every period at a glance</h3><p class="sub">Time-weighted return for each period against the three indices. Click a row to chart it.</p>
+    <h3>Every period at a glance</h3><p class="sub">Time-weighted return for each period against the S&P 500. Click a row to chart it.</p>
     <div class="pbars" style="--ni:${gsel.length}">
       <div class="pb pb-h"><span class="pl"></span><span class="pt"></span><span class="pv">${FUND}</span>${gsel.map((id) => `<span class="pi">${esc(BSHORT[id] || idxName(id))}</span>`).join('')}</div>
       ${all.map((s) => { const mx = Math.max(...all.map((q) => Math.max(Math.abs(q.twr), ...gsel.map((id) => Math.abs(q.idx[id].twr))))) || 1; const bar = (x) => { const w = (Math.abs(x) / mx) * 50; return x < 0 ? `right:50%;width:${w}%` : `left:50%;width:${w}%`; };
       return `<button class="pb${s.k === state.tf ? ' on' : ''}" data-tf="${s.k}"><span class="pl">${esc(TFL[s.k])}</span>
         <span class="pt" style="height:${10 + gsel.length * 7}px"><i class="z"></i><i class="b you" style="top:0;${bar(s.twr)}"></i>${gsel.map((id, j) => `<i class="b idx" style="top:${10 + j * 7}px;background:${IDX_COLOR[id]};${bar(s.idx[id].twr)}"></i>`).join('')}</span>
         <span class="pv ${cls(s.twr)}">${fmtSignedPct(s.twr, 1)}</span>${gsel.map((id) => { const e = s.twr - s.idx[id].twr; return `<span class="pi">${fmtSignedPct(s.idx[id].twr, 1)}<small class="${cls(e)}">${e >= 0 ? '+' : '−'}${Math.abs(e * 100).toFixed(1)} pts</small></span>`; }).join('')}</button>`; }).join('')}</div>
-    <div class="legend" style="margin:10px 0 0"><span><i class="sw" style="background:var(--fund)"></i>${FUND}</span>${gsel.map((id) => `<span><i class="sw" style="background:${IDX_COLOR[id]}"></i>${esc(idxName(id))}</span>`).join('')}<span class="muted">Under each index: points the fund is ahead (+) or behind (−)</span></div>
+    <div class="legend" style="margin:10px 0 0"><span><i class="sw" style="background:var(--fund)"></i>${FUND}</span>${gsel.map((id) => `<span><i class="sw" style="background:${IDX_COLOR[id]}"></i>${esc(idxName(id))}</span>`).join('')}<span class="muted">Under the S&P 500: points the fund is ahead (+) or behind (−)</span></div>
   </div>`;
 
   $$('#t-record [data-tf]').forEach((b) => b.addEventListener('click', () => { state.tf = b.dataset.tf; renderRecord(); }));
@@ -127,7 +127,7 @@ function renderRecord() {
   mount($('#perfchart'), (h, w) => {
     if (state.tableView.perf) { h.innerHTML = tableTwin(['Date'].concat(series.map((s) => s.label)), xs.map((t, i) => [dfmt(isoDay(t))].concat(series.map((s) => (s.v[i] == null ? '–' : tipVal(s.v[i])))))); return; }
     lineChart(h, w, {
-      x: xs, series, height: w < 520 ? 280 : 380, yFmt, zero: twr ? 0 : null, yMin: twr ? null : 0, aria: 'Freedom Fund against the S&P 500, Nasdaq-100 and MSCI World',
+      x: xs, series, height: w < 520 ? 280 : 380, yFmt, zero: twr ? 0 : null, yMin: twr ? null : 0, aria: 'Freedom Fund against the S&P 500',
       tip: (i) => `<div class="th">${dfmt(isoDay(xs[i]))}</div>${series.map((s) => (s.v[i] == null ? '' : trow(s.color, s.label, tipVal(s.v[i]), 1))).join('')}`,
     });
   });
@@ -236,7 +236,7 @@ function renderRisk() {
   const root = $('#t-risk'); unmountWithin(root);
   const R = M.risk, pr = prOf(), O = portOutlook(pr), V = M.secValue;
   if (!R) { root.innerHTML = '<div class="panel empty">The outlook needs 12 months of prices for every position.</div>'; return; }
-  const bench = M.D.benches.find((b) => b.id === state.obench) || M.D.benches[0];
+  const bench = M.D.benches.find((b) => b.id === 'SPX') || M.D.benches[0];
   const bName = BSHORT[bench.id] || bench.name;
   const n = state.hz, t = n / 12, hzL = HORIZONS.find((x) => x[0] === n)[2];
   const sigma = R.vol, bVol = R.bVol[bench.id], beta = R.pBeta[bench.id], rho = R.pCorr[bench.id];
@@ -252,7 +252,6 @@ function renderRisk() {
   <div class="lede"><div><p class="kicker">Outlook</p><h2>Where the ${FUND} could be ${n === 12 ? 'a year' : 'in ' + hzL} from now</h2></div></div>
   <div class="ctrls" style="margin-bottom:12px">
     <div class="seg" role="group" aria-label="Horizon">${HORIZONS.map(([k, l]) => `<button data-hz="${k}" aria-pressed="${k === n}">${l}</button>`).join('')}</div>
-    <div class="seg" role="group" aria-label="Benchmark">${['SPX', 'NDX', 'MSCI'].filter((id) => M.D.benches.some((b) => b.id === id)).map((id) => `<button data-ob="${id}" aria-pressed="${id === bench.id}">${esc(BSHORT[id])}</button>`).join('')}</div>
     <div class="seg" role="group" aria-label="Scenario odds">${Object.entries(PRESETS).map(([k, v]) => `<button data-pre="${k}" aria-pressed="${k === state.preset}">${v.label}</button>`).join('')}</div>
   </div>
   <div class="kpis4">
@@ -267,7 +266,6 @@ function renderRisk() {
   </div>`;
   $$('#t-risk [data-pre]').forEach((b) => b.addEventListener('click', () => { state.preset = b.dataset.pre; renderRisk(); }));
   $$('#t-risk [data-hz]').forEach((b) => b.addEventListener('click', () => { state.hz = +b.dataset.hz; renderRisk(); }));
-  $$('#t-risk [data-ob]').forEach((b) => b.addEventListener('click', () => { state.obench = b.dataset.ob; renderRisk(); }));
   const fo = { V0: V, mu: O.exp, sigma, months: n, t0: M.asOf, color: 'var(--fund)', ref: { mu: bMu, sigma: bVol, label: bName, color: IDX_COLOR[bench.id] }, aria: `Range of outcomes over ${hzL}` };
   mount($('#fan'), (host, w) => fanChart(host, w, Object.assign({ height: w < 520 ? 260 : 340 }, fo)));
 }
@@ -276,6 +274,6 @@ function renderRisk() {
 function renderNotes() {
   const D = M.D;
   $('#notes').innerHTML = `<div class="foot">
-    <p><b>How the numbers work.</b> Only stocks and ETFs (including ETCs) count. Crypto and leveraged products I traded are left out: money moving into or out of them is treated as if it left or joined the portfolio, so their gains and losses do not touch these figures. Dividends count as return; platform fees are left out. The daily value of the portfolio is rebuilt from every trade and daily closing prices in euro (Scalable Capital account, valued ${tfmt(D.meta.asOf)}). Time-weighted return measures the picks regardless of how much money was in; money-weighted return measures what the actual money earned. GameStop is also left out: it was a one-off speculative trade, not a pick. Benchmarks are the iShares MSCI World, S&P 500 and Nasdaq-100 ETFs in euro. The outlook is a simple model built on analyst targets and past volatility, not a forecast. Not investment advice.</p>
+    <p><b>How the numbers work.</b> Only stocks and ETFs (including ETCs) count. Crypto and leveraged products I traded are left out: money moving into or out of them is treated as if it left or joined the portfolio, so their gains and losses do not touch these figures. Dividends count as return; platform fees are left out. The daily value of the portfolio is rebuilt from every trade and daily closing prices in euro (Scalable Capital account, valued ${tfmt(D.meta.asOf)}). Time-weighted return measures the picks regardless of how much money was in; money-weighted return measures what the actual money earned. GameStop is also left out: it was a one-off speculative trade, not a pick. The benchmark is the iShares Core S&P 500 ETF in euro. The outlook is a simple model built on analyst targets and past volatility, not a forecast. Not investment advice.</p>
   </div>`;
 }

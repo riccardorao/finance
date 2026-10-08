@@ -10,9 +10,9 @@ answers three questions, one per tab:
 
 | Tab | Question it answers | What is on it |
 |---|---|---|
-| **Performance** | Have the picks made money, and against which index? | Four headline figures; a daily chart of time-weighted (TWR) or money-weighted (MWR) performance for 1M, 3M, 6M, YTD, 1Y, 2025, 2024 or Max (since inception) against the S&P 500, the Nasdaq-100 and MSCI World, which are always all shown; the headline statements refer to the S&P 500; *Every period at a glance* compares every period with all three indices |
+| **Performance** | Have the picks made money, and against which index? | Four headline figures; a daily chart of time-weighted (TWR) or money-weighted (MWR) performance for 1M, 3M, 6M, YTD, 1Y, 2025, 2024 or Max (since inception) against the S&P 500, the only benchmark; *Every period at a glance* compares every period with it |
 | **Portfolio** | What is owned and how is each position doing? | Per position: weight, share-price change over 1D, YTD and 1Y, unrealised gain in euro and in per cent, the 12-month target range (bear, weighted outcome, bull) and the consensus rating with the upside to the average target. Each opens to the thesis, the written kill-switch, bull and bear cases, industry and competitors, and the latest news |
-| **Outlook** | What could happen next? | A horizon toggle (3M, 6M, 1Y, 2Y, 3Y), a benchmark toggle (S&P 500, Nasdaq-100, MSCI World) and three sets of scenario odds (Consensus, Cautious, Stress) drive the expected return, the 9-in-10 range of outcomes, the chance of beating the benchmark, volatility and beta, and a range-of-outcomes chart |
+| **Outlook** | What could happen next? | A horizon toggle (3M, 6M, 1Y, 2Y, 3Y) and three sets of scenario odds (Consensus, Cautious, Stress) drive the expected return, the 9-in-10 range of outcomes, the chance of beating the S&P 500, volatility and beta, and a range-of-outcomes chart |
 
 ![Performance tab, built from the synthetic sample](docs/sample-record.png)
 
@@ -112,7 +112,7 @@ Every data directory, private or sample, holds the same files:
 | `snapshot.json` | Scalable connector: `get_portfolio_holdings`, `get_portfolio_overview`, `get_portfolio_cash_breakdown`, `get_security_quote`, `get_security_news` | Valuation time, total, cash, the broker's gain by period, each position (quantity, price, per-period performance, sector and theme) and the benchmark ETFs |
 | `series.json` | `get_security_chart`, one year | Fallback when `prices_daily.json` is absent (the synthetic sample uses it) |
 | `prices_daily.json`, `symbols.json` | `pipeline/fetch_daily.js` (Yahoo Finance chart data; `symbols.json` maps ISINs to tickers and can be edited) | Daily closing prices in euro for every instrument held and every index, from the first deposit |
-| `index_history.json` | `pipeline/fetch_index_history.js` (part of `npm run prices`) | Each benchmark index's annualised price growth since January 1989 (US dollars, excluding dividends), used as its expected return on the Outlook tab |
+| `index_history.json` | `pipeline/fetch_index_history.js` (part of `npm run prices`) | The S&P 500's annualised price growth since January 1989 (US dollars, excluding dividends), used as its expected return on the Outlook tab |
 | `prices_monthly.json` | `get_security_chart`, max, stored with `pipeline/add_prices.js` | Month-end prices for every index and for each instrument held at a month end, from the first deposit |
 | `splits.json` (optional) | By hand | Share splits, `{ISIN: [[YYYY-MM-DD, ratio]]}`. Chart prices are split-adjusted; ledger quantities before a split are not |
 | `history.json` | `pipeline/history.js` | Derived: the account value on every trading day |
@@ -154,7 +154,7 @@ at the end), so the size and timing of deposits do not affect the result.
 the value at the end of the period as the final cash flow.
 
 **Same money in the index.** This is a public market equivalent. Each cash flow is mirrored into the
-benchmark ETF (iShares Core MSCI World, Core S&P 500 or Nasdaq 100, all in euro) on the same day, at daily
+benchmark ETF (iShares Core S&P 500, in euro) on the same day, at daily
 closing prices. The result is what that money would be worth today, together with its own XIRR.
 
 **Cost basis.** First in, first out within each custody account. A custody transfer moves lots and keeps
@@ -173,10 +173,9 @@ average target, 25% bull. The three presets weight bull, base and bear at 25/50/
 
 **Range of outcomes.** A log-normal model: the median path is `V0 · exp((ln(1+μ) − σ²/2)·t)`, and the bands
 are the 5th, 25th, 75th and 95th percentiles. μ is the expected 12-month return under the chosen preset, assumed
-to repeat for horizons beyond a year, and σ the back-cast volatility. The selected benchmark is drawn at its own
-historical annualised growth since January 1989 (from `index_history.json`) with its own volatility. The ETFs
-on the page only start in 2009 and 2010, so the long run uses the indices themselves: MSCI World, S&P 500 and
-Nasdaq-100 price indices in US dollars. Like the analyst price targets behind the portfolio's expected return,
+to repeat for horizons beyond a year, and σ the back-cast volatility. The S&P 500 is drawn at its own
+historical annualised growth since January 1989 (from `index_history.json`) with its own volatility. The ETF
+on the page only starts in 2009, so the long run uses the index itself, in US dollars. Like the analyst price targets behind the portfolio's expected return,
 they exclude dividends. *Chance of beating* compares the two log-normal outcomes using the
 back-cast correlation between the portfolio and the benchmark. Real markets have fatter tails than this model.
 

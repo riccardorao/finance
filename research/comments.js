@@ -131,7 +131,7 @@ module.exports = {
     risks: [
       'Timing: Q2 revenue of $3.27bn missed expectations of about $3.37bn and the shares fell 17% on 29 July (27.9% across July). Management called it temporary, citing supply-chain congestion and multi-phase projects.',
       'Dependence on a few hyperscale customers.',
-      'High market sensitivity: beta of about 3 against MSCI World over the last year.',
+      'High market sensitivity: beta of about 3 against the broad market over the last year.',
     ],
     news: [
       ['2026-09-24', 'Agreed to acquire King Environmental Services to extend liquid-cooling services in Europe, the Middle East and Africa. Shares fell on the day.'],

@@ -1,6 +1,6 @@
-// Downloads the long-run monthly history of the three benchmark indices and stores each one's annualised
+// Downloads the S&P 500's long-run history and stores its annualised
 // growth rate (CAGR) from January 1989 to today. The Outlook tab uses these as each benchmark's expected return.
-// The ETFs on the page only start in 2009-10, so the long run uses the indices themselves (Yahoo Finance):
+// The ETF on the page only starts in 2009, so the long run uses the index itself (Yahoo Finance):
 // price indices in US dollars, which exclude dividends, like the analyst price targets they are compared with.
 // Output: <data dir>/index_history.json  { ISIN: { sym, from, to, years, cagr, basis } }
 // Usage:  node pipeline/fetch_index_history.js [data dir, default data/private] [from YYYY-MM, default 1989-01]
@@ -10,7 +10,7 @@ const dir = path.resolve(process.argv[2] || path.join(__dirname, '..', 'data', '
 const FROM = process.argv[3] || '1989-01';
 const UA = { 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36' };
 // ETF ISIN on the page -> index it tracks
-const INDEX = { IE00B4L5Y983: '^990100-USD-STRD', IE00B5BMR087: '^GSPC', IE00B53SZB19: '^NDX' };
+const INDEX = { IE00B5BMR087: '^GSPC' };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 // last daily close on or before day t (ms), and the latest price
 async function closes(sym, t) {

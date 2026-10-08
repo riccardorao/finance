@@ -31,7 +31,7 @@ const META = {
   CA2926717083: ['Energy Fuels', 'UUUU', 'Energy', 'Uranium & rare earths', 'Critical minerals', 0.7],
   US5533681012: ['MP Materials', 'MP', 'Materials', 'Rare earths', 'Critical minerals', 0.65],
 };
-const BENCH = [['MSCI', 'MSCI World', 'IE00B4L5Y983', 'iShares Core MSCI World (Acc)', 0.12], ['SPX', 'S&P 500', 'IE00B5BMR087', 'iShares Core S&P 500 (Acc)', 0.14], ['NDX', 'Nasdaq-100', 'IE00B53SZB19', 'iShares Nasdaq 100 (Acc)', 0.2]];
+const BENCH = [['SPX', 'S&P 500', 'IE00B5BMR087', 'iShares Core S&P 500 (Acc)', 0.14]];
 
 // one random walk per security across the monthly-then-daily calendar; the daily part feeds series.json
 function walk(vol, drift, start) {
@@ -96,7 +96,7 @@ const me = monthly.filter((d) => d !== '2026-10-01');
 fs.writeFileSync(path.join(out, 'prices_monthly.json'), JSON.stringify(Object.fromEntries(BENCH.map((b) => [b[2], { start: me[0].slice(0, 7), p: me.map((d) => +at(b[2], d).toFixed(4)) }]))));
 
 // long-run growth of each index (the real figures come from pipeline/fetch_index_history.js)
-fs.writeFileSync(path.join(out, 'index_history.json'), JSON.stringify(Object.fromEntries(BENCH.map((b, i) => [b[2], { sym: 'synthetic', from: '1989-01', to: '2026-09', years: 37.7, cagr: [0.06, 0.09, 0.14][i], basis: 'price index in US dollars, excluding dividends' }])), null, 1));
+fs.writeFileSync(path.join(out, 'index_history.json'), JSON.stringify(Object.fromEntries(BENCH.map((b, i) => [b[2], { sym: 'synthetic', from: '1989-01', to: '2026-09', years: 37.7, cagr: 0.09, basis: 'price index in US dollars, excluding dividends' }])), null, 1));
 
 const profile = JSON.parse(fs.readFileSync(path.join(__dirname, 'profile.template.json'), 'utf8'));
 fs.writeFileSync(path.join(out, 'profile.json'), JSON.stringify(profile, null, 1));

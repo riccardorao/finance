@@ -25,14 +25,12 @@ function dailySeries(isins, asOfDay) {
   });
   return { dates, ref: 'daily closes (Yahoo Finance), euro', p };
 }
-const S = PD ? dailySeries(SNAP.holdings.map((h) => h.isin).concat(SNAP.benches.map((b) => b.isin)), SNAP.meta.asOf.slice(0, 10)) : rd('series.json');
+const S = PD ? dailySeries(SNAP.holdings.map((h) => h.isin).concat(SNAP.benches.filter((b) => b.id === 'SPX').map((b) => b.isin)), SNAP.meta.asOf.slice(0, 10)) : rd('series.json');
 const PM = fs.existsSync(path.join(dir, 'prices_monthly.json')) ? rd('prices_monthly.json') : {};
 const HIST = rd('history.json');
 // Benchmarks offered on the Performance tab (accumulating iShares ETFs in euro).
 const INDICES = [
-  { id: 'MSCI', name: 'MSCI World', isin: 'IE00B4L5Y983', etf: 'iShares Core MSCI World' },
   { id: 'SPX', name: 'S&P 500', isin: 'IE00B5BMR087', etf: 'iShares Core S&P 500' },
-  { id: 'NDX', name: 'Nasdaq-100', isin: 'IE00B53SZB19', etf: 'iShares Nasdaq 100' },
 ].filter((x) => PM[x.isin] || (PD && PD[x.isin]));
 // Long-run annualised growth of each benchmark (pipeline/fetch_index_history.js), the Outlook's expected return.
 const IH = fs.existsSync(path.join(dir, 'index_history.json')) ? rd('index_history.json') : {};
@@ -74,7 +72,7 @@ const realised = Object.entries(L.realised).map(([k, o]) => {
 const DATA = {
   meta: SNAP.meta,
   total: SNAP.total, cash: SNAP.cash, pl: SNAP.pl,
-  holdings, benches: SNAP.benches,
+  holdings, benches: SNAP.benches.filter((b) => b.id === 'SPX'),
   series: { dates: S.dates, ref: S.ref, p: S.p },
   indices: INDICES,
   benchMonthly: Object.fromEntries(INDICES.map((x) => [x.isin, PM[x.isin]])),
