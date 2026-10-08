@@ -36,7 +36,8 @@ function renderHeaderPublic() {
   $('#mh-name').textContent = 'Equity Portfolio Dashboard';
   $('#mh-strategy').textContent = D.profile.manager;
   $('#mh-value').innerHTML = `<span class="${cls(y1.twr)}">${fmtSignedPct(y1.twr, 1)}</span><small class="aum-k">12 months</small>`;
-  $('#mh-sub').innerHTML = `${D.public.n} positions · today <span class="${cls(d)}">${fmtSignedPct(d, 1)}</span>${u != null ? ` · unrealised <span class="${cls(u)}">${fmtSignedPct(u, 1)}</span>` : ''}`;
+  const sp = y1.idx.SPX; // the headline number always travels with what the market did over the same 12 months
+  $('#mh-sub').innerHTML = `${sp ? `vs ${vsIdx(y1.twr, sp.twr, idxName('SPX'))} · ` : ''}${D.public.n} positions · today <span class="${cls(d)}">${fmtSignedPct(d, 1)}</span>${u != null ? ` · unrealised <span class="${cls(u)}">${fmtSignedPct(u, 1)}</span>` : ''}`;
   $('#status').dataset.mode = 'snapshot';
   $('#status-text').textContent = `As of ${tfmt(D.meta.asOf)}`;
   $('#btn-refresh').hidden = true;
@@ -124,7 +125,7 @@ function renderRecord() {
   const fl = PF.fl.filter((f) => f[0] > a.t && f[0] <= b.t);
   let series, yFmt, tipVal;
   if (twr) {
-    series = [{ v: pp.map((p) => (p.i / a.i - 1) * 100), color: 'var(--fund)', width: 2.25, label: FUND, fill: true, fillTo: 0, fillOpacity: 0.08 }]
+    series = [{ v: pp.map((p) => (p.i / a.i - 1) * 100), color: 'var(--fund)', width: 2.25, label: FUND, fill: true, split: true, fillTo: 0, fillOpacity: 0.16 }]
       .concat(sel.map((id) => ({ v: xs.map((t) => (PF.P[id](t) / PF.P[id](a.t) - 1) * 100), color: IDX_COLOR[id], width: 1.5, label: idxName(id) })));
     yFmt = (v) => Math.round(v) + '%'; tipVal = (v) => fmtSignedPct(v / 100, 1);
   } else {
@@ -222,7 +223,7 @@ function renderBookPublic() {
     <div class="pub-h"><span>Pick</span><span>Sector</span><span class="c-m">Region</span><span>Weight</span><span>Unrealised</span><span class="c-m c-rng">12-month range</span></div>
     ${M.H.map((h) => { const sc = h.sc, mid = sc ? expOf(sc, PRESETS.analyst.p) : null;
       return `<div class="pub-r">
-        <span class="nm"><b>${esc(h.name)}</b><i class="lock" aria-label="Name for subscribers"></i></span>
+        <span class="nm"><b>${esc(h.name)}</b><i class="lock" aria-label="Name for subscribers"></i>${sc ? `<small class="rng-m">12-month range ${fmtSignedPct(sc.bear, 0)} · ${fmtSignedPct(mid, 0)} · ${fmtSignedPct(sc.bull, 0)}</small>` : ''}</span>
         <span>${esc(h.sector)}</span>
         <span class="c-m muted">${esc(h.region)}</span>
         <span class="n"><b>${(h.weight * 100).toFixed(1)}%</b></span>

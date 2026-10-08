@@ -563,3 +563,6 @@ ul.rules { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 8px; font-si
 .pub-sec div { display: grid; grid-template-columns: minmax(0, 1fr) 70px 34px; gap: 8px; align-items: center; color: var(--ink2); }
 .pub-sec i { display: block; height: 6px; border-radius: 3px; background: var(--accent); max-width: 100%; }
 .pub-sec b { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink); }
+/* the 12-month range as text where the bar is hidden (phones) */
+.rng-m { display: none; }
+@media (max-width: 860px) { .pub-r .nm { flex-wrap: wrap; } .rng-m { display: block; flex-basis: 100%; font-size: 12.5px; color: var(--ink2); font-variant-numeric: tabular-nums; margin-top: 2px; } }

@@ -292,7 +292,17 @@ function lineChart(host, w, o) {
     const pts = []; s.v.forEach((v, i) => { if (v != null) pts.push([X(xs[i]), Y(v)]); });
     if (!pts.length) return;
     const path = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
-    if (s.fill) g += `<path d="${path}L${pts[pts.length - 1][0].toFixed(1)} ${Y(Math.max(ymin, Math.min(ymax, s.fillTo != null ? s.fillTo : ymin))).toFixed(1)}L${pts[0][0].toFixed(1)} ${Y(Math.max(ymin, Math.min(ymax, s.fillTo != null ? s.fillTo : ymin))).toFixed(1)}Z" fill="${s.color}" opacity="${s.fillOpacity || 0.1}"/>`;
+    if (s.fill) {
+      const yb = Y(Math.max(ymin, Math.min(ymax, s.fillTo != null ? s.fillTo : ymin))).toFixed(1);
+      const d = `${path}L${pts[pts.length - 1][0].toFixed(1)} ${yb}L${pts[0][0].toFixed(1)} ${yb}Z`;
+      if (s.split && s.fillTo != null) {
+        // one area, cut at the baseline: gain above it, loss below it, each in its own colour
+        const id = 'lc' + (lineChart.n = (lineChart.n || 0) + 1);
+        g += `<defs><clipPath id="${id}u"><rect x="0" y="0" width="${w}" height="${yb}"/></clipPath><clipPath id="${id}d"><rect x="0" y="${yb}" width="${w}" height="${h}"/></clipPath></defs>`
+          + `<path d="${d}" clip-path="url(#${id}u)" fill="var(--pos-fill)" opacity="${s.fillOpacity || 0.1}"/>`
+          + `<path d="${d}" clip-path="url(#${id}d)" fill="var(--neg-fill)" opacity="${s.fillOpacity || 0.1}"/>`;
+      } else g += `<path d="${d}" fill="${s.color}" opacity="${s.fillOpacity || 0.1}"/>`;
+    }
     g += `<path d="${path}" fill="none" stroke="${s.color}" stroke-width="${s.width || 2}" stroke-linejoin="round" stroke-linecap="round"${s.dash ? ` stroke-dasharray="${s.dash}"` : ''}/>`;
     if (s.dots) pts.forEach((p) => { g += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" fill="${s.color}" stroke="var(--panel)" stroke-width="2"/>`; });
     else { const e = pts[pts.length - 1]; g += `<circle cx="${e[0].toFixed(1)}" cy="${e[1].toFixed(1)}" r="4" fill="${s.color}" stroke="var(--panel)" stroke-width="2"/>`; }
