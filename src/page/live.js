@@ -79,6 +79,7 @@ async function liveRefresh() {
 
 /* ---------- boot ---------- */
 async function watchResearch() {
+  if (PUB) return; // the public build has no positions to attach research to
   try {
     const db = window.claude && window.claude.use ? await window.claude.use('db') : null;
     if (!db) return;
@@ -103,6 +104,7 @@ async function boot() {
   window.addEventListener('hashchange', () => setTab(location.hash.slice(1), false));
   watchResearch();
   $('#btn-refresh').addEventListener('click', liveRefresh);
+  if (PUB) return; // and nothing to refresh live: a refresh would bring the names back
   try {
     const mcp = window.claude && window.claude.use ? await window.claude.use('mcp') : null;
     if (mcp) { MCP = mcp; state.canLive = true; renderHeader(); liveRefresh(); }

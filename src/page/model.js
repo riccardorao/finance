@@ -22,6 +22,10 @@ const state = { tab: 'record', bench: 'MSCI', tf: '1Y', measure: 'twr', hz: 12, 
 const PRESETS = { analyst: { label: 'Consensus', p: [0.25, 0.5, 0.25] }, cautious: { label: 'Cautious', p: [0.15, 0.45, 0.4] }, stress: { label: 'Stress', p: [0.05, 0.35, 0.6] } };
 const REF_MU = 0.07; // assumed long-run annual return for the benchmark reference
 let DATA_ACTIVE = null; // snapshot or live-merged
+/* The public build (pipeline/build_public.js): money rescaled so the stock book is 100 today, picks
+   anonymised, per-stock risk shipped as book totals. PUB switches the few places that show money. */
+const PUB = typeof DATA !== 'undefined' && !!(DATA && DATA.public);
+const money0 = (v) => (PUB ? fmtNum(v, 1) : fmtEUR0(v));
 let M = null; // derived model
 
 /* ---------- period maths ---------- */
@@ -77,7 +81,7 @@ function buildModel(D) {
   const al = alignSeries(SER, hIds.concat(bIds));
   // returns & risk
   let risk = null;
-  if (al) {
+  if (al && !PUB) {
     const w = Object.fromEntries(H.filter((h) => hIds.includes(h.isin)).map((h) => [h.isin, h.value]));
     const wtot = C_sum(Object.values(w));
     const wn = Object.fromEntries(Object.entries(w).map(([k, v]) => [k, v / wtot]));
@@ -100,6 +104,7 @@ function buildModel(D) {
       rc: rc.contrib, hm, ids: hIds,
     };
   }
+  if (PUB) risk = Object.assign({}, D.public.risk); // computed from the full data by build_public.js
   // period table
   const rows = {};
   for (const p of PERIODS) {
@@ -120,7 +125,7 @@ function buildModel(D) {
   const L = D.ledger.summary;
   const incomeDiv = C_sum(D.ledger.divAll.map((d) => d[2]));
   const hhi = C_sum(H.map((h) => (h.value / secValue) ** 2));
-  H.forEach((h) => { h.sc = scenarios(h, risk); });
+  H.forEach((h) => { h.sc = PUB ? h.scPre || null : scenarios(h, risk); });
   const lev = C_sum(D.ledger.realised.filter((r) => r.type === 'Leveraged & certificates').map((r) => r.pl));
   const perf = perfModel(D, asOf, D.history.scope === 'stocks' ? secValue : total);
   return { D, asOf, H, total, lev, perf, cash: D.cash, secValue, flows, firstFlow, risk, rows, irr, anchors, deposited, withdrawn, net: deposited - withdrawn, unreal, realised: L.realisedTotal + L.realisedCrypto, incomeDiv, hhi, effN: 1 / hhi };
@@ -372,7 +377,7 @@ function fanChart(host, w, o) {
   const path = (arr) => arr.map((v, j) => `${j ? 'L' : 'M'}${XF(j).toFixed(1)} ${Y(v).toFixed(1)}`).join('');
   const d0 = new Date(o.t0), mt = (k) => Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth() + k, d0.getUTCDate());
   let g = '';
-  ticks.forEach((tv) => { const y = Math.round(Y(tv)) + 0.5; g += `<line class="gl" x1="${m.l}" x2="${m.l + iw}" y1="${y}" y2="${y}"/><text x="${m.l - 8}" y="${y + 4}" text-anchor="end">${Math.round(tv / 1000)}k</text>`; });
+  ticks.forEach((tv) => { const y = Math.round(Y(tv)) + 0.5; g += `<line class="gl" x1="${m.l}" x2="${m.l + iw}" y1="${y}" y2="${y}"/><text x="${m.l - 8}" y="${y + 4}" text-anchor="end">${PUB ? Math.round(tv) : Math.round(tv / 1000) + 'k'}</text>`; });
   const step = N <= 6 ? 1 : N <= 12 ? (iw < 380 ? 4 : 2) : (iw < 380 ? 6 : 3);
   for (let k = 0; k <= N; k += step) g += `<text x="${X(k)}" y="${h - 6}" text-anchor="middle">${k === 0 ? 'Today' : esc(mlabel(mt(k)))}</text>`;
   const yb = Math.round(Y(o.V0)) + 0.5;
@@ -380,7 +385,7 @@ function fanChart(host, w, o) {
   g += `<path d="${area(4, 0)}" fill="${C}" opacity="0.11"/><path d="${area(3, 1)}" fill="${C}" opacity="0.2"/>`;
   g += `<path d="${path(RF)}" fill="none" stroke="${RC}" stroke-width="1.75" stroke-dasharray="5 4"/>`;
   g += `<path d="${path(FF.map((q) => q[2]))}" fill="none" stroke="${C}" stroke-width="2.25"/>`;
-  [0, 2, 4].forEach((j) => { const v = F[N][j]; g += `<text x="${X(N) - 4}" y="${Y(v) + (j === 0 ? 14 : j === 4 ? -6 : -6)}" text-anchor="end" style="fill:var(--ink2);font-weight:600">${['5%', '', '95%'][j / 2]}${j === 2 ? '' : ' · '}${fmtEUR0(v)}</text>`; });
+  [0, 2, 4].forEach((j) => { const v = F[N][j]; g += `<text x="${X(N) - 4}" y="${Y(v) + (j === 0 ? 14 : j === 4 ? -6 : -6)}" text-anchor="end" style="fill:var(--ink2);font-weight:600">${['5%', '', '95%'][j / 2]}${j === 2 ? '' : ' · '}${money0(v)}</text>`; });
   g += `<line class="xh" id="fxh" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" style="display:none"/><rect id="fov" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" tabindex="0" role="img" aria-label="${esc(o.aria)}"/>`;
   host.innerHTML = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${g}</svg>`;
   const svg = host.firstChild, ov = svg.querySelector('#fov'), xh = svg.querySelector('#fxh');
@@ -388,7 +393,7 @@ function fanChart(host, w, o) {
   const show = (k, cx, cy) => {
     cur = k; const xx = X(k); xh.setAttribute('x1', xx); xh.setAttribute('x2', xx); xh.style.display = '';
     const q = F[k], r = svg.getBoundingClientRect();
-    showTip(`<div class="th">${k === 0 ? 'Today' : dfmt(isoDay(mt(k))) + ` · ${k} month${k > 1 ? 's' : ''}`}</div>${trow(C, '1 in 20 better than', fmtEUR0(q[4]))}${trow(C, 'Middle half', `${fmtEUR0(q[1])} – ${fmtEUR0(q[3])}`)}${trow(C, 'Median', fmtEUR0(q[2]), 1)}${trow(C, '1 in 20 worse than', fmtEUR0(q[0]))}${trow(RC, o.ref.label + ' median', fmtEUR0(Rf[k]), 1)}`, cx != null ? cx : r.left + xx, cy != null ? cy : r.top + m.t + 20);
+    showTip(`<div class="th">${k === 0 ? 'Today' : dfmt(isoDay(mt(k))) + ` · ${k} month${k > 1 ? 's' : ''}`}</div>${trow(C, '1 in 20 better than', money0(q[4]))}${trow(C, 'Middle half', `${money0(q[1])} – ${money0(q[3])}`)}${trow(C, 'Median', money0(q[2]), 1)}${trow(C, '1 in 20 worse than', money0(q[0]))}${trow(RC, o.ref.label + ' median', money0(Rf[k]), 1)}`, cx != null ? cx : r.left + xx, cy != null ? cy : r.top + m.t + 20);
   };
   const near = (cx) => { const r = svg.getBoundingClientRect(); return Math.max(0, Math.min(N, Math.round(((cx - r.left - m.l) / iw) * N))); };
   ov.addEventListener('pointermove', (e) => show(near(e.clientX), e.clientX, e.clientY));

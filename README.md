@@ -58,6 +58,41 @@ npm run test:sample     # sample build
 because the host wraps the page in its own skeleton. Open it directly in a browser and it still renders, with
 the browser filling in the missing tags.
 
+## Public build: no euro, no names
+
+`npm run public` (after `npm run build`) writes `dist/public.html`: the real track record for a public
+website, with the picks kept for subscribers. It is what riccardorao.com/app/portfolio/ serves.
+
+```bash
+node pipeline/build_public.js data/private/data.json dist/public.html \
+  --unlock 'https://…payment link…' --price '€999 a year'
+```
+
+Hiding names in the page is not enough, because anything in the page's data can be read in its source, so
+`pipeline/build_public.js` generates the data without them and checks its own output before writing:
+
+- **No euro amounts.** Money is rescaled so the stock book is 100 today. Returns, weights and scenarios are
+  ratios and do not change; every euro figure disappears. The money-weighted chart and the outlook read
+  "if the portfolio is 100 today".
+- **No names.** Holdings become Pick A, B, C… by weight. Each keeps its GICS sector, a broad region (North
+  America, Asia, Europe), weight, unrealised gain in per cent and the 12-month bear / weighted / bull
+  outcome rounded to a whole per cent. Names, tickers, ISINs, industry and theme, quantities, real prices,
+  daily price history (which would let anyone match a pick against the market), lots, trades, dividends,
+  analyst targets, theses, kill-switches and news are not in the page at all.
+- **Risk as totals.** Volatility, beta and correlation need per-stock prices, so they are computed here
+  from the full data and shipped for the book as a whole.
+- **Closed positions** keep only category, dates and the rescaled result, enough for "winning calls".
+- **The check.** The build aborts if the public data contains any holding's or closed position's name,
+  ticker or ISIN, or a euro sign anywhere other than the subscription price.
+
+In the page, `PUB` (in `model.js`) switches the few places that show money, replaces the Portfolio tab with
+the anonymised table and the subscription card, and turns off live refresh and the research feed, either
+of which would bring the names back.
+
+What it cannot do: coarse facts can still narrow a pick down for someone who follows the market (a large
+technology holding in Asia with a big gain is not hard to guess). Leaving sector, region and gain out
+entirely is the only stronger option.
+
 ## Repository layout
 
 ```
@@ -82,6 +117,7 @@ the browser filling in the missing tags.
 │   ├── add_prices.js        Appends month-end prices for one instrument to prices_monthly.json
 │   ├── build_data.js        snapshot + ledger + history + prices + profile + research -> data.json
 │   ├── build_page.js        data.json + src/ -> one self-contained HTML page
+│   ├── build_public.js      data.json -> the public page: rescaled to 100, picks anonymised, self-checked
 │   ├── make_sample.js       Writes the synthetic sample account in data/sample/
 │   └── profile.template.json  Template for profile.json (manager name, positions)
 ├── research/
