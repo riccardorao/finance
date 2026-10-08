@@ -15,10 +15,12 @@
 //     computed here from the full data and shipped as totals for the whole book.
 //   - Closed positions keep only their category, dates and the sign and size of the result (rescaled).
 //
-// Usage: node pipeline/build_public.js <data.json> <out.html> [--unlock <url>] [--price <text>]
+// Usage: node pipeline/build_public.js <data.json> <out.html> [--unlock <url>] [--price <text>] [--summary <out.json>]
 //   data.json  the full data object built by build_data.js (data/private/data.json)
 //   --unlock   where "Subscribe" leads: a payment link, or a mailto: until there is one
 //   --price    the price as shown, e.g. "€999 a year"
+//   --summary  also write the headline figures as JSON (periods against the indices, sectors, risk),
+//              for a website to quote without loading the page; checked like the page
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -43,8 +45,8 @@ const ctx = vm.createContext({
   document: { querySelector: () => null, querySelectorAll: () => [] },
   window: {}, localStorage: { getItem: () => null, setItem() {} },
 });
-vm.runInContext(rd('src/core.js') + '\n' + rd('src/page/model.js') + '\n;globalThis.__m = { buildModel, PRESETS, expOf };', ctx);
-const { buildModel, PRESETS, expOf } = ctx.__m;
+vm.runInContext(rd('src/core.js') + '\n' + rd('src/page/model.js') + '\n;globalThis.__m = { buildModel, PRESETS, expOf, TF };', ctx);
+const { buildModel, PRESETS, expOf, TF } = ctx.__m;
 const full = JSON.parse(JSON.stringify(D));
 full.ser = {}; Object.keys(full.series.p).forEach((id) => { full.ser[id] = { d: full.series.dates, p: full.series.p[id] }; });
 const M = buildModel(full);
@@ -139,4 +141,32 @@ ${scripts}
 `;
 fs.mkdirSync(path.dirname(path.resolve(outFile)), { recursive: true });
 fs.writeFileSync(outFile, html);
+
+/* ---------- optional summary: the same figures the page shows, as data ---------- */
+const sumFile = opt('--summary', '');
+if (sumFile) {
+  const r4 = (x) => (x == null || !isFinite(x) ? null : +x.toFixed(4));
+  const per = TF.map(([key, label]) => {
+    const st = M.perf.stats(key);
+    return { k: key, label, years: +st.years.toFixed(2), twr: r4(st.twr), twrAnn: r4(st.twrAnn), idx: Object.fromEntries(Object.entries(st.idx).map(([id, x]) => [id, r4(x.twr)])) };
+  });
+  const si = M.perf.stats('SI');
+  const closed = D.ledger.realised.filter((x) => (x.type === 'Shares' || x.type === 'ETFs & ETCs') && x.last);
+  const sectors = {}; M.H.forEach((h) => { sectors[h.sector || 'Other'] = (sectors[h.sector || 'Other'] || 0) + h.value / M.secValue; });
+  const summary = {
+    asOf: D.meta.asOf, from: D.meta.ledgerFrom, positions: M.H.length,
+    indices: D.indices.map((x) => ({ id: x.id, name: x.name })),
+    periods: per,
+    sinceStart: { mwr: r4(si.mwr), idx: Object.fromEntries(Object.entries(si.idx).map(([id, x]) => [id, r4(x.mwr)])) },
+    winningCalls: { won: closed.filter((x) => x.pl > 0).length, of: closed.length },
+    sectors: Object.fromEntries(Object.entries(sectors).sort((a, b) => b[1] - a[1]).map(([k, w]) => [k, r4(w)])),
+    risk: { vol: r4(R.vol), beta: Object.fromEntries(Object.entries(R.pBeta).map(([k, v]) => [k, r4(v)])) },
+    unlock,
+  };
+  const sj = JSON.stringify(summary, null, 1);
+  const sLeaks = [...forbidden].filter((x) => String(x).length >= 3 && sj.includes(String(x)));
+  if (sLeaks.length || /€|\bEUR\b/.test(JSON.stringify({ ...summary, unlock: null }))) { console.error('ABORT: the summary would contain', sLeaks.join(', ') || 'a euro amount'); process.exit(1); }
+  fs.writeFileSync(sumFile, sj + '\n');
+  console.log('wrote', sumFile);
+}
 console.log('wrote', path.relative(process.cwd(), path.resolve(outFile)), (html.length / 1024).toFixed(1) + ' KB,', holdings.length, 'picks,', P.ledger.realised.length, 'closed positions, checked for', forbidden.size, 'names and ids');
