@@ -154,7 +154,9 @@ function renderBook() {
   const V = M.secValue;
   const cov = M.H.filter((h) => h.sc);
   const dLo = Math.min(-0.2, ...cov.map((h) => h.sc.bear)), dHi = Math.max(0.2, ...cov.map((h) => h.sc.bull));
-  const PX = (v) => 19 + ((v - dLo) / (dHi - dLo)) * 62; // the outer fifths hold the bear and bull labels
+  const PX = (v) => 9 + ((v - dLo) / (dHi - dLo)) * 82; // inset so the end balls stay inside the column
+  // bear, weighted and bull positions, pushed apart just enough that the three balls never overlap
+  const balls = (a, b, c) => { const G = 19, x = [PX(a), PX(b), PX(c)]; x[1] = Math.max(x[1], x[0] + G); x[2] = Math.max(x[2], x[1] + G); const over = x[2] - 91; if (over > 0) { x[2] -= over; x[1] = Math.min(x[1], x[2] - G); x[0] = Math.min(x[0], x[1] - G); } return x; };
   const pc = (h, k) => { const r = perfOf(h, k); return r == null ? '<span class="muted">–</span>' : pctSpan(r, 1); };
   const bp = BOOK_PERIODS.some((p) => p[0] === state.bp) ? state.bp : '1D';
   const ytd = C_sum(M.H.map((h) => { const r = perfOf(h, 'YTD'); return r == null ? 0 : h.value - h.value / (1 + r); }));
@@ -164,26 +166,26 @@ function renderBook() {
   <div class="lede"><div><p class="kicker">Portfolio</p><h2>What I own: ${M.H.length} positions worth ${fmtEUR0(V)}, ${ytd >= 0 ? 'up' : 'down'} ${fmtEUR0(Math.abs(ytd))} this year</h2><p>Tap a stock to see why I own it, what would make me sell, and the bull and bear case.</p></div>
     <div class="seg" role="group" aria-label="Share-price period">${BOOK_PERIODS.map(([k, l]) => `<button data-bp="${k}" aria-pressed="${k === bp}">${k}</button>`).join('')}</div></div>
   <div class="panel flat">
-    <div class="book-h"><span>Position</span><span>Value</span><span class="c-d">Weight</span><span>${esc(BOOK_PERIODS.find((p) => p[0] === bp)[1])}</span><span class="c-m">Unrealised €</span><span>Unrealised %</span><span class="c-m c-rng">12-month target range</span><span class="c-m">Analysts</span><span></span></div>
+    <div class="book-h"><span>Position</span><span>${bp}</span><span class="c-d">Weight</span><span>Value</span><span class="c-m">Unrealised €</span><span>Unrealised %</span><span class="c-m c-rng">12-month target range</span><span class="c-m">Analysts</span><span></span></div>
     ${M.H.map((h) => {
       const sc = h.sc, cons = h.research && h.research.cons, open = state.open === h.isin;
       const mid = sc ? expOf(sc, PRESETS.analyst.p) : null; // 25% bear, 50% average target, 25% bull
       return `<div class="posn${open ? ' open' : ''}" data-i="${h.isin}">
         <button class="pos-row" aria-expanded="${open}" aria-controls="pd-${h.isin}">
           <span class="nm"><b>${esc(h.name)}</b><small>${esc(h.ticker || '')}</small></span>
-          <span class="n"><b>${fmtEUR0(h.value)}</b></span>
-          <span class="n c-d">${(h.weight * 100).toFixed(1)}%</span>
           <span class="n">${pc(h, bp)}</span>
+          <span class="n c-d">${(h.weight * 100).toFixed(1)}%</span>
+          <span class="n"><b>${fmtEUR0(h.value)}</b></span>
           <span class="n c-m"><b>${h.pnl != null ? eur0Span(h.pnl) : '–'}</b></span>
           <span class="n"><b>${h.pnl != null ? pctSpan(h.pnlPct, 1) : '–'}</b></span>
-          <span class="c-m c-rng">${sc ? `<span class="rng" role="img" aria-label="Bear ${fmtSignedPct(sc.bear, 0)}, weighted ${fmtSignedPct(mid, 0)}, bull ${fmtSignedPct(sc.bull, 0)}"><i class="z" style="left:${PX(0)}%"></i><i class="seg" style="left:${PX(sc.bear)}%;width:${PX(sc.bull) - PX(sc.bear)}%"></i><i class="d bear" style="left:${PX(sc.bear)}%"></i><i class="t" style="left:${PX(mid)}%"></i><i class="d bull" style="left:${PX(sc.bull)}%"></i><em class="lb neg" style="right:calc(${100 - PX(sc.bear)}% + 7px)">${fmtSignedPct(sc.bear, 0)}</em><em class="lb bs" style="left:${PX(mid)}%">${fmtSignedPct(mid, 0)}</em><em class="lb pos" style="left:calc(${PX(sc.bull)}% + 7px)">${fmtSignedPct(sc.bull, 0)}</em></span>` : '<small class="muted">no analyst coverage</small>'}</span>
-          <span class="c-m cons">${cons && sc ? `<span class="rt ${ratingCls(cons.rating)}">${esc(cons.rating)}</span><small>target <b class="${cls(sc.base)}">${fmtSignedPct(sc.base, 0)}</b></small>` : '<small class="muted">–</small>'}</span>
+          <span class="c-m c-rng">${sc ? `<span class="rng" role="img" aria-label="Bear ${fmtSignedPct(sc.bear, 0)}, weighted ${fmtSignedPct(mid, 0)}, bull ${fmtSignedPct(sc.bull, 0)}">${((x) => `<i class="seg" style="left:${x[0]}%;width:${x[2] - x[0]}%"></i><em class="ball bear" style="left:${x[0]}%">${fmtSignedPct(sc.bear, 0)}</em><em class="ball mid" style="left:${x[1]}%">${fmtSignedPct(mid, 0)}</em><em class="ball bull" style="left:${x[2]}%">${fmtSignedPct(sc.bull, 0)}</em>`)(balls(sc.bear, mid, sc.bull))}</span>` : '<small class="muted">no analyst coverage</small>'}</span>
+          <span class="c-m cons">${cons && sc ? `<span class="rt ${ratingCls(cons.rating)}">${esc(cons.rating)}</span><b class="tg ${cls(sc.base)}" title="Upside to the average analyst target">${fmtSignedPct(sc.base, 0)}</b>` : '<small class="muted">–</small>'}</span>
           <span class="chev" aria-hidden="true"></span>
         </button>
         <div class="pos-d" id="pd-${h.isin}" ${open ? '' : 'hidden'}>${open ? positionDetail(h) : ''}</div>
       </div>`;
     }).join('')}
-    <div class="book-f"><span class="foot-n">Value: what the position is worth today. Weight: its share of the portfolio. The period column shows the change in the share price in euro over the period picked above. Unrealised: gain or loss on what I still hold, against what I paid. 12-month target range: red dot the bear case, green dot the bull case (the highest analyst target), black tick the weighted outcome (25% bear, 50% average analyst target, 25% bull), all against today's price. Analysts: consensus rating and the upside to the average 12-month target.</span></div>
+    <div class="book-f"><span class="foot-n">Value: what the position is worth today. Weight: its share of the portfolio. The first number column shows the change in the share price in euro over the period picked above. Unrealised: gain or loss on what I still hold, against what I paid. 12-month target range: red ball the bear case, green ball the bull case (the highest analyst target), black ball the weighted outcome (25% bear, 50% average analyst target, 25% bull), all against today's price. Analysts: consensus rating, then the upside to the average 12-month target.</span></div>
   </div>`;
 
   $$('#t-book [data-bp]').forEach((b) => b.addEventListener('click', () => { state.bp = b.dataset.bp; renderBook(); }));
