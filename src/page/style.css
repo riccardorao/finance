@@ -14,13 +14,14 @@
   --line2: #c8d0d8;
   --accent: #1c5cab;
   --accent-soft: rgba(28, 92, 171, 0.1);
-  --pos: #006300;
+  /* one green and one red everywhere: gains and losses, bull and bear, the fund and the S&P 500 */
+  --pos: #15803d;
   --neg: #c42d2d;
-  --pos-fill: #1fa34a;
-  --neg-fill: #d84a4a;
+  --pos-fill: var(--pos);
+  --neg-fill: var(--neg);
   --warn: #b77900;
   --cn: #9aa6b1;
-  --fund: #1fa34a; --spx: #d93b3b;
+  --fund: var(--pos); --spx: var(--neg);
   --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4; --c6: #008300; --c7: #4a3aa7; --c8: #e34948;
   --gold: #9a7417;
   --radius: 8px;
@@ -30,9 +31,9 @@
     color-scheme: dark;
     --bg: #0b1015; --panel: #131a21; --inset: #1a232b; --ink: #eef3f7; --ink2: #b2bec9; --ink3: #8795a2;
     --line: #232e38; --line2: #33414d; --accent: #3987e5; --accent-soft: rgba(57, 135, 229, 0.16);
-    --pos: #1fb852; --neg: #f27272; --pos-fill: #1f9d4b; --neg-fill: #c94545;
+    --pos: #3fb950; --neg: #f27272; --pos-fill: var(--pos); --neg-fill: var(--neg);
     --warn: #d69a1e; --cn: #66737f;
-    --fund: #2fbf62; --spx: #e66767;
+    --fund: var(--pos); --spx: var(--neg);
     --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; --gold: #d4b25c;
   }
 }
@@ -40,9 +41,9 @@
   color-scheme: dark;
   --bg: #0b1015; --panel: #131a21; --inset: #1a232b; --ink: #eef3f7; --ink2: #b2bec9; --ink3: #8795a2;
   --line: #232e38; --line2: #33414d; --accent: #3987e5; --accent-soft: rgba(57, 135, 229, 0.16);
-  --pos: #1fb852; --neg: #f27272; --pos-fill: #1f9d4b; --neg-fill: #c94545;
+  --pos: #3fb950; --neg: #f27272; --pos-fill: var(--pos); --neg-fill: var(--neg);
   --warn: #d69a1e; --cn: #66737f;
-  --fund: #2fbf62; --spx: #e66767;
+  --fund: var(--pos); --spx: var(--neg);
     --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; --gold: #d4b25c;
 }
 

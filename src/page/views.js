@@ -260,12 +260,12 @@ function renderRisk() {
   </div>
   <div class="kpis4">
     ${kpi('Expected, ' + hzL, fmtSignedPct(exp, 0), cls(exp), `${exp >= 0 ? '+' : ''}${fmtEUR0(exp * V)} · ${esc(bName)} ${fmtSignedPct(bExp, 0)} at historical pace`)}
-    ${kpi('9 in 10 outcomes', `<span class="${cls(q(-1.645))}">${fmtSignedPct(q(-1.645), 0)}</span> <span class="muted">to</span> <span class="${cls(q(1.645))}">${fmtSignedPct(q(1.645), 0)}</span>`, '', `${fmtEUR0(V * (1 + q(-1.645)))} to ${fmtEUR0(V * (1 + q(1.645)))}`)}
+    ${kpi('Range at ±1<span style="text-transform:none">σ</span>', `<span class="${cls(q(-1))}">${fmtSignedPct(q(-1), 0)}</span> <span class="muted">to</span> <span class="${cls(q(1))}">${fmtSignedPct(q(1), 0)}</span>`, '', `±2σ: ${fmtSignedPct(q(-2), 0)} to ${fmtSignedPct(q(2), 0)} · ±3σ: ${fmtSignedPct(q(-3), 0)} to ${fmtSignedPct(q(3), 0)}`)}
     ${kpi('Chance of beating ' + esc(bName), Math.round(pBeat * 100) + '%', pBeat >= 0.5 ? 'pos' : 'neg', `over ${hzL}, correlation ${fmtNum(rho, 2)}`)}
     ${kpi('Volatility', (sigma * 100).toFixed(0) + '%', '', `${esc(bName)} ${(bVol * 100).toFixed(0)}% · beta ${fmtNum(beta, 2)}`)}
   </div>
   <div class="panel" style="margin-top:14px">
-    <h3>Range of outcomes, next ${hzL}</h3><p class="sub">The fund is worth ${fmtEUR0(V)} today. Shaded: 9 in 10 outcomes and the middle half. Dashed: ${esc(bName)} growing at ${bMuTxt}, with its own volatility. Odds ${pr.map((x) => Math.round(x * 100)).join('/')} (bull/base/bear)${n > 12 ? '; beyond 12 months the expected return is assumed to repeat' : ''}.</p>
+    <h3>Range of outcomes, next ${hzL}</h3><p class="sub">The fund is worth ${fmtEUR0(V)} today. Shaded bands: ±1σ, ±2σ and ±3σ around the median, which hold about 68%, 95% and 99.7% of outcomes, given an expected return of ${fmtSignedPct(O.exp, 0)} a year and volatility (σ) of ${(sigma * 100).toFixed(0)}% a year. Dashed: ${esc(bName)} growing at ${bMuTxt}, with its own volatility. Odds ${pr.map((x) => Math.round(x * 100)).join('/')} (bull/base/bear)${n > 12 ? '; beyond 12 months the expected return is assumed to repeat' : ''}.</p>
     <div id="fan" class="chart"></div>
   </div>`;
   $$('#t-risk [data-pre]').forEach((b) => b.addEventListener('click', () => { state.preset = b.dataset.pre; renderRisk(); }));
