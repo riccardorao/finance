@@ -459,13 +459,12 @@ ul.criteria li span, ul.rejected li span { color: var(--ink2); }
 .cons .rt { display: inline-block; font: 500 10.5px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; border-radius: 3px; padding: 1px 6px; border: 1px solid var(--line2); color: var(--ink2); white-space: nowrap; }
 .cons .rt.pos { color: var(--pos); border-color: color-mix(in srgb, var(--pos-fill) 60%, transparent); }
 .cons .rt.neg { color: var(--neg); border-color: color-mix(in srgb, var(--neg-fill) 60%, transparent); }
-.cons { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
-.cons .tg { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cons small { margin-top: 3px; font-variant-numeric: tabular-nums; }
 .cons small b { font-weight: 600; }
 .rng { position: relative; display: block; height: 22px; }
 .rng .seg { position: absolute; top: 10px; height: 2px; background: var(--line2); border: 0; border-radius: 0; }
-.rng .ball { position: absolute; top: 0; transform: translateX(-50%); min-width: 40px; height: 22px; padding: 0 6px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; font: 600 11px var(--mono); font-style: normal; font-variant-numeric: tabular-nums; white-space: nowrap; color: #fff; }
-.rng .ball.bear { background: #c42d2d; } .rng .ball.bull { background: #19863d; } .rng .ball.mid { background: #1d2329; box-shadow: 0 0 0 1px var(--line2); }
+.rng .ball { position: absolute; top: 0; transform: translateX(-50%); min-width: 40px; height: 22px; padding: 0 6px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; font: 600 11px var(--mono); font-style: normal; font-variant-numeric: tabular-nums; white-space: nowrap; background: var(--panel); border: 1.5px solid currentColor; }
+.rng .ball.bear { color: var(--neg); } .rng .ball.bull { color: var(--pos); } .rng .ball.mid { color: var(--ink); }
 .chev { width: 9px; height: 9px; border-right: 1.5px solid var(--ink3); border-bottom: 1.5px solid var(--ink3); transform: rotate(45deg); justify-self: end; margin-top: -4px; transition: transform 0.15s; }
 .posn.open .chev { transform: rotate(-135deg); margin-top: 4px; }
 @media (max-width: 1120px) { .book-h, .pos-row { grid-template-columns: minmax(120px, 1.2fr) 66px 74px 84px 92px minmax(210px, 1.9fr) 150px 14px; } .c-d { display: none; } }

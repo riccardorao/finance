@@ -10,7 +10,7 @@ answers three questions, one per tab. It always opens on Portfolio:
 
 | Tab | Question it answers | What is on it |
 |---|---|---|
-| **Portfolio** | What is owned and how is each position doing? | Per position, in this order: the share-price change over a period picked with a toggle (1D, 1W, 1M, 3M, 6M, YTD, 1Y), weight, value in euro, unrealised gain in euro and in per cent, the 12-month target range (bear, weighted outcome, bull) and the consensus rating with the upside to the average target. Each opens to the thesis, the written kill-switch, bull and bear cases, industry and competitors, and the latest news |
+| **Portfolio** | What is owned and how is each position doing? | Per position, in this order: the share-price change over a period picked with a toggle (1D, 1W, 1M, 3M, 6M, YTD, 1Y), weight, value in euro, return since bought in euro and in per cent (unrealised), the 12-month target range (bear, weighted outcome, bull) and the consensus rating with the upside to the average target. Each opens to the thesis, the written kill-switch, bull and bear cases, industry and competitors, and the latest news |
 | **Performance** | Have the picks made money, and against which index? | Four headline figures; a daily chart of time-weighted (TWR) or money-weighted (MWR) performance for 1M, 3M, 6M, YTD, 1Y, 2025, 2024 or Max (since inception) against the S&P 500, the only benchmark; *Every period at a glance* compares every period with it |
 | **Outlook** | What could happen next? | A horizon toggle (3M, 6M, 1Y, 2Y, 3Y) and three sets of scenario odds (Consensus, Cautious, Stress) drive the expected return, the 9-in-10 range of outcomes, the chance of beating the S&P 500, volatility and beta, and a range-of-outcomes chart |
 

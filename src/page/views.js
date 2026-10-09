@@ -166,7 +166,7 @@ function renderBook() {
   <div class="lede"><div><p class="kicker">Portfolio</p><h2>What I own: ${M.H.length} positions worth ${fmtEUR0(V)}, ${ytd >= 0 ? 'up' : 'down'} ${fmtEUR0(Math.abs(ytd))} this year</h2><p>Tap a stock to see why I own it, what would make me sell, and the bull and bear case.</p></div>
     <div class="seg" role="group" aria-label="Share-price period">${BOOK_PERIODS.map(([k, l]) => `<button data-bp="${k}" aria-pressed="${k === bp}">${k}</button>`).join('')}</div></div>
   <div class="panel flat">
-    <div class="book-h"><span>Position</span><span>${bp}</span><span class="c-d">Weight</span><span>Value</span><span class="c-m">Unrealised €</span><span>Unrealised %</span><span class="c-m c-rng">12-month target range</span><span class="c-m">Analysts</span><span></span></div>
+    <div class="book-h"><span>Position</span><span>${bp}</span><span class="c-d">Weight</span><span>Value</span><span class="c-m">Return €</span><span>Return %</span><span class="c-m c-rng">12-month target range</span><span class="c-m">Analysts</span><span></span></div>
     ${M.H.map((h) => {
       const sc = h.sc, cons = h.research && h.research.cons, open = state.open === h.isin;
       const mid = sc ? expOf(sc, PRESETS.analyst.p) : null; // 25% bear, 50% average target, 25% bull
@@ -179,13 +179,13 @@ function renderBook() {
           <span class="n c-m"><b>${h.pnl != null ? eur0Span(h.pnl) : '–'}</b></span>
           <span class="n"><b>${h.pnl != null ? pctSpan(h.pnlPct, 1) : '–'}</b></span>
           <span class="c-m c-rng">${sc ? `<span class="rng" role="img" aria-label="Bear ${fmtSignedPct(sc.bear, 0)}, weighted ${fmtSignedPct(mid, 0)}, bull ${fmtSignedPct(sc.bull, 0)}">${((x) => `<i class="seg" style="left:${x[0]}%;width:${x[2] - x[0]}%"></i><em class="ball bear" style="left:${x[0]}%">${fmtSignedPct(sc.bear, 0)}</em><em class="ball mid" style="left:${x[1]}%">${fmtSignedPct(mid, 0)}</em><em class="ball bull" style="left:${x[2]}%">${fmtSignedPct(sc.bull, 0)}</em>`)(balls(sc.bear, mid, sc.bull))}</span>` : '<small class="muted">no analyst coverage</small>'}</span>
-          <span class="c-m cons">${cons && sc ? `<span class="rt ${ratingCls(cons.rating)}">${esc(cons.rating)}</span><b class="tg ${cls(sc.base)}" title="Upside to the average analyst target">${fmtSignedPct(sc.base, 0)}</b>` : '<small class="muted">–</small>'}</span>
+          <span class="c-m cons">${cons && sc ? `<span class="rt ${ratingCls(cons.rating)}">${esc(cons.rating)}</span><small>target <b class="${cls(sc.base)}">${fmtSignedPct(sc.base, 0)}</b></small>` : '<small class="muted">–</small>'}</span>
           <span class="chev" aria-hidden="true"></span>
         </button>
         <div class="pos-d" id="pd-${h.isin}" ${open ? '' : 'hidden'}>${open ? positionDetail(h) : ''}</div>
       </div>`;
     }).join('')}
-    <div class="book-f"><span class="foot-n">Value: what the position is worth today. Weight: its share of the portfolio. The first number column shows the change in the share price in euro over the period picked above. Unrealised: gain or loss on what I still hold, against what I paid. 12-month target range: red ball the bear case, green ball the bull case (the highest analyst target), black ball the weighted outcome (25% bear, 50% average analyst target, 25% bull), all against today's price. Analysts: consensus rating, then the upside to the average 12-month target.</span></div>
+    <div class="book-f"><span class="foot-n">Value: what the position is worth today. Weight: its share of the portfolio. The first number column shows the change in the share price in euro over the period picked above. Return € and %: gain or loss on what I still hold, against what I paid. 12-month target range: red ball the bear case, green ball the bull case (the highest analyst target), black ball the weighted outcome (25% bear, 50% average analyst target, 25% bull), all against today's price. Analysts: consensus rating, then the upside to the average 12-month target.</span></div>
   </div>`;
 
   $$('#t-book [data-bp]').forEach((b) => b.addEventListener('click', () => { state.bp = b.dataset.bp; renderBook(); }));
@@ -246,7 +246,7 @@ function renderRisk() {
   const sigma = R.vol, bVol = R.bVol[bench.id], beta = R.pBeta[bench.id], rho = R.pCorr[bench.id];
   const ix = M.D.indices.find((x) => x.id === bench.id) || {};
   const bMu = ix.cagr != null ? ix.cagr : REF_MU; // the benchmark's own historical annual growth
-  const bMuTxt = ix.cagr != null ? `its historical pace of ${fmtSignedPct(bMu, 1)} a year from ${dfmt(ix.cagrFrom + '-15', { day: undefined })} to ${dfmt(ix.cagrTo + '-15', { day: undefined })}${ix.cagrBasis ? ` (${esc(ix.cagrBasis)}, like the analyst price targets)` : ''}` : `an assumed ${fmtSignedPct(bMu, 0)} a year`;
+  const bMuTxt = ix.cagr != null ? `historical pace of ${fmtSignedPct(bMu, 1)} a year from ${dfmt(ix.cagrFrom + '-15', { day: undefined })} to ${dfmt(ix.cagrTo + '-15', { day: undefined })}${ix.cagrBasis ? ` (${esc(ix.cagrBasis)}, like the analyst price targets)` : ''}` : `an assumed ${fmtSignedPct(bMu, 0)} a year`;
   const mP = Math.log(1 + O.exp) - sigma * sigma / 2, mB = Math.log(1 + bMu) - bVol * bVol / 2;
   const exp = (1 + O.exp) ** t - 1, bExp = (1 + bMu) ** t - 1;
   const q = (z) => Math.exp(mP * t + z * sigma * Math.sqrt(t)) - 1;
@@ -259,7 +259,7 @@ function renderRisk() {
     <div class="seg" role="group" aria-label="Scenario odds">${Object.entries(PRESETS).map(([k, v]) => `<button data-pre="${k}" aria-pressed="${k === state.preset}">${v.label}</button>`).join('')}</div>
   </div>
   <div class="kpis4">
-    ${kpi('Expected, ' + hzL, fmtSignedPct(exp, 0), cls(exp), `${exp >= 0 ? '+' : ''}${fmtEUR0(exp * V)} · ${esc(bName)} ${fmtSignedPct(bExp, 0)} at its historical pace`)}
+    ${kpi('Expected, ' + hzL, fmtSignedPct(exp, 0), cls(exp), `${exp >= 0 ? '+' : ''}${fmtEUR0(exp * V)} · ${esc(bName)} ${fmtSignedPct(bExp, 0)} at historical pace`)}
     ${kpi('9 in 10 outcomes', `<span class="${cls(q(-1.645))}">${fmtSignedPct(q(-1.645), 0)}</span> <span class="muted">to</span> <span class="${cls(q(1.645))}">${fmtSignedPct(q(1.645), 0)}</span>`, '', `${fmtEUR0(V * (1 + q(-1.645)))} to ${fmtEUR0(V * (1 + q(1.645)))}`)}
     ${kpi('Chance of beating ' + esc(bName), Math.round(pBeat * 100) + '%', pBeat >= 0.5 ? 'pos' : 'neg', `over ${hzL}, correlation ${fmtNum(rho, 2)}`)}
     ${kpi('Volatility', (sigma * 100).toFixed(0) + '%', '', `${esc(bName)} ${(bVol * 100).toFixed(0)}% · beta ${fmtNum(beta, 2)}`)}
