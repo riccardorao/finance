@@ -16,9 +16,9 @@ answers three questions, one per tab:
 
 ![Performance tab, built from the synthetic sample](docs/sample-record.png)
 
-> **Also in this repository:** [`household/`](household/README.md) is a separate, simpler tool for household accounts
-> (BCC and Hype). It runs as a single offline HTML page that imports bank exports or a PSD2 bank link. It runs checks
-> on past transactions (reconciliation, double charges, price rises, missing pension) and makes suggestions.
+> **Also in this repository:** [`household/`](household/README.md) is *Conti di Casa*, a separate household finance
+> tool. It is a single offline HTML page that reads the Excel, CSV or PDF exports from any bank. It covers spending
+> and budgets, one-off expenses and cash, savings opportunities, and a goals plan for the medium to long term.
 > Build it with `npm run household`.
 
 The screenshots in `docs/` come from the **synthetic sample** in `data/sample`. They are not real

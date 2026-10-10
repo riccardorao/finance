@@ -1,8 +1,7 @@
 # Personal account data never leaves this machine
 data/private/
-# Household finance: bank keys, sessions and downloaded transactions
+# Household finance: real bank exports and backups
 household/private/
-*.pem
 # Build and test output
 dist/
 test-output/

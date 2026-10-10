@@ -14,8 +14,7 @@
     "test": "node tests/render.js dist/portfolio.html test-output && node tests/live.js ok && node tests/live.js partial && node tests/live.js denied",
     "test:sample": "node tests/render.js dist/sample.html test-output/sample && node tests/live.js ok data/sample test-output/sample/_wrapped.html",
     "household": "node household/build.js",
-    "test:household": "node --test 'household/tests/*.test.js' && node household/build.js && node household/tests/ui.js",
-    "bank": "node household/sync/enablebanking.js"
+    "test:household": "node --test 'household/tests/*.test.js' && node household/build.js && node household/tests/ui.js"
   },
   "devDependencies": {
     "playwright": "^1.47.0"

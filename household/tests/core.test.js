@@ -103,8 +103,8 @@ test('re-importing an overlapping file adds nothing twice, but keeps genuine sam
   assert.strictEqual(r1.added, 3);
   const r2 = C.mergeImport(s, 'a', one.concat([{ date: '2026-01-04', desc: 'Y', amt: -700 }]), { file: '2' });
   assert.deepStrictEqual([r2.added, r2.dup], [1, 3]);
-  // the same movement arriving from the bank link with a different description is recognised
-  const r3 = C.mergeImport(s, 'a', [{ date: '2026-01-05', desc: 'Y - CARD 1234', amt: -700 }], { file: 'bank', kind: 'bank' });
+  // the same movement arriving from another file type (e.g. the PDF statement) with a different description is recognised
+  const r3 = C.mergeImport(s, 'a', [{ date: '2026-01-05', desc: 'Y - CARD 1234', amt: -700 }], { file: 'statement.pdf', kind: 'pdf' });
   assert.deepStrictEqual([r3.added, r3.fuzzy], [0, 1]);
   assert.strictEqual(C.undoImport(s, r2.id), 1);
   assert.strictEqual(s.txns.length, 3);
@@ -143,13 +143,43 @@ test('statement PDF lines (Hype layout guess)', () => {
   assert.strictEqual(guess[0].signGuess, true);
 });
 
-test('bank-link JSON', () => {
-  const obj = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'sample', 'hype-collegamento-esempio.json'), 'utf8'));
-  const accs = C.fromSyncJson(obj);
-  assert.strictEqual(accs.length, 1);
-  assert.strictEqual(accs[0].txns.length, 9);
-  assert.deepStrictEqual(accs[0].checkpoint, { date: '2026-09-30', bal: 31250, src: 'bank' });
-  assert.strictEqual(C.fromSyncJson({ format: 'other' }), null);
+test('English-headed export (Revolut layout): dot decimals, ISO dates with times, running balance', () => {
+  const rows = C.parseCSV(fs.readFileSync(path.join(__dirname, '..', 'sample', 'revolut-esempio.csv'), 'utf8'));
+  const map = C.detectTable(rows);
+  assert.strictEqual(map.decimalComma, false);
+  const { txns, skipped } = C.rowsToTxns(rows, map);
+  assert.deepStrictEqual(skipped, []);
+  assert.strictEqual(txns.length, 9);
+  assert.deepStrictEqual([txns[1].date, txns[1].desc, txns[1].amt], ['2026-07-10', 'Netflix', -1399]);
+  assert.deepStrictEqual(C.checkpointsFromFile(txns), [{ date: '2026-07-03', bal: 31250, src: 'file' }, { date: '2026-09-10', bal: 92113, src: 'file' }]);
+});
+
+test('one-off expenses count in totals but not in averages', () => {
+  const s = C.emptyState();
+  s.accounts.push({ id: 'a', name: 'A', checkpoints: [] });
+  const tx = [];
+  for (const m of ['01', '02', '03']) tx.push({ date: `2026-${m}-05`, desc: 'PAGAMENTO POS CONAD', amt: -30000 });
+  tx.push({ date: '2026-02-10', desc: 'PAGAMENTO POS MEDIAWORLD LAVATRICE', amt: -60000 });
+  C.mergeImport(s, 'a', tx, { file: 'x' });
+  s.txns.find((t) => /LAVATRICE/.test(t.desc)).extra = true;
+  const m = C.monthly(s)['2026-02'];
+  assert.deepStrictEqual([m.out, m.extra], [90000, 60000]);
+  const { avg } = C.categoryAverages(s, '2026-04', 3);
+  assert.strictEqual(avg.shopping, undefined, 'the one-off is left out of averages');
+  assert.strictEqual(avg.spesa, -30000);
+});
+
+test('cash: noted spending replaces withdrawals, the rest can be split', () => {
+  const s = C.emptyState();
+  s.accounts.push({ id: 'a', name: 'A', checkpoints: [] }, { id: C.CASH_ACC, name: 'Cash', checkpoints: [] });
+  C.mergeImport(s, 'a', [{ date: '2026-03-02', desc: 'PRELIEVO BANCOMAT', amt: -20000 }], { file: 'x' });
+  s.txns.push({ id: 'c1', acc: C.CASH_ACC, date: '2026-03-04', desc: 'Mercato', amt: -5000, cat: 'spesa', catSrc: 'user', src: 'manual' });
+  let m = C.monthly(s)['2026-03'];
+  assert.strictEqual(m.out, 20000, 'not counted twice');
+  assert.deepStrictEqual([m.cats.spesa, m.cats.contanti, m.cashLeft], [-5000, -15000, 15000]);
+  s.cash.split = { spesa: 60, ristoranti: 40 };
+  m = C.monthly(s)['2026-03'];
+  assert.deepStrictEqual([m.cats.spesa, m.cats.ristoranti, m.cats.contanti, m.out], [-14000, -6000, undefined, 20000]);
 });
 
 test('reconciliation flags a gap between two known balances', () => {

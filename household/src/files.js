@@ -1,5 +1,5 @@
 /* Reading what the bank gives you, in the browser: CSV, XLSX, "Excel" files that are really HTML tables,
-   the household JSON written by the bank sync, and statement PDFs (Hype). Nothing is uploaded anywhere. */
+   statement PDFs, and the app's own backup file. Nothing is uploaded anywhere. */
 
 async function readText(buf) {
   try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { return new TextDecoder('windows-1252').decode(buf); }
@@ -117,7 +117,7 @@ async function readPdfLines(buf) {
 }
 
 // Reads one file and says what it is. Returns
-// { kind: 'table', rows, map } | { kind: 'sync', accounts } | { kind: 'backup', state } | { kind: 'pdf', txns } | { kind: 'error', msg }
+// { kind: 'table', rows, map } | { kind: 'backup', state } | { kind: 'pdf', txns } | { kind: 'error', msg }
 async function readBankFile(file) {
   const buf = await file.arrayBuffer();
   const head = new Uint8Array(buf.slice(0, 8));
@@ -137,9 +137,7 @@ async function readBankFile(file) {
     const trimmed = text.replace(/^﻿/, '').trimStart();
     if (trimmed.startsWith('{')) {
       const obj = JSON.parse(trimmed);
-      if (obj.format === 'household-backup') return { kind: 'backup', state: obj.state };
-      const accounts = fromSyncJson(obj);
-      return accounts ? { kind: 'sync', accounts } : { kind: 'error', msg: 'err.unknown' };
+      return obj.format === 'household-backup' ? { kind: 'backup', state: obj.state } : { kind: 'error', msg: 'err.unknown' };
     }
     if (trimmed.startsWith('<')) {
       const rows = readHtmlTable(text);

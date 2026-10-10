@@ -1,6 +1,6 @@
 // Drives the built page in Chromium: demo data through every tab at desktop, dark and phone widths, then a real
-// import round (BCC CSV, the same data as XLSX, the bank-link JSON), a category correction that becomes a rule,
-// a backup download and a reload. Fails on console errors or sideways scrolling.
+// round from onboarding: BCC CSV, the same data as XLSX, a Revolut-style CSV, a category correction that becomes a
+// rule, a one-off expense, a cash note, a goal, a backup download and a reload. Fails on console errors or sideways scrolling.
 // Usage: node household/tests/ui.js [page, default dist/household.html] [out dir, default test-output/household]
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -12,7 +12,7 @@ const outDir = path.resolve(process.argv[3] || path.join(root, 'test-output', 'h
 const sample = path.join(__dirname, '..', 'sample');
 fs.mkdirSync(outDir, { recursive: true });
 const TODAY = '2026-10-10';
-const TABS = ['home', 'moves', 'budget', 'checks', 'import', 'settings'];
+const TABS = ['home', 'moves', 'budget', 'save', 'goals', 'checks', 'import', 'settings'];
 
 // A minimal XLSX (shared strings, numbers as numbers, dates as Excel serials) built from the sample CSV.
 function zip(files) {
@@ -78,6 +78,7 @@ function makeXlsx(csvPath, out) {
     for (const tab of TABS) {
       await p.click(`#tab-${tab}`);
       if (tab === 'moves') await p.click('.tx-main');
+      if (tab === 'goals') await p.click('.goal-head');
       await p.waitForTimeout(150);
       if (await overflow(p)) errs.push(`horizontal overflow on ${tab}`);
       await p.screenshot({ path: path.join(outDir, `${c.name}-${tab}.png`), fullPage: true });
@@ -94,12 +95,15 @@ function makeXlsx(csvPath, out) {
   const errs = [];
   watch(p, errs);
   await p.goto('file://' + page);
+  await p.click('[data-bank="bcc"]');
+  await p.fill('#onb-name', 'Famiglia Test');
+  await p.click('[data-act="onb-start"]');
   const importFile = async (file, accountName) => {
     await p.click('#tab-import');
     if (await p.$('[data-act="imp-again"]')) await p.click('[data-act="imp-again"]');
     await p.setInputFiles('#imp-file', file);
     await p.waitForSelector('[data-act="imp-go"]');
-    if (accountName) await p.fill('[data-act="draft-name"]', accountName);
+    if (accountName && await p.$('[data-act="draft-name"]')) await p.fill('[data-act="draft-name"]', accountName);
     await p.click('[data-act="imp-go"]');
     return (await p.textContent('#main h3')).trim();
   };
@@ -112,9 +116,10 @@ function makeXlsx(csvPath, out) {
   msg = await importFile(xlsx);
   console.log('  xlsx:', msg);
   if (!/0 movimenti nuovi, 14 già presenti/.test(msg)) fail('XLSX of the same data should match the CSV exactly');
-  msg = await importFile(path.join(sample, 'hype-collegamento-esempio.json'));
-  console.log('  json:', msg);
-  if (!/9 movimenti nuovi.*2 trasferimenti/.test(msg)) fail('bank-link JSON should add 9 and pair 2 transfers');
+  msg = await importFile(path.join(sample, 'revolut-esempio.csv'));
+  console.log('  revolut csv:', msg);
+  if (!/9 movimenti nuovi.*2 trasferimenti/.test(msg)) fail('Revolut-style CSV should add 9 and pair 2 transfers');
+  if ((await p.evaluate(() => S.accounts.map((a) => a.name).join('|'))) !== 'BCC|Contanti|Revolut') fail('accounts should be BCC, cash and Revolut, got ' + await p.evaluate(() => S.accounts.map((a) => a.name).join('|')));
 
   // checks after import: reconciliation and double charge
   await p.click('#tab-checks');
@@ -132,16 +137,40 @@ function makeXlsx(csvPath, out) {
   const rules = await p.evaluate(() => S.rules.length);
   if (rules !== 1) fail('a rule should have been created');
 
+  // one-off expense, a cash note and a goal
+  await p.click('#tab-moves');
+  await p.fill('#q', 'enel');
+  await p.waitForTimeout(400);
+  await p.click('.tx-main');
+  await p.click('[data-act="toggle-extra"]');
+  if (!(await p.evaluate(() => S.txns.some((x) => x.extra)))) fail('one-off flag not set');
+  await p.click('#tab-save');
+  await p.click('[data-act="manual"][data-cash="1"]');
+  await p.fill('#m-amt', '25');
+  await p.fill('#m-desc', 'Mercato');
+  await p.click('[data-act="manual-save"]');
+  if (!(await p.evaluate(() => S.txns.some((x) => x.acc === 'acc_cash' && x.amt === -2500)))) fail('cash note not saved');
+  await p.click('#tab-goals');
+  await p.click('[data-act="goal-new"]');
+  await p.fill('#gf-name', 'Auto');
+  await p.fill('#gf-target', '15000');
+  await p.fill('#gf-date', '2030-06');
+  await p.click('[data-act="goal-save"]');
+  const goalTxt = await p.textContent('.goal');
+  if (!/Auto/.test(goalTxt) || !/al mese/.test(goalTxt)) fail('goal card should show a monthly amount');
+  if (!(await p.$('.goal .chart'))) fail('the new goal should open with its projection');
+  await p.screenshot({ path: path.join(outDir, 'imported-goals.png'), fullPage: true });
+
   // backup download, then reload: data persists
   await p.click('#tab-settings');
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('[data-act="backup"]')]);
   const backup = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
-  if (backup.format !== 'household-backup' || backup.state.txns.length !== 23) fail('backup should hold 23 transactions, got ' + backup.state.txns.length);
+  if (backup.format !== 'household-backup' || backup.state.txns.length !== 24) fail('backup should hold 24 transactions, got ' + backup.state.txns.length);
   await p.waitForTimeout(300);
   await p.reload();
   await p.waitForTimeout(300);
   const after = await p.evaluate(() => S.txns.length);
-  if (after !== 23) fail('after reload expected 23 transactions, got ' + after);
+  if (after !== 24) fail('after reload expected 24 transactions, got ' + after);
   await p.click('#tab-home');
   await p.screenshot({ path: path.join(outDir, 'imported-home.png'), fullPage: true });
   if (errs.length) { console.log('import ERRORS\n  ' + errs.join('\n  ')); failed += errs.length; } else console.log('import round ok');

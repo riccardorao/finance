@@ -212,10 +212,10 @@ function parseCSV(text) {
 }
 
 const HEADERS = {
-  date: ['data contabile', 'data operazione', 'data registrazione', 'data movimento', 'data', 'booking date', 'date', 'data op', 'data contab', 'data transazione', 'giorno'],
+  date: ['completed date', 'started date', 'transaction date', 'data contabile', 'data operazione', 'data registrazione', 'data movimento', 'data', 'booking date', 'date', 'data op', 'data contab', 'data transazione', 'giorno'],
   vdate: ['data valuta', 'valuta', 'value date', 'data val'],
-  desc: ['descrizione', 'descrizione operazione', 'causale', 'causale abi', 'dettagli', 'dettaglio', 'description', 'operazione', 'descrizione estesa', 'beneficiario', 'esercente', 'controparte', 'note', 'motivo', 'tipologia', 'descrizione movimento', 'concetto'],
-  amt: ['importo', 'importo eur', 'importo (eur)', 'importo euro', 'amount', 'ammontare', 'importo in euro', 'valore'],
+  desc: ['descrizione', 'descrizione operazione', 'causale', 'causale abi', 'dettagli', 'dettaglio', 'description', 'operazione', 'descrizione estesa', 'beneficiario', 'esercente', 'controparte', 'note', 'motivo', 'tipologia', 'descrizione movimento', 'concetto', 'partner name', 'payee', 'payment reference', 'counterparty', 'merchant', 'reference'],
+  amt: ['importo', 'amount (eur)', 'importo eur', 'importo (eur)', 'importo euro', 'amount', 'ammontare', 'importo in euro', 'valore'],
   debit: ['uscite', 'dare', 'addebiti', 'addebito', 'debit', 'importo dare', 'uscita', 'importo addebito', 'movimenti dare'],
   credit: ['entrate', 'avere', 'accrediti', 'accredito', 'credit', 'importo avere', 'entrata', 'importo accredito', 'movimenti avere'],
   bal: ['saldo', 'saldo contabile', 'balance', 'saldo progressivo', 'saldo disponibile'],
@@ -360,18 +360,6 @@ function txnsFromPdfLines(lines) {
   return out.filter((t) => t.amt !== 0).map((t) => ({ ...t, desc: t.desc || '—' }));
 }
 
-/* ---------- the household JSON format (bank sync output and backups) ---------- */
-// { format: 'household-transactions', version: 1, accounts: [{ name, bank, iban, balance: { date, amount }, transactions: [{ date, vdate, desc, amount, ref }] }] }
-function fromSyncJson(obj) {
-  if (!obj || obj.format !== 'household-transactions' || !Array.isArray(obj.accounts)) return null;
-  return obj.accounts.map((a) => ({
-    name: a.name || a.iban || 'Conto', bank: a.bank || '', iban: a.iban || '',
-    checkpoint: a.balance && a.balance.date ? { date: a.balance.date, bal: Math.round(Number(a.balance.amount) * 100), src: 'bank' } : null,
-    txns: (a.transactions || []).map((t) => ({ date: t.date, vdate: t.vdate || undefined, desc: t.desc || '—', amt: Math.round(Number(t.amount) * 100), ref: t.ref || undefined }))
-      .filter((t) => parseDate(t.date) && t.amt),
-  }));
-}
-
 /* ---------- import ---------- */
 // cyrb53: a fast 53-bit string hash, enough to tell transactions apart.
 function hash(str, seed = 0) {
@@ -395,7 +383,8 @@ function assignIds(accId, txns) {
 }
 
 function emptyState() {
-  return { version: SCHEMA_VERSION, lang: 'it', accounts: [], txns: [], rules: [], categories: { custom: [], labels: {}, hidden: [] }, budgets: {}, imports: [], dismissed: {}, mappings: {}, lastBackup: null, created: new Date().toISOString() };
+  return { version: SCHEMA_VERSION, lang: 'it', accounts: [], txns: [], rules: [], categories: { custom: [], labels: {}, hidden: [] }, budgets: {}, imports: [], dismissed: {}, mappings: {}, lastBackup: null, created: new Date().toISOString(),
+    profile: { name: '', onboarded: false }, cash: { track: true, split: {} }, goals: [], plan: { adopted: {}, monthly: null, inflation: 0.02, returns: {} } };
 }
 // Brings an older saved state up to the current schema. Add a step here whenever the shape changes.
 function migrate(s) {
@@ -403,6 +392,9 @@ function migrate(s) {
   const base = emptyState();
   for (const k of Object.keys(base)) if (s[k] == null) s[k] = base[k];
   s.categories = { ...base.categories, ...s.categories };
+  s.profile = { ...base.profile, ...s.profile };
+  s.cash = { ...base.cash, ...s.cash };
+  s.plan = { ...base.plan, ...s.plan };
   // v1 is the first version; future steps go here, e.g. if (s.version < 2) { ...; s.version = 2; }
   s.version = SCHEMA_VERSION;
   return s;
@@ -411,7 +403,7 @@ function migrate(s) {
 function newId(prefix) { return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
 // Merges parsed transactions into an account. Exact repeats are skipped; a movement with the same amount within
-// two days that came in through a different channel (file vs bank link vs PDF) is treated as the same one.
+// two days that came in through a different channel (spreadsheet vs PDF statement) is treated as the same one.
 function mergeImport(state, accId, txns, meta) {
   const src = meta.kind || 'file';
   const withIds = assignIds(accId, txns);
@@ -478,15 +470,38 @@ function detectTransfers(txns) {
 }
 
 /* ---------- aggregates ---------- */
+const CASH_ACC = 'acc_cash';
 const counted = (state, t) => !t.excl && catKind(state, t.cat) !== 'move';
-function monthly(state, accFilter) {
+// Month by month: income, spending, one-off ("extra") spending and spending per category.
+// Cash: what is recorded by hand on the cash wallet replaces the same amount of withdrawals, so it is never counted
+// twice; whatever is still unexplained stays under "Cash withdrawals", or is spread by the user's cash split.
+// opts.ordinary leaves one-off expenses out (for averages and budgets).
+function monthly(state, accFilter, opts) {
+  const ordinary = opts && opts.ordinary;
   const m = {};
   for (const t of state.txns) {
-    if (!counted(state, t) || (accFilter && t.acc !== accFilter)) continue;
+    if (!counted(state, t) || (accFilter && t.acc !== accFilter) || (ordinary && t.extra)) continue;
     const k = monthOf(t.date);
-    const r = (m[k] = m[k] || { month: k, inc: 0, out: 0, cats: {} });
+    const r = (m[k] = m[k] || { month: k, inc: 0, out: 0, extra: 0, cats: {}, cashW: 0, cashR: 0 });
     if (catKind(state, t.cat) === 'in') r.inc += t.amt; else r.out -= t.amt;
+    if (t.extra) r.extra -= t.amt;
     r.cats[t.cat] = (r.cats[t.cat] || 0) + t.amt;
+    if (t.cat === 'contanti') r.cashW -= t.amt;
+    if (t.acc === CASH_ACC && t.amt < 0 && catKind(state, t.cat) === 'out') r.cashR -= t.amt;
+  }
+  const split = (state.cash && state.cash.split) || {};
+  const splitTotal = Object.values(split).reduce((s, v) => s + (+v || 0), 0);
+  for (const r of Object.values(m)) {
+    const cover = Math.min(r.cashR, r.cashW);
+    if (cover > 0) { r.cats.contanti = (r.cats.contanti || 0) + cover; r.out -= cover; }
+    r.cashLeft = Math.max(0, r.cashW - r.cashR);
+    const left = -(r.cats.contanti || 0);
+    if (left > 0 && splitTotal > 0) {
+      const share = Math.min(100, splitTotal) / 100;
+      for (const [c, pct] of Object.entries(split)) if (+pct > 0) r.cats[c] = (r.cats[c] || 0) - Math.round(left * (+pct / 100));
+      r.cats.contanti = -Math.round(left * (1 - share));
+    }
+    if (r.cats.contanti === 0) delete r.cats.contanti;
   }
   return m;
 }
@@ -496,7 +511,7 @@ const meanOf = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0);
 
 // Average monthly spending per category over the n full months before `month`.
 function categoryAverages(state, month, n = 12) {
-  const m = monthly(state);
+  const m = monthly(state, null, { ordinary: true });
   const months = monthsRange(addMonths(month, -n), addMonths(month, -1)).filter((k) => m[k]);
   const avg = {};
   for (const k of months) for (const [c, v] of Object.entries(m[k].cats)) avg[c] = (avg[c] || 0) + v / months.length;
@@ -644,11 +659,11 @@ function runChecks(state, today) {
   // 6. Unusually large spending in the last 60 days
   const yearAgo = addDays(today, -365);
   for (const t of tx) {
-    if (t.amt >= 0 || catKind(state, t.cat) !== 'out' || daysBetween(t.date, today) > 60 || ['tasse', 'assicurazioni', 'casa'].includes(t.cat) && t.amt > -50000) continue;
+    if (t.amt >= 0 || t.extra || catKind(state, t.cat) !== 'out' || daysBetween(t.date, today) > 60 || ['tasse', 'assicurazioni', 'casa'].includes(t.cat) && t.amt > -50000) continue;
     const peers = tx.filter((x) => x.cat === t.cat && x.id !== t.id && x.amt < 0 && x.date >= yearAgo).map((x) => -x.amt);
     if (peers.length < 5) continue;
     const med = median(peers);
-    if (-t.amt >= Math.max(25000, med * 4)) out.push({ id: 'big|' + t.id, level: 'info', key: 'chk.big', p: { desc: t.desc, amt: -t.amt, date: t.date, times: Math.round(-t.amt / med) }, ids: [t.id] });
+    if (-t.amt >= Math.max(25000, med * 4)) out.push({ id: 'big|' + t.id, level: 'info', key: 'chk.big', p: { desc: t.desc, amt: -t.amt, date: t.date, times: Math.round(-t.amt / med) }, ids: [t.id], act: 'extra' });
   }
 
   // 7. Recurring: price rises, late or missing payments, new ones
@@ -811,10 +826,27 @@ function makeDemo(today) {
   mergeImport(s, 'acc_bcc', bcc.slice(half - 5), { file: 'demo-bcc-2.csv', checkpoints: checkpointsFromFile(bcc.slice(half - 5)) });
   mergeImport(s, 'acc_hype', hype.filter((t) => t.date < addDays(today, -45)), { file: 'demo-hype.pdf', kind: 'pdf' });
   s.accounts[1].checkpoints.push({ date: lastDate(s.txns.filter((t) => t.acc === 'acc_hype')), bal: 31250, src: 'manual' });
+  // cash spending noted by hand in the last three months, and one one-off purchase
+  s.accounts.push({ id: CASH_ACC, name: 'Contanti', bank: '', checkpoints: [] });
+  for (let k = 1; k <= 3; k++) {
+    const m = addMonths(monthOf(today), -k);
+    s.txns.push({ id: 'demo-c1-' + k, acc: CASH_ACC, date: d(m, 18), desc: 'Mercato rionale', amt: -4500, cat: 'spesa', catSrc: 'user', src: 'manual' });
+    s.txns.push({ id: 'demo-c2-' + k, acc: CASH_ACC, date: d(m, 25), desc: 'Caffè e giornale', amt: -3000, cat: 'ristoranti', catSrc: 'user', src: 'manual' });
+  }
+  s.txns.push({ id: 'demo-x1', acc: 'acc_hype', date: d(addMonths(monthOf(today), -4), 12), desc: 'PAGAMENTO POS MEDIAWORLD LAVATRICE', amt: -64900, cat: 'casa', catSrc: 'user', src: 'file', extra: true });
+  s.txns.sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id));
+  const y = +today.slice(0, 4);
+  s.profile = { name: 'Famiglia Rossi', onboarded: true };
+  s.goals = [
+    { id: 'g_emergency', name: 'Fondo di emergenza', type: 'emergency', target: 650000, date: `${y + 1}-06`, saved: 250000, monthly: null, profile: 'auto', priority: 1, real: false },
+    { id: 'g_car', name: 'Auto nuova', type: 'car', target: 1800000, date: `${y + 3}-09`, saved: 300000, monthly: null, profile: 'auto', priority: 2, real: true },
+    { id: 'g_travel', name: 'Viaggio per l’anniversario', type: 'travel', target: 400000, date: `${y + 1}-09`, saved: 50000, monthly: null, profile: 'auto', priority: 2, real: false },
+    { id: 'g_family', name: 'Un aiuto per i nipoti', type: 'family', target: 3000000, date: `${y + 15}-01`, saved: 500000, monthly: null, profile: 'auto', priority: 3, real: true },
+  ];
   s.demo = true;
   return s;
 }
 
 if (typeof module !== 'undefined') {
-  module.exports = { SCHEMA_VERSION, CATEGORIES, DEFAULT_RULES, allCategories, catById, catKind, normDesc, merchantKey, titleCase, categorise, recategorise, parseAmount, parseDate, addDays, daysBetween, monthOf, addMonths, monthsRange, daysInMonth, parseCSV, detectTable, rowsToTxns, checkpointsFromFile, txnsFromPdfLines, fromSyncJson, hash, assignIds, emptyState, migrate, mergeImport, undoImport, detectTransfers, monthly, categoryAverages, balances, averageBalance, findRecurring, runChecks, suggest, suggestBudgets, makeDemo, lastDate, median };
+  module.exports = { CASH_ACC, counted, SCHEMA_VERSION, CATEGORIES, DEFAULT_RULES, allCategories, catById, catKind, normDesc, merchantKey, titleCase, categorise, recategorise, parseAmount, parseDate, addDays, daysBetween, monthOf, addMonths, monthsRange, daysInMonth, parseCSV, detectTable, rowsToTxns, checkpointsFromFile, txnsFromPdfLines, hash, assignIds, emptyState, migrate, mergeImport, undoImport, detectTransfers, monthly, categoryAverages, balances, averageBalance, findRecurring, runChecks, suggest, suggestBudgets, makeDemo, lastDate, median };
 }
