@@ -74,8 +74,8 @@ function renderRecord() {
   <div class="kpis4">
     ${kpi('Last 12 months', fmtSignedPct(y1.twr, 1), cls(y1.twr), vsIdx(y1.twr, y1.idx[primary].twr, pName))}
     ${kpi('This year', fmtSignedPct(ytd.twr, 1), cls(ytd.twr), vsIdx(ytd.twr, ytd.idx[primary].twr, pName))}
-    ${kpi('Every euro since I started', fmtSignedPct(si.mwr, 1) + '<small> a year</small>', cls(si.mwr), `the same money in ${esc(pName)}: ${fmtSignedPct(si.idx[primary].mwr, 1)} a year`)}
-    ${kpi('Winning calls', `${wins}<small> of ${closedStocks.length}</small>`, '', `closed stock and ETF positions sold at a profit`)}
+    ${kpi('Every euro since I started', fmtSignedPct(si.mwr, 1) + '<small> a year</small>', cls(si.mwr), `${esc(pName)}: ${fmtSignedPct(si.idx[primary].mwr, 1)} a year`)}
+    ${kpi('Winning calls', `${wins}<small> of ${closedStocks.length}</small>`, '', `closed positions sold at a profit`)}
   </div>
 
   <div class="panel" style="margin-top:14px">
