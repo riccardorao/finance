@@ -536,3 +536,28 @@ ul.rules { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 8px; font-si
 .brand .aum { font-size: clamp(40px, 7vw, 64px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; font-variant-numeric: tabular-nums; margin-top: 14px; }
 .brand .aum-sub { margin-top: 4px; font-size: 13.5px; }
 .brand .aum-sub span { white-space: nowrap; }
+/* outlook summary tiles: figure, verdict, visual, detail */
+.kpi.ok { display: flex; flex-direction: column; }
+.kpi.ok .vd { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-top: 2px; }
+.kpi.ok .n { margin-top: auto; padding-top: 8px; color: var(--ink3); font-size: 12px; }
+.kpi .sg { text-transform: none; }
+.duo { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; margin-top: 10px; font-size: 12px; }
+.duo .dl { color: var(--ink2); white-space: nowrap; }
+.duo .dt { height: 8px; background: var(--inset); border-radius: 4px; overflow: hidden; }
+.duo .dt i { display: block; height: 8px; border-radius: 4px; }
+.duo b { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.strip { position: relative; display: block; height: 14px; margin-top: 12px; }
+.strip .b2 { position: absolute; left: 0; right: 0; top: 3px; height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--fund) 22%, transparent); }
+.strip .b1 { position: absolute; top: 3px; height: 8px; border-radius: 4px; background: var(--fund); opacity: 0.7; }
+.strip .z { position: absolute; top: 0; height: 14px; width: 2px; margin-left: -1px; background: var(--ink2); }
+.strip .md { position: absolute; top: 2px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--panel); border: 2px solid var(--fund); box-sizing: border-box; }
+.meter { position: relative; display: block; height: 10px; margin-top: 12px; background: color-mix(in srgb, var(--spx) 22%, transparent); border-radius: 5px; overflow: hidden; }
+.meter i { display: block; height: 10px; background: var(--fund); }
+.meter em { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--panel); }
+.duo .dr { display: contents; }
+@media (max-width: 560px) {
+  .kpi.ok .v { font-size: 21px; }
+  .duo { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .duo .dr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 6px; }
+  .duo .dt { grid-column: 1 / -1; grid-row: 2; }
+}

@@ -228,6 +228,12 @@ function selectHolding(isin) {
 /* =====================================================================
    RISK AND OUTLOOK
    ===================================================================== */
+// Outlook summary tile: the figure, a one-line verdict, a small visual, then the detail
+const okTile = (k, v, c, verdict, vis, foot) => `<div class="kpi ok"><div class="k">${k}</div><div class="v ${c || ''}">${v}</div><div class="vd">${verdict}</div>${vis}<div class="n">${foot}</div></div>`;
+const duoBars = (rows, f) => { const mx = Math.max(...rows.map((r) => Math.abs(r[1]))) || 1; return `<div class="duo">${rows.map(([l, x, col]) => `<div class="dr"><span class="dl">${esc(l)}</span><span class="dt"><i style="width:${(Math.abs(x) / mx) * 100}%;background:${col}"></i></span><b class="${cls(x)}">${f(x)}</b></div>`).join('')}</div>`; };
+// ±1σ (dark) and ±2σ (light) bands on a strip from −2σ to +2σ, with a tick at zero and a dot at the median
+const rangeStrip = (q) => { const lo = q(-2), hi = q(2), X = (x) => ((x - lo) / (hi - lo)) * 100;
+  return `<span class="strip" role="img" aria-label="±1σ ${fmtSignedPct(q(-1), 0)} to ${fmtSignedPct(q(1), 0)}"><i class="b2"></i><i class="b1" style="left:${X(q(-1))}%;width:${X(q(1)) - X(q(-1))}%"></i>${lo < 0 && hi > 0 ? `<i class="z" style="left:${X(0)}%"></i>` : ''}<i class="md" style="left:${X(q(0))}%"></i></span>`; };
 const HORIZONS = [[3, '3M', '3 months'], [6, '6M', '6 months'], [12, '1Y', '1 year'], [24, '2Y', '2 years'], [36, '3Y', '3 years']];
 // standard normal distribution function (Abramowitz and Stegun 7.1.26)
 function normCdf(z) {
@@ -257,11 +263,15 @@ function renderRisk() {
     <div class="seg" role="group" aria-label="Horizon">${HORIZONS.map(([k, l]) => `<button data-hz="${k}" aria-pressed="${k === n}">${l}</button>`).join('')}</div>
     <div class="seg" role="group" aria-label="Scenario odds">${Object.entries(PRESETS).map(([k, v]) => `<button data-pre="${k}" aria-pressed="${k === state.preset}">${v.label}</button>`).join('')}</div>
   </div>
-  <div class="kpis4">
-    ${kpi('Expected, ' + hzL, fmtSignedPct(exp, 0), cls(exp), `${esc(bName)} ${fmtSignedPct(bExp, 0)} at historical pace`)}
-    ${kpi('Range at ±1<span style="text-transform:none">σ</span>', `<span class="${cls(q(-1))}">${fmtSignedPct(q(-1), 0)}</span> <span class="muted">to</span> <span class="${cls(q(1))}">${fmtSignedPct(q(1), 0)}</span>`, '', `±2σ: ${fmtSignedPct(q(-2), 0)} to ${fmtSignedPct(q(2), 0)}<br>±3σ: ${fmtSignedPct(q(-3), 0)} to ${fmtSignedPct(q(3), 0)}`)}
-    ${kpi('Chance of beating ' + esc(bName), Math.round(pBeat * 100) + '%', pBeat >= 0.5 ? 'pos' : 'neg', `over ${hzL}, correlation ${fmtNum(rho, 2)}`)}
-    ${kpi('Volatility', (sigma * 100).toFixed(0) + '%', '', `${esc(bName)} ${(bVol * 100).toFixed(0)}% · beta ${fmtNum(beta, 2)}`)}
+  <div class="kpis4 ok4">
+    ${okTile('Expected return', fmtSignedPct(exp, 0), cls(exp), bExp > 0 && exp > 0 ? `${fmtNum(exp / bExp, 1)}× the ${esc(bName)}` : `${pts(exp - bExp, 0)} vs the ${esc(bName)}`,
+      duoBars([[FUND, exp, 'var(--fund)'], [bName, bExp, 'var(--spx)']], (x) => fmtSignedPct(x, 0)), `over ${hzL}; the ${esc(bName)} at historical pace`)}
+    ${okTile('Likely range', `${fmtSignedPct(q(-1), 0)} to ${fmtSignedPct(q(1), 0)}`, '', '2 in 3 outcomes (±1<span class="sg">σ</span>)',
+      rangeStrip(q), `±2<span class="sg">σ</span> ${fmtSignedPct(q(-2), 0)} to ${fmtSignedPct(q(2), 0)}<br>±3<span class="sg">σ</span> ${fmtSignedPct(q(-3), 0)} to ${fmtSignedPct(q(3), 0)}`)}
+    ${okTile('Chance of beating the ' + esc(bName), Math.round(pBeat * 100) + '%', pBeat >= 0.5 ? 'pos' : 'neg', `about ${Math.round(pBeat * 10)} in 10`,
+      `<span class="meter" role="img" aria-label="${Math.round(pBeat * 100)}%"><i style="width:${(pBeat * 100).toFixed(1)}%"></i><em></em></span>`, `over ${hzL}; correlation ${fmtNum(rho, 2)}`)}
+    ${okTile('Risk', (sigma * 100).toFixed(0) + '%', '', `${fmtNum(sigma / bVol, 1)}× as volatile as the ${esc(bName)}`,
+      duoBars([[FUND, sigma, 'var(--fund)'], [bName, bVol, 'var(--spx)']], (x) => (x * 100).toFixed(0) + '%'), `annual volatility; beta ${fmtNum(beta, 2)}`)}
   </div>
   <div class="panel" style="margin-top:14px">
     <h3>Range of outcomes, next ${hzL}</h3><p class="sub">The fund is worth ${fmtEUR0(V)} today. Shaded bands: ±1σ, ±2σ and ±3σ around the median, which hold about 68%, 95% and 99.7% of outcomes, given an expected return of ${fmtSignedPct(O.exp, 0)} a year and volatility (σ) of ${(sigma * 100).toFixed(0)}% a year. Dashed: ${esc(bName)} growing at ${bMuTxt}, with its own volatility. Odds ${pr.map((x) => Math.round(x * 100)).join('/')} (bull/base/bear)${n > 12 ? '; beyond 12 months the expected return is assumed to repeat' : ''}.</p>
