@@ -504,7 +504,8 @@ ul.criteria li span, ul.rejected li span { color: var(--ink2); }
 .ctrls { justify-content: space-between; }
 .headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin: 14px 0 6px; }
 .big2 { font-size: 30px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.idxv { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.idxv { display: inline-flex; align-items: baseline; gap: 6px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.idxv .sw { align-self: center; } /* text shares the baseline and size of "time-weighted · 1 year" */
 .pbars { display: grid; }
 .pb { display: grid; grid-template-columns: minmax(84px, 120px) minmax(0, 1fr) 64px repeat(var(--ni, 1), 96px); gap: 12px; align-items: center; border: 0; background: none; padding: 7px 6px; border-bottom: 1px solid var(--line); text-align: left; border-radius: 4px; }
 .pb:last-child { border-bottom: 0; }
