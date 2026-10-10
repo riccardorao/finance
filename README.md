@@ -193,3 +193,40 @@ marked `"killDraft": true` shows a *draft* tag on the page until you confirm it 
 - The broker exposes no daily history of account value, so it is rebuilt from the trades and market prices.
   It matches the broker's own figures to within about 2%.
 - Everything on the page is information about one account, not investment advice.
+
+## CFA Prep Tracker (`cfa/cfa-tracker.html`)
+
+A standalone page for following CFA Level I, II and III preparation. It has no build step and no dependencies
+beyond jsPDF (loaded from cdnjs for the PDF report), so the file can be dropped onto any website as is.
+
+| Page | What is on it |
+|---|---|
+| **Overview** | Where each level stands, the next exam, the chance of passing it, and a back-check of past estimates against real results |
+| **Level I / II / III** | Exam settings, chance of passing, a step-by-step build-up of the estimate, estimated score per section now and on exam day, mock-score and study-hour charts, focus suggestions, study sessions grouped by week (expandable), mock exams with their section scores (expandable), the exam result with its back-check, and previous attempts |
+| **Reports** | PDF report and CSV export for one level or all three |
+
+Each visitor's data is stored in their own browser (`localStorage`), so nobody sees anyone else's figures and
+nothing is sent to a server. First-time visitors see clearly labelled example data with a button to start fresh.
+
+**Attempts.** Each level holds a list of attempts. Recording a failed result lets you start a new attempt (with
+readings covered and confidence carried over if you choose); the old attempt's sessions, mocks and result move to
+*Previous attempts* and no longer count towards the current one.
+
+**Estimate.** Built per section and summed by exam weight:
+
+1. Current level: recency-weighted average of the last five mocks (or practice scores when there are no mocks),
+   spread across sections using the latest section scores.
+2. Syllabus still to cover: coverage projected to exam day at the last four weeks' pace; new material counts at
+   80% of the candidate's level, uncovered material at the guessing rate.
+3. Momentum: half the mock trend carried forward (capped).
+4. Hours shortfall: up to −4 points when projected hours fall below 75% of target.
+5. Back-check: the average margin error on past exams, shrunk for small samples (can be switched off).
+
+The projected score is compared with the assumed pass mark (CFA Institute does not publish it) through a normal
+distribution whose spread combines exam-day noise, mock inconsistency and time to the exam.
+
+**Back-check.** For a sat exam the user records the outcome, the session pass rate, their estimate of the pass
+mark, their score if known and the section result bands from the score report. The score and the pass mark are
+both absolute numbers, so the back-check reads them as one margin (score minus pass mark) and compares it with
+the estimated margin before the exam (estimate minus assumed pass mark). Each section's estimate is also checked
+against its result band.
