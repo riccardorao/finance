@@ -1,5 +1,7 @@
 # Personal account data never leaves this machine
 data/private/
+# Household finance: real bank exports and backups
+household/private/
 # Build and test output
 dist/
 test-output/
