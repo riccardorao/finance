@@ -201,14 +201,31 @@ beyond jsPDF (loaded from cdnjs for the PDF report), so the file can be dropped 
 
 | Page | What is on it |
 |---|---|
-| **Overview** | Where each level stands, the next exam and the chance of passing it |
-| **Level I / II / III** | Exam settings (date, target hours, assumed pass mark, Level III pathway), chance of passing, mock-score and study-hour charts, a topic grid with CFA Institute's exam weights, coverage, confidence and practice scores, focus suggestions, and logs for study sessions and mock exams |
+| **Overview** | Where each level stands, the next exam, the chance of passing it, and a back-check of past estimates against real results |
+| **Level I / II / III** | Exam settings, chance of passing, a step-by-step build-up of the estimate, estimated score per section now and on exam day, mock-score and study-hour charts, focus suggestions, study sessions grouped by week (expandable), mock exams with their section scores (expandable), the exam result with its back-check, and previous attempts |
 | **Reports** | PDF report and CSV export for one level or all three |
 
 Each visitor's data is stored in their own browser (`localStorage`), so nobody sees anyone else's figures and
 nothing is sent to a server. First-time visitors see clearly labelled example data with a button to start fresh.
 
-The pass estimate blends a recency-weighted mock average, topic scores weighted by exam weight, syllabus
-coverage projected to exam day at the current weekly pace, the mock trend, and a penalty for finishing well
-short of the target hours. The projected score is compared with an assumed pass mark (CFA Institute does not
-publish it) through a normal distribution. The page explains the method under *How the pass estimate works*.
+**Attempts.** Each level holds a list of attempts. Recording a failed result lets you start a new attempt (with
+readings covered and confidence carried over if you choose); the old attempt's sessions, mocks and result move to
+*Previous attempts* and no longer count towards the current one.
+
+**Estimate.** Built per section and summed by exam weight:
+
+1. Current level: recency-weighted average of the last five mocks (or practice scores when there are no mocks),
+   spread across sections using the latest section scores.
+2. Syllabus still to cover: coverage projected to exam day at the last four weeks' pace; new material counts at
+   80% of the candidate's level, uncovered material at the guessing rate.
+3. Momentum: half the mock trend carried forward (capped).
+4. Hours shortfall: up to −4 points when projected hours fall below 75% of target.
+5. Back-check: the average gap between estimate and real score on past exams, shrunk for small samples (can be
+   switched off).
+
+The projected score is compared with the assumed pass mark (CFA Institute does not publish it) through a normal
+distribution whose spread combines exam-day noise, mock inconsistency and time to the exam.
+
+**Back-check.** For a sat exam the user records the outcome, the session pass rate, their estimate of the pass
+mark, their score if known and the section result bands from the score report. The page compares the estimate
+with the actual score (entered, or estimated from the bands) for the exam overall and for each section.

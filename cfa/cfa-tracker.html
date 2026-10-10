@@ -1,10 +1,10 @@
 <title>CFA Prep Tracker</title>
-<meta name="description" content="Track your CFA Level I, II and III preparation: study hours, syllabus coverage, mock exams and your chance of passing.">
+<meta name="description" content="Track your CFA Level I, II and III preparation: study hours, syllabus coverage, mock exams, exam attempts and your chance of passing.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,650&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: sticky ledger-style tab bar; each level is a working page: verdict strip, charts, topic grid, logs. */
+/* Layout: sticky tab bar; each level page reads top-down: verdict, estimate build-up, sections, logs, attempt history. */
 :root {
   --bg: #F3F5F8;
   --surface: #FFFFFF;
@@ -22,8 +22,8 @@
   --warn-soft: #F8EBCF;
   --bad: #B3362E;
   --bad-soft: #F8DEDB;
-  --f-display: "Source Serif 4", Georgia, "Times New Roman", serif;
-  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-display: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-body: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --r: 6px;
 }
@@ -43,28 +43,29 @@
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
-h1, h2, h3 { font-family: var(--f-display); font-weight: 650; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
-h1 { font-size: clamp(1.7rem, 3.5vw, 2.3rem); line-height: 1.15; }
-h2 { font-size: 1.35rem; line-height: 1.25; }
-h3 { font-size: 1.05rem; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; margin: 0; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 800; text-wrap: balance; margin: 0; letter-spacing: -0.02em; }
+h1 { font-size: clamp(1.6rem, 3.4vw, 2.2rem); line-height: 1.15; }
+h2 { font-size: 1.2rem; line-height: 1.25; font-weight: 700; }
+h3 { font-size: 1rem; font-weight: 700; }
 p { margin: 0; }
 a { color: var(--accent); }
-.num, td.n, .mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
-.label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.num, .mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; }
 .muted { color: var(--muted); }
 .small { font-size: 0.85rem; }
+.pos { color: var(--good); } .neg { color: var(--bad); }
 
 /* Header */
 .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); border-bottom: 1px solid var(--line); }
 .top-in { max-width: 1180px; margin: 0 auto; padding: 10px 16px 0; display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 6px 24px; }
 .brand { display: flex; align-items: baseline; gap: 10px; padding-bottom: 10px; }
-.brand b { font-family: var(--f-display); font-size: 1.2rem; font-weight: 650; }
+.brand b { font-family: var(--f-display); font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }
 .brand span { font-size: 0.8rem; color: var(--muted); }
-nav.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
-nav.tabs button { appearance: none; border: 0; background: none; font: inherit; font-weight: 500; color: var(--ink-2); padding: 10px 14px 11px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
+nav.tabs { display: flex; flex-wrap: wrap; gap: 2px; max-width: 100%; }
+nav.tabs button { appearance: none; border: 0; background: none; font: inherit; font-weight: 600; color: var(--ink-2); padding: 10px 12px 11px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
 nav.tabs button:hover { color: var(--ink); }
-nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 700; }
 
 main { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 64px; display: grid; gap: 22px; }
 section.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: grid; gap: 16px; min-width: 0; align-content: start; }
@@ -72,37 +73,39 @@ section.panel { background: var(--surface); border: 1px solid var(--line); borde
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 22px; }
 .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 18px; }
 
-/* Banner */
 .banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 12px 16px; border-radius: var(--r); background: var(--accent-soft); color: var(--ink); border: 1px solid var(--line); }
 .banner .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.note { padding: 12px 14px; border-radius: var(--r); background: var(--surface-2); font-size: 0.88rem; color: var(--ink-2); }
 
 /* Controls */
-button.btn { appearance: none; font: inherit; font-weight: 600; font-size: 0.88rem; padding: 8px 14px; border-radius: var(--r); border: 1px solid var(--accent); background: var(--accent); color: var(--surface); cursor: pointer; }
+button.btn { appearance: none; font: inherit; font-weight: 700; font-size: 0.88rem; padding: 8px 14px; border-radius: var(--r); border: 1px solid var(--accent); background: var(--accent); color: var(--surface); cursor: pointer; }
 button.btn.ghost { background: transparent; color: var(--accent); }
 button.btn.quiet { background: transparent; color: var(--ink-2); border-color: var(--line); }
 button.btn.danger { background: var(--bad); border-color: var(--bad); color: var(--surface); }
-button.btn:disabled { opacity: 0.5; cursor: default; }
 button.link { appearance: none; border: 0; background: none; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 button.x { appearance: none; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 4px 6px; border-radius: 4px; }
 button.x:hover { color: var(--bad); background: var(--bad-soft); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-input, select, textarea { font: inherit; font-size: 0.9rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 7px 9px; min-width: 0; }
+input, select { font: inherit; font-size: 0.9rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 7px 9px; min-width: 0; }
 input[type="number"] { font-family: var(--f-mono); }
 input[type="range"] { padding: 0; accent-color: var(--accent); border: 0; background: transparent; }
+input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
 .field { display: grid; gap: 4px; min-width: 0; }
-.field > span { font-size: 0.75rem; font-weight: 600; color: var(--ink-2); }
+.field > span { font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
+.check { display: inline-flex; gap: 8px; align-items: center; font-size: 0.88rem; color: var(--ink-2); }
 .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 10px; align-items: end; }
-.settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 12px; }
+.settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 12px; }
+.acts-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
 /* Verdict */
-.verdict { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 2fr); gap: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
+.verdict { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 2fr); border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
 .verdict .big { padding: 22px; display: grid; gap: 8px; align-content: start; border-right: 1px solid var(--line); }
-.verdict .big .pct { font-family: var(--f-display); font-size: 3.6rem; line-height: 1; font-weight: 650; font-variant-numeric: tabular-nums; }
+.verdict .big .pct { font-family: var(--f-display); font-size: 3.4rem; line-height: 1; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .verdict .kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .kpi { padding: 16px 18px; border-left: 1px solid var(--line); border-top: 1px solid var(--line); display: grid; gap: 4px; align-content: start; min-width: 0; }
 .kpi:nth-child(-n+3) { border-top: 0; }
 .kpi:nth-child(3n+1) { border-left: 0; }
-.kpi .v { font-family: var(--f-mono); font-size: 1.35rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.kpi .v { font-family: var(--f-mono); font-size: 1.3rem; font-weight: 500; font-variant-numeric: tabular-nums; }
 .kpi .s { font-size: 0.8rem; color: var(--muted); }
 @media (max-width: 760px) {
   .verdict { grid-template-columns: 1fr; }
@@ -112,7 +115,7 @@ input[type="range"] { padding: 0; accent-color: var(--accent); border: 0; backgr
   .kpi:nth-child(2n+1) { border-left: 0 !important; }
   .kpi:nth-child(-n+2) { border-top: 0 !important; }
 }
-.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); width: fit-content; white-space: nowrap; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); width: fit-content; white-space: nowrap; }
 .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .pill.good { background: var(--good-soft); color: var(--good); }
 .pill.warn { background: var(--warn-soft); color: var(--warn); }
@@ -121,23 +124,55 @@ input[type="range"] { padding: 0; accent-color: var(--accent); border: 0; backgr
 .bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; position: relative; }
 .bar > i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 3px; }
 .bar > i.proj { background: var(--proj); opacity: 0.35; }
+.chip { font-family: var(--f-mono); font-size: 0.82rem; padding: 2px 7px; border-radius: 4px; background: var(--surface-2); white-space: nowrap; }
+.chip.good { background: var(--good-soft); color: var(--good); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
 
-/* Tables */
-.tbl-wrap { overflow-x: auto; min-width: 0; }
-table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
-th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-tr:last-child td { border-bottom: 0; }
-th.n, td.n { text-align: right; }
-.topics td input[type="number"] { width: 72px; }
-.topics td select { width: 64px; }
-.cov { display: flex; align-items: center; gap: 8px; min-width: 150px; }
-.cov input { flex: 1; }
+/* Tables: become stacked cards on narrow screens, never scroll sideways */
+table.rt { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+table.rt th { text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+table.rt td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+table.rt tr:last-child td { border-bottom: 0; }
+table.rt .n { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+table.rt td input[type="number"] { width: 70px; }
+@media (max-width: 760px) {
+  table.rt thead { display: none; }
+  table.rt, table.rt tbody, table.rt tr { display: block; width: 100%; }
+  table.rt tr { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  table.rt tr:last-child { border-bottom: 0; }
+  table.rt td { border: 0; padding: 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-width: 0; text-align: right; }
+  table.rt td::before { content: attr(data-l); color: var(--muted); font-size: 0.75rem; font-family: var(--f-body); text-align: left; }
+  table.rt td.first { grid-column: 1 / -1; font-weight: 700; }
+  table.rt td.first::before { content: none; }
+  table.rt td.wide { grid-column: 1 / -1; }
+}
+table.rt td .pill { white-space: normal; text-align: left; }
+.cov { display: flex; align-items: center; gap: 8px; min-width: 140px; }
+.cov input { flex: 1; min-width: 80px; }
 .cov output { font-family: var(--f-mono); font-size: 0.82rem; width: 40px; text-align: right; }
-.score-chip { font-family: var(--f-mono); font-size: 0.82rem; padding: 2px 7px; border-radius: 4px; }
-.score-chip.good { background: var(--good-soft); color: var(--good); }
-.score-chip.warn { background: var(--warn-soft); color: var(--warn); }
-.score-chip.bad { background: var(--bad-soft); color: var(--bad); }
+
+/* Estimate build-up */
+.build { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.step { display: grid; grid-template-columns: 26px minmax(0, 1fr) minmax(80px, 180px) 74px; gap: 12px; align-items: center; padding: 11px 14px; border-top: 1px solid var(--line); }
+.step:first-child { border-top: 0; }
+.step .no { font-family: var(--f-mono); color: var(--muted); font-size: 0.82rem; }
+.step .what b { display: block; font-weight: 700; }
+.step .what span { font-size: 0.8rem; color: var(--muted); }
+.step .v { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-weight: 500; }
+.step.total { background: var(--surface-2); }
+.step.total .v { font-weight: 700; font-size: 1.05rem; }
+.wbar { position: relative; height: 10px; }
+.wbar::before { content: ""; position: absolute; left: 50%; top: -4px; bottom: -4px; border-left: 1px solid var(--line); }
+.wbar i { position: absolute; top: 0; bottom: 0; border-radius: 2px; }
+.wbar i.up { background: var(--good); left: 50%; }
+.wbar i.down { background: var(--bad); right: 50%; }
+.wbar i.lvl { background: var(--accent); left: 0; opacity: 0.85; }
+.wbar.lvl::before { content: none; }
+@media (max-width: 560px) {
+  .step { grid-template-columns: 22px minmax(0, 1fr) 64px; }
+  .step .wbar, .step > div:empty { display: none; }
+}
 
 /* Charts */
 .chart { width: 100%; height: auto; display: block; overflow: visible; }
@@ -150,43 +185,66 @@ th.n, td.n { text-align: right; }
 .chart .pace { stroke: var(--proj); stroke-width: 2; stroke-dasharray: 6 5; fill: none; }
 .chart .projdot { fill: var(--surface); stroke: var(--proj); stroke-width: 2; }
 .chart .today { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 3; }
-.chart .hit { fill: transparent; cursor: default; }
-.chart text.lab { fill: var(--ink-2); font-family: var(--f-body); font-size: 11.5px; font-weight: 600; }
+.chart .hit { fill: transparent; }
+.chart text.lab { fill: var(--ink-2); font-family: var(--f-body); font-size: 11.5px; font-weight: 700; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.8rem; color: var(--ink-2); }
 .legend span { display: inline-flex; align-items: center; gap: 7px; }
 .legend i { width: 18px; height: 0; border-top: 2px solid var(--accent); }
 .legend i.dash { border-top: 2px dashed var(--proj); }
 .legend i.ref { border-top: 2px dashed var(--ink-2); }
-.empty { padding: 28px 16px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--r); font-size: 0.9rem; }
+.empty { padding: 24px 16px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--r); font-size: 0.9rem; }
 #tip { position: fixed; pointer-events: none; z-index: 50; background: var(--ink); color: var(--bg); font-size: 0.8rem; padding: 6px 9px; border-radius: 5px; max-width: 240px; line-height: 1.35; }
+
+/* Expandable groups */
+.groups { display: grid; gap: 8px; }
+details.grp { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+details.grp > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 10px 12px; }
+details.grp > summary::-webkit-details-marker { display: none; }
+details.grp > summary::before { content: ""; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform .15s; }
+details.grp[open] > summary::before { transform: rotate(45deg); }
+details.grp > summary .t { font-weight: 700; min-width: 0; }
+details.grp > summary .t small { display: block; font-weight: 500; color: var(--muted); font-size: 0.8rem; }
+details.grp > summary .m { font-family: var(--f-mono); font-size: 0.85rem; text-align: right; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: end; }
+details.grp .body { padding: 0 12px 12px 36px; display: grid; gap: 10px; }
+ul.sess { list-style: none; margin: 0; padding: 0; display: grid; }
+ul.sess li { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto auto; gap: 2px 12px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); font-size: 0.88rem; }
+ul.sess li:first-child { border-top: 0; }
+ul.sess li .d { font-family: var(--f-mono); font-size: 0.8rem; color: var(--ink-2); }
+ul.sess li .w small { display: block; color: var(--muted); font-size: 0.8rem; }
+ul.sess li .h { font-family: var(--f-mono); }
+@media (max-width: 520px) { ul.sess li { grid-template-columns: minmax(0, 1fr) auto auto; } ul.sess li .d { grid-column: 1 / -1; } }
+.tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 6px 14px; }
+.tgrid div { display: flex; justify-content: space-between; gap: 8px; font-size: 0.85rem; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+details.mock-topics summary, details.inline summary { cursor: pointer; font-size: 0.85rem; color: var(--accent); font-weight: 700; }
+details.mock-topics { grid-column: 1 / -1; }
+.mt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 8px; margin-top: 10px; }
+
+/* Back-check */
+.bc { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 0; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.bc div { padding: 12px 14px; display: grid; gap: 2px; border-left: 1px solid var(--line); margin-left: -1px; }
+.bc .v { font-family: var(--f-mono); font-size: 1.15rem; }
+.bc .s { font-size: 0.78rem; color: var(--muted); }
 
 /* Overview */
 .level-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 14px; align-content: start; }
 .level-card header { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
-.level-card .roman { font-family: var(--f-display); font-size: 2.6rem; line-height: 0.9; color: var(--accent); font-weight: 650; }
+.level-card .roman { font-family: var(--f-display); font-size: 2.4rem; line-height: 0.95; color: var(--accent); font-weight: 800; letter-spacing: -0.03em; }
 .level-card dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; font-size: 0.88rem; }
 .level-card dt { color: var(--muted); }
 .level-card dd { margin: 0; text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
-.journey { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface); }
+.journey { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface); }
 .journey div { padding: 14px 16px; display: grid; gap: 4px; border-left: 1px solid var(--line); min-width: 0; }
 .journey div:first-child { border-left: 0; }
 .hero { display: grid; gap: 10px; }
 .hero p { color: var(--ink-2); max-width: 65ch; }
-
 .focus { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .focus li { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); }
 .focus li b { grid-row: span 2; font-family: var(--f-mono); color: var(--accent); }
-details.method summary { cursor: pointer; font-weight: 600; color: var(--ink-2); }
-details.method { font-size: 0.88rem; color: var(--ink-2); }
-details.method ol, details.method ul { padding-left: 1.2rem; display: grid; gap: 6px; max-width: 75ch; }
-details.mock-topics { grid-column: 1 / -1; }
-details.mock-topics summary { cursor: pointer; font-size: 0.85rem; color: var(--accent); font-weight: 600; }
-.mt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 8px; margin-top: 10px; }
 .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: var(--r); display: flex; gap: 14px; align-items: center; z-index: 60; font-size: 0.88rem; max-width: calc(100% - 32px); }
-.toast button { appearance: none; background: none; border: 0; color: var(--bg); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.toast button { appearance: none; background: none; border: 0; color: var(--bg); font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }
 footer.foot { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 0 40px; color: var(--muted); font-size: 0.8rem; display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: space-between; }
 @media (prefers-reduced-motion: no-preference) { .bar > i { transition: width .3s ease; } }
-@media (max-width: 560px) { .journey { grid-template-columns: 1fr; } .journey div { border-left: 0; border-top: 1px solid var(--line); } .journey div:first-child { border-top: 0; } section.panel { padding: 16px; } }
+@media (max-width: 560px) { .journey { grid-template-columns: 1fr; } .journey div { border-left: 0; border-top: 1px solid var(--line); } .journey div:first-child { border-top: 0; } section.panel { padding: 16px; } details.grp .body { padding-left: 12px; } }
 </style>
 
 <header class="top">
@@ -219,7 +277,7 @@ footer.foot { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-b
 const PATHWAYS = { pm: "Portfolio Management", pmk: "Private Markets", pw: "Private Wealth" };
 const LEVELS = {
   1: {
-    name: "Level I", roman: "I", hours: 300, mps: 70, guess: 33.3,
+    name: "Level I", roman: "I", hours: 300, mps: 70, guess: 33.3, passNote: "roughly 40–45% in recent sessions",
     format: "180 multiple-choice questions in two 2h 15m sessions",
     topics: [
       ["ethics", "Ethical & Professional Standards", 15, 20], ["quant", "Quantitative Methods", 6, 9],
@@ -230,7 +288,7 @@ const LEVELS = {
     ]
   },
   2: {
-    name: "Level II", roman: "II", hours: 325, mps: 70, guess: 33.3,
+    name: "Level II", roman: "II", hours: 325, mps: 70, guess: 33.3, passNote: "roughly 40–55% in recent sessions",
     format: "88 item-set questions (22 vignettes) in two 2h 12m sessions",
     topics: [
       ["ethics", "Ethical & Professional Standards", 10, 15], ["quant", "Quantitative Methods", 5, 10],
@@ -241,7 +299,7 @@ const LEVELS = {
     ]
   },
   3: {
-    name: "Level III", roman: "III", hours: 350, mps: 65, guess: 25,
+    name: "Level III", roman: "III", hours: 350, mps: 65, guess: 25, passNote: "roughly 50% in recent sessions",
     format: "Item sets and constructed-response (essay) questions in two sessions",
     topics: [
       ["aa", "Asset Allocation", 15, 20], ["pc", "Portfolio Construction", 15, 20],
@@ -251,107 +309,143 @@ const LEVELS = {
   }
 };
 const KINDS = ["Reading", "Practice questions", "Mock exam", "Review", "Video lecture"];
-const STATUS = { "not-started": "Not started", studying: "Studying", passed: "Passed", "not-passed": "Did not pass" };
+const STATUS = { "not-started": "Not started", studying: "Studying", awaiting: "Exam taken, awaiting result", passed: "Passed", failed: "Did not pass" };
+const BANDS = { lo: { t: "Below 50%", mid: 40, a: 0, b: 50 }, mid: { t: "50–70%", mid: 60, a: 50, b: 70 }, hi: { t: "Above 70%", mid: 80, a: 70, b: 100 } };
 
-function topicsFor(id, lv) {
+function topicsFor(id, pathway) {
   const L = LEVELS[id];
   const sum = L.topics.reduce((s, t) => s + (t[2] + t[3]) / 2, 0);
   return L.topics.map(([tid, name, lo, hi]) => ({
     id: tid, lo, hi, w: (lo + hi) / 2 / sum,
-    name: tid === "path" ? PATHWAYS[lv.pathway || "pm"] + " pathway" : name
+    name: tid === "path" ? PATHWAYS[pathway || "pm"] + " pathway" : name
   }));
 }
 
 /* ---------- Dates & formatting ---------- */
 const DAY = 86400000;
 function today() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
-function parse(s) { if (!s) return null; const [y, m, d] = s.split("-").map(Number); return y ? new Date(y, m - 1, d) : null; }
+function parse(s) { if (!s) return null; const [y, m, d] = String(s).split("-").map(Number); return y ? new Date(y, m - 1, d) : null; }
 function iso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
 function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
 function fmtDate(s) { const d = typeof s === "string" ? parse(s) : s; return d ? d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"; }
 function fmtShort(d) { return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }); }
+function fmtMonth(s) { const d = parse(s); return d ? d.toLocaleDateString("en-GB", { month: "long", year: "numeric" }) : "—"; }
+function weekStart(d) { return addDays(d, -((d.getDay() + 6) % 7)); }
 const nf1 = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 const nf0 = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 0 });
 function pct(v, d) { return v == null || isNaN(v) ? "—" : (d === 0 ? nf0.format(v) : nf1.format(v)) + "%"; }
+function pts(v) { return v == null || isNaN(v) ? "—" : (v > 0.05 ? "+" : v < -0.05 ? "−" : "±") + nf1.format(Math.abs(v)) + " pts"; }
 function hrs(v) { return v == null ? "—" : nf0.format(v) + " h"; }
 function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 function uid() { return Math.random().toString(36).slice(2, 10); }
+function num(v) { return v == null || v === "" || isNaN(Number(v)) ? null : Number(v); }
 
 /* ---------- State ---------- */
 const KEY = "cfa-prep-tracker-v1";
-function blankLevel(id) {
-  const topics = {};
-  LEVELS[id].topics.forEach(t => { topics[t[0]] = { cov: 0, conf: 0, prac: null }; });
-  return { status: "not-started", examDate: "", targetHours: LEVELS[id].hours, mps: LEVELS[id].mps, pathway: "pm", topics, sessions: [], mocks: [] };
+function blankTopics(id) { const t = {}; LEVELS[id].topics.forEach(x => { t[x[0]] = { cov: 0, conf: 0, prac: null }; }); return t; }
+function blankAttempt(id) { return { id: uid(), examDate: "", targetHours: LEVELS[id].hours, mps: LEVELS[id].mps, topics: blankTopics(id), sessions: [], mocks: [], result: null }; }
+function blankLevel(id) { return { pathway: "pm", attempts: [blankAttempt(id)] }; }
+function blankState() { return { v: 2, example: false, name: "", useBackcheck: true, levels: { 1: blankLevel(1), 2: blankLevel(2), 3: blankLevel(3) } }; }
+
+function migrate(s) {
+  if (!s || !s.levels) return null;
+  if (s.v !== 2) {
+    [1, 2, 3].forEach(id => {
+      const o = s.levels[id] || {};
+      const a = Object.assign(blankAttempt(id), { examDate: o.examDate || "", targetHours: o.targetHours || LEVELS[id].hours, mps: o.mps || LEVELS[id].mps, topics: o.topics || blankTopics(id), sessions: o.sessions || [], mocks: o.mocks || [] });
+      if (o.status === "passed" || o.status === "not-passed") a.result = { outcome: o.status === "passed" ? "passed" : "failed", actual: null, mps: null, passRate: null, bands: {} };
+      s.levels[id] = { pathway: o.pathway || "pm", attempts: [a] };
+    });
+    s.v = 2; s.useBackcheck = true;
+  }
+  [1, 2, 3].forEach(id => {
+    const lv = s.levels[id] || (s.levels[id] = blankLevel(id));
+    if (!lv.attempts || !lv.attempts.length) lv.attempts = [blankAttempt(id)];
+    lv.attempts.forEach(a => {
+      a.topics = a.topics || {};
+      LEVELS[id].topics.forEach(t => { if (!a.topics[t[0]]) a.topics[t[0]] = { cov: 0, conf: 0, prac: null }; });
+      a.sessions = a.sessions || []; a.mocks = a.mocks || [];
+    });
+  });
+  return s;
 }
-function blankState() { return { v: 1, example: false, name: "", levels: { 1: blankLevel(1), 2: blankLevel(2), 3: blankLevel(3) } }; }
 
 function exampleState() {
-  let seed = 7;
+  let seed = 11;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
   const t = today();
   const s = blankState();
   s.example = true;
   s.name = "Example candidate";
 
-  // Level I: passed earlier this year
-  const l1 = s.levels[1];
-  l1.status = "passed";
-  const l1exam = addDays(t, -150);
-  l1.examDate = iso(l1exam);
-  const l1ids = LEVELS[1].topics.map(x => x[0]);
-  for (let d = -125; d < 0; d += 2) {
-    l1.sessions.push({ id: uid(), date: iso(addDays(l1exam, d)), topic: l1ids[Math.floor(rnd() * l1ids.length)], kind: KINDS[Math.floor(rnd() * 4)], hours: Math.round((3 + rnd() * 3) * 4) / 4, notes: "" });
+  function fill(id, a, exam, days, perDay, order, mocks) {
+    const ids = order || LEVELS[id].topics.map(x => x[0]);
+    for (let d = -days; d <= -1; d++) {
+      if (rnd() < 0.42) continue;
+      const prog = (d + days) / days;
+      const tid = ids[Math.min(ids.length - 1, Math.max(0, Math.floor(prog * ids.length + (rnd() - 0.5) * 2)))];
+      a.sessions.push({ id: uid(), date: iso(addDays(exam, d)), topic: rnd() < 0.1 ? "mixed" : tid, kind: prog > 0.65 && rnd() < 0.45 ? "Practice questions" : KINDS[rnd() < 0.6 ? 0 : 4], hours: Math.round((perDay * (0.6 + rnd() * 0.8)) * 4) / 4, notes: "" });
+    }
+    mocks.forEach(([d, p, sc, tp]) => a.mocks.push({ id: uid(), date: iso(addDays(exam, d)), provider: p, score: sc, topics: tp }));
   }
-  l1ids.forEach(id => { l1.topics[id] = { cov: 100, conf: 4, prac: Math.round(68 + rnd() * 16) }; });
-  [[-35, "CFA Institute mock A", 66], [-21, "Third-party mock 1", 70], [-9, "CFA Institute mock B", 74]].forEach(([d, p, sc]) => {
-    const tp = {}; l1ids.forEach(id => { tp[id] = Math.round(clamp(sc + (rnd() - 0.5) * 22, 35, 98)); });
-    l1.mocks.push({ id: uid(), date: iso(addDays(l1exam, d)), provider: p, score: sc, topics: tp });
-  });
+  const l1ids = LEVELS[1].topics.map(x => x[0]);
+  const tps = (base, spread) => { const o = {}; l1ids.forEach(k => { o[k] = Math.round(clamp(base + (spread[k] || 0), 30, 95)); }); return o; };
+
+  // Level I, attempt 1: did not pass
+  const l1 = s.levels[1];
+  const a1 = l1.attempts[0];
+  const e1 = addDays(t, -420);
+  a1.examDate = iso(e1);
+  l1ids.forEach(k => { a1.topics[k] = { cov: 100, conf: 3, prac: null }; });
+  fill(1, a1, e1, 110, 2.6, null, [
+    [-30, "Third-party mock 1", 59, tps(59, { ethics: -4, quant: 8, fi: -9, deriv: -10, corp: 7 })],
+    [-16, "CFA Institute mock A", 64, tps(64, { ethics: -3, quant: 7, fi: -8, deriv: -9, corp: 6 })],
+    [-6, "CFA Institute mock B", 67, tps(67, { ethics: -2, quant: 6, fi: -7, deriv: -8, corp: 6 })]]);
+  a1.result = { outcome: "failed", actual: null, mps: null, passRate: 43, bands: { ethics: "mid", quant: "hi", econ: "mid", fsa: "mid", corp: "hi", equity: "mid", fi: "lo", deriv: "lo", alts: "mid", pm: "mid" } };
+
+  // Level I, attempt 2: passed
+  const a2 = blankAttempt(1);
+  const e2 = addDays(t, -150);
+  a2.examDate = iso(e2);
+  l1ids.forEach(k => { a2.topics[k] = { cov: 100, conf: 4, prac: null }; });
+  fill(1, a2, e2, 95, 3.6, ["fi", "deriv", "ethics", "fsa", "equity", "alts", "pm", "quant", "econ", "corp"], [
+    [-28, "Third-party mock 2", 68, tps(68, { fi: -3, deriv: -4, quant: 5 })],
+    [-14, "CFA Institute mock C", 72, tps(72, { fi: -2, deriv: -3, quant: 5 })],
+    [-5, "CFA Institute mock D", 74, tps(74, { fi: -1, deriv: -2, quant: 5 })]]);
+  a2.result = { outcome: "passed", actual: null, mps: null, passRate: 45, bands: { ethics: "hi", quant: "hi", econ: "mid", fsa: "hi", corp: "hi", equity: "hi", fi: "mid", deriv: "mid", alts: "hi", pm: "mid" } };
+  l1.attempts.push(a2);
 
   // Level II: studying, exam in seven weeks
-  const l2 = s.levels[2];
-  l2.status = "studying";
-  l2.examDate = iso(addDays(t, 49));
+  const b = s.levels[2].attempts[0];
+  const e3 = addDays(t, 49);
+  b.examDate = iso(e3);
   const cov = { ethics: 80, quant: 100, econ: 100, fsa: 100, corp: 100, equity: 90, fi: 70, deriv: 45, alts: 30, pm: 20 };
   const conf = { ethics: 3, quant: 4, econ: 4, fsa: 3, corp: 4, equity: 3, fi: 2, deriv: 2, alts: 2, pm: 1 };
   const prac = { ethics: 64, quant: 76, econ: 72, fsa: 61, corp: 74, equity: 66, fi: 58, deriv: 52, alts: null, pm: null };
-  Object.keys(cov).forEach(id => { l2.topics[id] = { cov: cov[id], conf: conf[id], prac: prac[id] }; });
+  Object.keys(cov).forEach(k => { b.topics[k] = { cov: cov[k], conf: conf[k], prac: prac[k] }; });
   const order = ["quant", "econ", "corp", "fsa", "equity", "ethics", "fi", "deriv", "alts", "pm"];
-  for (let d = -118; d <= -1; d += 1) {
+  for (let d = -118; d <= -1; d++) {
     if (rnd() < 0.45) continue;
     const prog = (d + 118) / 118;
-    const id = order[Math.min(order.length - 1, Math.floor(prog * 9.5 + (rnd() - 0.5) * 2))] || "quant";
-    l2.sessions.push({ id: uid(), date: iso(addDays(t, d)), topic: rnd() < 0.12 ? "mixed" : id, kind: d > -45 && rnd() < 0.4 ? "Practice questions" : KINDS[Math.floor(rnd() * 2) === 0 ? 0 : 4], hours: Math.round((1.5 + rnd() * 2.5) * 4) / 4, notes: "" });
+    const id = order[Math.min(order.length - 1, Math.max(0, Math.floor(prog * 9.5 + (rnd() - 0.5) * 2)))];
+    b.sessions.push({ id: uid(), date: iso(addDays(t, d)), topic: rnd() < 0.12 ? "mixed" : id, kind: d > -45 && rnd() < 0.4 ? "Practice questions" : KINDS[rnd() < 0.5 ? 0 : 4], hours: Math.round((1.5 + rnd() * 2.5) * 4) / 4, notes: "" });
   }
   [[-40, "Third-party mock 1", 57, { ethics: 58, quant: 70, econ: 66, fsa: 55, corp: 68, equity: 60, fi: 50, deriv: 40, alts: 45, pm: 42 }],
    [-20, "CFA Institute mock A", 62, { ethics: 63, quant: 74, econ: 70, fsa: 60, corp: 72, equity: 64, fi: 56, deriv: 46, alts: 48, pm: 45 }],
    [-6, "Third-party mock 2", 65, { ethics: 66, quant: 77, econ: 72, fsa: 62, corp: 75, equity: 68, fi: 60, deriv: 52, alts: 50, pm: 48 }]
-  ].forEach(([d, p, sc, tp]) => l2.mocks.push({ id: uid(), date: iso(addDays(t, d)), provider: p, score: sc, topics: tp }));
+  ].forEach(([d, p, sc, tp]) => b.mocks.push({ id: uid(), date: iso(addDays(t, d)), provider: p, score: sc, topics: tp }));
   return s;
 }
 
 let state;
 function load() {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) {
-      const s = JSON.parse(raw);
-      if (s && s.levels) {
-        [1, 2, 3].forEach(id => {
-          const b = blankLevel(id);
-          s.levels[id] = Object.assign(b, s.levels[id] || {});
-          LEVELS[id].topics.forEach(t => { if (!s.levels[id].topics[t[0]]) s.levels[id].topics[t[0]] = { cov: 0, conf: 0, prac: null }; });
-        });
-        return s;
-      }
-    }
-  } catch (e) { /* storage unavailable */ }
+  try { const raw = localStorage.getItem(KEY); if (raw) { const s = migrate(JSON.parse(raw)); if (s) return s; } } catch (e) { /* storage unavailable */ }
   return exampleState();
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* in-memory only */ } }
 state = load();
+function cur(id) { const a = state.levels[id].attempts; return a[a.length - 1]; }
 
 /* ---------- Model ---------- */
 function phi(z) {
@@ -360,43 +454,75 @@ function phi(z) {
   const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
   return z > 0 ? 1 - p : p;
 }
+function statusOf(at) {
+  if (at.result) return at.result.outcome === "passed" ? "passed" : "failed";
+  const ex = parse(at.examDate);
+  if (ex && ex < today()) return "awaiting";
+  return at.sessions.length || at.mocks.length ? "studying" : "not-started";
+}
+function bandEstimate(id, at) {
+  if (!at.result || !at.result.bands) return null;
+  const T = topicsFor(id, state.levels[id].pathway);
+  let w = 0, acc = 0;
+  T.forEach(t => { const b = BANDS[at.result.bands[t.id]]; if (b) { w += t.w; acc += t.w * b.mid; } });
+  return w >= 0.7 ? acc / w : null;
+}
+function actualOf(id, at) {
+  if (!at.result) return null;
+  const a = num(at.result.actual);
+  if (a != null) return { v: a, src: "entered" };
+  const b = bandEstimate(id, at);
+  return b != null ? { v: b, src: "bands" } : null;
+}
 
-function compute(id) {
-  const lv = state.levels[id], L = LEVELS[id], g = L.guess;
-  const T = topicsFor(id, lv);
+// Back-check: how far the model's exam-day estimate was from your real score on past exams (all levels)
+function calibration() {
+  const list = [];
+  [1, 2, 3].forEach(lid => state.levels[lid].attempts.forEach((a, i) => {
+    const act = actualOf(lid, a);
+    if (!act) return;
+    const r = compute(lid, a, { calib: false });
+    if (r.Eexam == null) return;
+    list.push({ lid, n: i + 1, pred: r.Eexam, actual: act.v, err: act.v - r.Eexam });
+  }));
+  const n = list.length;
+  const mean = n ? list.reduce((s, x) => s + x.err, 0) / n : 0;
+  return { n, mean, adj: n ? clamp(mean * n / (n + 2), -6, 6) : 0, list };
+}
+
+function compute(id, at, opts) {
+  opts = opts || {};
+  at = at || cur(id);
+  const L = LEVELS[id], g = L.guess, pathway = state.levels[id].pathway;
+  const T = topicsFor(id, pathway);
   const now = today();
-  const exam = parse(lv.examDate);
+  const exam = parse(at.examDate);
   const daysLeft = exam ? Math.round((exam - now) / DAY) : null;
-  const upcoming = daysLeft != null && daysLeft > 0;
+  const status = statusOf(at);
+  const upcoming = daysLeft != null && daysLeft > 0 && !at.result;
   const weeksLeft = upcoming ? daysLeft / 7 : 0;
-  const mps = Number(lv.mps) || L.mps;
-  const target = Number(lv.targetHours) || L.hours;
+  const mps = Number(at.mps) || L.mps;
+  const target = Number(at.targetHours) || L.hours;
 
-  const sessions = lv.sessions.slice().sort((a, b) => a.date.localeCompare(b.date));
-  const mocks = lv.mocks.slice().sort((a, b) => a.date.localeCompare(b.date));
+  const sessions = at.sessions.slice().sort((a, b) => a.date.localeCompare(b.date));
+  const mocks = at.mocks.slice().sort((a, b) => a.date.localeCompare(b.date));
   const H = sessions.reduce((s, x) => s + (Number(x.hours) || 0), 0);
-  const ref = upcoming || !exam ? now : exam;
+  const ref = exam && exam < now ? exam : now;
   const cutoff = addDays(ref, -28);
-  const recent = sessions.filter(x => { const d = parse(x.date); return d > cutoff && d <= ref; });
-  const rate = recent.reduce((s, x) => s + (Number(x.hours) || 0), 0) / 4;
+  const rate = sessions.filter(x => { const d = parse(x.date); return d > cutoff && d <= ref; }).reduce((s, x) => s + (Number(x.hours) || 0), 0) / 4;
+  const C = T.reduce((s, t) => s + t.w * (Number(at.topics[t.id].cov) || 0) / 100, 0);
 
-  const C = T.reduce((s, t) => s + t.w * (Number(lv.topics[t.id].cov) || 0) / 100, 0);
-
-  // Per-topic score: latest mock topic score, else practice score
+  // Step 0: measured section scores (latest mock section score, else practice score)
   const rows = T.map(t => {
-    const tp = lv.topics[t.id];
+    const tp = at.topics[t.id];
     let mockScore = null;
-    for (let i = mocks.length - 1; i >= 0; i--) { const v = mocks[i].topics && mocks[i].topics[t.id]; if (v != null && v !== "") { mockScore = Number(v); break; } }
-    const prac = tp.prac == null || tp.prac === "" ? null : Number(tp.prac);
-    const score = mockScore != null ? mockScore : prac;
+    for (let i = mocks.length - 1; i >= 0; i--) { const v = num(mocks[i].topics && mocks[i].topics[t.id]); if (v != null) { mockScore = v; break; } }
+    const prac = num(tp.prac);
     const h = sessions.filter(x => x.topic === t.id).reduce((s, x) => s + (Number(x.hours) || 0), 0);
-    return Object.assign({}, t, { cov: Number(tp.cov) || 0, conf: Number(tp.conf) || 0, prac, mockScore, score, hours: h });
+    return Object.assign({}, t, { c: (Number(tp.cov) || 0) / 100, cov: Number(tp.cov) || 0, conf: Number(tp.conf) || 0, prac, mockScore, measured: mockScore != null ? mockScore : prac, hours: h });
   });
-  const scored = rows.filter(r => r.score != null);
-  const Wt = scored.reduce((s, r) => s + r.w, 0);
-  const Tw = Wt > 0 ? scored.reduce((s, r) => s + r.w * r.score, 0) / Wt : null;
 
-  // Mock average, recent mocks weighted more heavily
+  // Mock average: last five, most recent weighted most
   const last = mocks.slice(-5);
   let M = null, sd = 0;
   if (last.length) {
@@ -409,107 +535,147 @@ function compute(id) {
     }
   }
 
+  // Knowledge level on studied material, used for sections without a measured score
+  const kOf = (score, c) => clamp((score - (1 - c) * g) / c, g, 95);
+  const measuredRows = rows.filter(r => r.measured != null);
+  const Wm = measuredRows.reduce((s, r) => s + r.w, 0);
+  let Kfill = null;
+  if (M != null) Kfill = kOf(M, Math.max(C, 0.2));
+  else if (measuredRows.length) { const ks = measuredRows.map(r => r.c > 0.2 ? kOf(r.measured, r.c) : r.measured); Kfill = ks.reduce((s, k) => s + k, 0) / ks.length; }
+
+  // Step 1: current level, by section and overall (anchored to the mock average when there are mocks)
   let Enow = null, source = "none";
-  if (M != null) { Enow = Wt >= 0.5 ? 0.7 * M + 0.3 * Tw : M; source = Wt >= 0.5 ? "mocks+topics" : "mocks"; }
-  else if (Wt >= 0.3) { Enow = C * Tw + (1 - C) * g; source = "practice"; }
+  rows.forEach(r => { r.raw = r.measured != null ? r.measured : (Kfill != null ? g + r.c * (Kfill - g) : null); });
+  if (M != null) {
+    const shift = M - rows.reduce((s, r) => s + r.w * r.raw, 0);
+    rows.forEach(r => { r.now = r.raw + shift; });
+    Enow = M; source = "mocks";
+  } else if (Wm >= 0.3) {
+    rows.forEach(r => { r.now = r.raw; });
+    Enow = rows.reduce((s, r) => s + r.w * r.now, 0); source = "practice";
+  } else rows.forEach(r => { r.now = null; });
 
-  // Mock trend (points per week)
-  let slope = null;
-  if (mocks.length >= 3) {
-    const pts = mocks.slice(-5).map(m => [(parse(m.date) - now) / DAY / 7, Number(m.score)]);
-    const mx = pts.reduce((s, p) => s + p[0], 0) / pts.length, my = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-    const num = pts.reduce((s, p) => s + (p[0] - mx) * (p[1] - my), 0), den = pts.reduce((s, p) => s + (p[0] - mx) ** 2, 0);
-    slope = den > 0 ? clamp(num / den, -1.5, 1.5) : 0;
-  }
-
-  // Projection to exam day
-  let Hx = H, Cx = C, Eexam = Enow, gain = 0, penalty = 0;
+  // Steps 2–5: projection to exam day
+  let Hx = H, Cx = C, gain = 0, penalty = 0, add = 0;
   if (upcoming) {
-    const add = rate * weeksLeft;
+    add = rate * weeksLeft;
     Hx = H + add;
     const hpc = C > 0.05 && H > 0 ? H / C : target * 0.85;
     Cx = Math.min(1, C + add / hpc);
-    if (Enow != null) {
-      const K = C > 0.2 ? clamp((Enow - (1 - C) * g) / C, g, 95) : Enow;
-      gain = slope != null ? clamp(slope * weeksLeft * 0.5, -3, 4) : clamp(add / 60, 0, 3) * (Cx >= 0.999 ? 1 : 0.5);
-      if (Hx < 0.75 * target) penalty = -Math.min(4, (0.75 - Hx / target) * 16);
-      if (Cx - C > 0.1) gain = Math.min(gain, 2);
-      Eexam = clamp(Enow + 0.8 * (Cx - C) * Math.max(0, K - g) + gain + penalty, 0, 100);
-    }
   }
-  const sigma = Math.sqrt((M != null ? 5 : 7) ** 2 + (sd * 0.6) ** 2 + (upcoming ? Math.min(4, weeksLeft * 0.25) : 0) ** 2);
+  const f = C < 1 ? (Cx - C) / (1 - C) : 0;
+  let slope = null;
+  if (mocks.length >= 3) {
+    const p = mocks.slice(-5).map(m => [(parse(m.date) - now) / DAY / 7, Number(m.score)]);
+    const mx = p.reduce((s, q) => s + q[0], 0) / p.length, my = p.reduce((s, q) => s + q[1], 0) / p.length;
+    const nu = p.reduce((s, q) => s + (q[0] - mx) * (q[1] - my), 0), de = p.reduce((s, q) => s + (q[0] - mx) ** 2, 0);
+    slope = de > 0 ? clamp(nu / de, -1.5, 1.5) : 0;
+  }
+  if (upcoming && Enow != null) {
+    gain = slope != null ? clamp(slope * weeksLeft * 0.5, -3, 4) : clamp(add / 60, 0, 3) * (Cx >= 0.999 ? 1 : 0.5);
+    if (Cx - C > 0.1) gain = Math.min(gain, 2);
+    if (Hx < 0.75 * target) penalty = -Math.min(4, (0.75 - Hx / target) * 16);
+  }
+  const cal = opts.calib === false || at.result ? { n: 0, adj: 0, mean: 0, list: [] } : calibration();
+  const calib = state.useBackcheck && Enow != null ? cal.adj : 0;
+  rows.forEach(r => {
+    r.cx = r.c + (1 - r.c) * f;
+    if (r.now == null) { r.exam = null; r.uplift = 0; return; }
+    const k = r.c > 0.2 ? kOf(r.now, r.c) : (Kfill != null ? Kfill : r.now);
+    r.uplift = 0.8 * (r.cx - r.c) * Math.max(0, k - g);
+    r.exam = clamp(r.now + r.uplift + gain + penalty + calib, 0, 100);
+    r.now = clamp(r.now, 0, 100);
+  });
+  const covUp = rows.reduce((s, r) => s + r.w * (r.uplift || 0), 0);
+  const Eexam = Enow == null ? null : clamp(Enow + covUp + gain + penalty + calib, 0, 100);
+
+  // Steps 6–7: margin, uncertainty and chance of passing
+  const sBase = M != null ? 5 : 7, sCons = sd * 0.6, sTime = upcoming ? Math.min(4, weeksLeft * 0.25) : 0;
+  const sigma = Math.sqrt(sBase ** 2 + sCons ** 2 + sTime ** 2);
   const P = Eexam != null ? phi((Eexam - mps) / sigma) : null;
 
   let band;
-  if (lv.status === "passed") band = { k: "good", t: "Passed" };
-  else if (lv.status === "not-passed") band = { k: "bad", t: "Did not pass" };
+  if (status === "passed") band = { k: "good", t: "Passed" };
+  else if (status === "failed") band = { k: "bad", t: "Did not pass" };
   else if (P == null) band = { k: "", t: "Not enough data" };
   else if (P >= 0.75) band = { k: "good", t: "On track" };
   else if (P >= 0.5) band = { k: "warn", t: "Borderline" };
   else band = { k: "bad", t: "At risk" };
 
-  // Focus areas
   const focus = rows.map(r => {
-    const est = r.score != null ? r.score : g + (r.cov / 100) * (mps - g);
+    const est = r.exam != null ? r.exam : g + r.c * (mps - g);
     const pr = r.w * Math.max(0, mps + 5 - est) + r.w * (100 - r.cov) * 0.25 + r.w * (5 - (r.conf || 0)) * 1.5;
     const why = [];
-    if (r.score != null && r.score < mps) why.push("scoring " + pct(r.score, 0) + " against a " + pct(mps, 0) + " pass line");
+    if (r.exam != null) why.push("projected " + pct(r.exam, 0) + " on exam day");
+    if (r.measured != null && r.measured < mps) why.push("latest score " + pct(r.measured, 0));
     if (r.cov < 100) why.push(pct(r.cov, 0) + " of readings covered");
-    if (r.score == null) why.push("no practice or mock score yet");
+    if (r.measured == null) why.push("no practice or mock score yet");
     if (r.conf && r.conf <= 2) why.push("confidence " + r.conf + "/5");
     return { r, pr, why };
-  }).filter(f => f.pr > 0.4 && f.why.length).sort((a, b) => b.pr - a.pr).slice(0, 4);
+  }).filter(x => x.pr > 0.4).sort((a, b) => b.pr - a.pr).slice(0, 4);
 
   const byKind = {};
   sessions.forEach(x => { byKind[x.kind] = (byKind[x.kind] || 0) + (Number(x.hours) || 0); });
 
-  return { id, lv, L, T, rows, now, exam, daysLeft, upcoming, weeksLeft, mps, target, sessions, mocks, H, rate, C, Cx, Hx, M, Tw, Wt, Enow, Eexam, sigma, P, band, slope, gain, penalty, source, focus, byKind, g };
+  // Back-check for an attempt with a recorded result
+  let back = null;
+  if (at.result) {
+    const act = actualOf(id, at);
+    const rmps = num(at.result.mps);
+    const mpsUsed = rmps != null ? rmps : mps;
+    back = {
+      outcome: at.result.outcome, passRate: num(at.result.passRate), mpsUsed, mpsReported: rmps,
+      actual: act ? act.v : null, actualSrc: act ? act.src : null, pred: Eexam, err: act && Eexam != null ? act.v - Eexam : null,
+      Ppred: P, margin: act ? act.v - mpsUsed : null,
+      sections: rows.map(r => {
+        const bd = BANDS[at.result.bands && at.result.bands[r.id]];
+        let chk = null;
+        if (bd && r.exam != null) chk = r.exam < bd.a ? "under" : r.exam > bd.b ? "over" : "match";
+        return { r, b: bd, chk };
+      })
+    };
+  }
+
+  return { id, at, L, T, rows, now, exam, daysLeft, status, upcoming, weeksLeft, mps, target, sessions, mocks, H, rate, C, Cx, Hx, add, M, sd, Enow, Eexam, covUp, gain, penalty, calib, cal, slope, sigma, sBase, sCons, sTime, P, band, source, focus, byKind, g, back };
 }
 
-function weeklyNeeded(r) {
-  if (!r.upcoming) return null;
-  return Math.max(0, (r.target - r.H) / Math.max(r.weeksLeft, 0.14));
-}
+function weeklyNeeded(r) { return r.upcoming ? Math.max(0, (r.target - r.H) / Math.max(r.weeksLeft, 0.14)) : null; }
 function scoreClass(v, mps) { return v == null ? "" : v >= mps + 5 ? "good" : v >= mps - 5 ? "warn" : "bad"; }
 
 /* ---------- Charts ---------- */
 function mockChart(r) {
-  if (!r.mocks.length) return '<div class="empty">No mock exams yet. Add your first one below to see your score trend against the pass line.</div>';
-  const W = 640, Hh = 230, ml = 38, mr = 86, mt = 14, mb = 28;
+  if (!r.mocks.length) return '<div class="empty">No mock exams yet. Record your first one below to see your score trend against the pass mark.</div>';
+  const W = 640, Hh = 230, ml = 38, mr = 90, mt = 16, mb = 28;
   const d0 = parse(r.mocks[0].date);
-  let d1 = r.upcoming ? r.exam : parse(r.mocks[r.mocks.length - 1].date);
-  if (r.exam && !r.upcoming && r.exam > d1) d1 = r.exam;
+  const d1 = r.upcoming ? r.exam : parse(r.mocks[r.mocks.length - 1].date);
   const span = Math.max(14 * DAY, d1 - d0);
   const x0 = new Date(+d0 - span * 0.06), x1 = new Date(+d1 + span * 0.04);
-  const minS = Math.min(r.mps, ...r.mocks.map(m => +m.score), r.Eexam || 100);
+  const minS = Math.min(r.mps, ...r.mocks.map(m => +m.score), r.Eexam == null ? 100 : r.Eexam);
   const y0 = minS < 45 ? 20 : 40, y1 = 100;
   const X = d => ml + (W - ml - mr) * ((d - x0) / (x1 - x0));
   const Y = v => mt + (Hh - mt - mb) * (1 - (v - y0) / (y1 - y0));
-  let s = `<svg class="chart" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Mock exam scores over time against the minimum passing score">`;
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Mock exam scores over time against the assumed pass mark">`;
   for (let v = y0; v <= y1; v += 10) s += `<line class="grid" x1="${ml}" x2="${W - mr}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${ml - 6}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
-  const ticks = 4;
-  for (let i = 0; i <= ticks; i++) { const d = new Date(+x0 + (x1 - x0) * (i / ticks)); s += `<text x="${X(d)}" y="${Hh - 8}" text-anchor="middle">${fmtShort(d)}</text>`; }
+  for (let i = 0; i <= 4; i++) { const d = new Date(+x0 + (x1 - x0) * (i / 4)); s += `<text x="${X(d)}" y="${Hh - 8}" text-anchor="middle">${fmtShort(d)}</text>`; }
   s += `<line class="ref" x1="${ml}" x2="${W - mr}" y1="${Y(r.mps)}" y2="${Y(r.mps)}"/><text class="lab" x="${W - mr + 6}" y="${Y(r.mps) + 4}">Pass ${r.mps}%</text>`;
   if (r.upcoming && r.now >= x0) s += `<line class="today" x1="${X(r.now)}" x2="${X(r.now)}" y1="${mt}" y2="${Hh - mb}"/>`;
-  const pts = r.mocks.map(m => [X(parse(m.date)), Y(+m.score), m]);
-  s += `<polyline class="series" points="${pts.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ")}"/>`;
-  const lastP = pts[pts.length - 1];
+  const p = r.mocks.map(m => [X(parse(m.date)), Y(+m.score), m]);
+  s += `<polyline class="series" points="${p.map(q => q[0].toFixed(1) + "," + q[1].toFixed(1)).join(" ")}"/>`;
+  const lastP = p[p.length - 1];
   if (r.upcoming && r.Eexam != null) {
     const px = X(r.exam), py = Y(r.Eexam);
     s += `<line class="pace" x1="${lastP[0]}" y1="${lastP[1]}" x2="${px}" y2="${py}"/><circle class="projdot" cx="${px}" cy="${py}" r="5"/>`;
-    s += `<text class="lab" x="${px + 9}" y="${py - 7}">Exam ${nf1.format(r.Eexam)}%</text>`;
+    const close = Math.abs(r.Eexam - r.mps) < 6, ly = close ? (r.Eexam < r.mps ? py + 17 : py - 11) : py - 7;
+    s += `<text class="lab" x="${px + 9}" y="${ly}">Exam ${nf1.format(r.Eexam)}%</text>`;
     s += `<circle class="hit" cx="${px}" cy="${py}" r="12" data-tip="${esc("Projected exam-day score: " + pct(r.Eexam) + " on " + fmtDate(r.exam))}"/>`;
-  }
-  pts.forEach(([x, y, m]) => {
-    s += `<circle class="dot" cx="${x}" cy="${y}" r="4.5"/><circle class="hit" cx="${x}" cy="${y}" r="12" data-tip="${esc(fmtDate(m.date) + " · " + (m.provider || "Mock") + ": " + pct(+m.score))}"/>`;
-  });
-  if (!r.upcoming || r.Eexam == null) s += `<text class="lab" x="${lastP[0] + 9}" y="${lastP[1] + 4}">${nf1.format(+lastP[2].score)}%</text>`;
+  } else s += `<text class="lab" x="${lastP[0] + 9}" y="${lastP[1] - 7}">${nf1.format(+lastP[2].score)}%</text>`;
+  p.forEach(([x, y, m]) => { s += `<circle class="dot" cx="${x}" cy="${y}" r="4.5"/><circle class="hit" cx="${x}" cy="${y}" r="12" data-tip="${esc(fmtDate(m.date) + " · " + (m.provider || "Mock") + ": " + pct(+m.score))}"/>`; });
   return s + "</svg>";
 }
 
 function hoursChart(r) {
-  if (!r.sessions.length) return '<div class="empty">No study sessions logged yet. Log a session below to see your hours against the pace you need.</div>';
-  const W = 640, Hh = 230, ml = 42, mr = 86, mt = 14, mb = 28;
+  if (!r.sessions.length) return '<div class="empty">No study sessions logged yet. Log one below to see your hours against the pace you need.</div>';
+  const W = 640, Hh = 230, ml = 42, mr = 90, mt = 16, mb = 28;
   const d0 = parse(r.sessions[0].date);
   const endD = r.exam && r.exam > d0 ? r.exam : addDays(r.now, 7);
   const x0 = addDays(d0, -2), x1 = addDays(endD, 2);
@@ -520,23 +686,20 @@ function hoursChart(r) {
   const step = yMax > 300 ? 100 : 50;
   for (let v = 0; v <= yMax; v += step) s += `<line class="grid" x1="${ml}" x2="${W - mr}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${ml - 6}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
   for (let i = 0; i <= 4; i++) { const d = new Date(+x0 + (x1 - x0) * (i / 4)); s += `<text x="${X(d)}" y="${Hh - 8}" text-anchor="middle">${fmtShort(d)}</text>`; }
-  // target pace: straight line from first session to target on exam day
   if (r.exam && r.exam > d0) {
     s += `<line class="pace" x1="${X(d0)}" y1="${Y(0)}" x2="${X(r.exam)}" y2="${Y(r.target)}"/>`;
     s += `<text class="lab" x="${X(r.exam) + 8}" y="${Y(r.target) + 4}">Target ${nf0.format(r.target)} h</text>`;
   }
-  // cumulative by day
   const byDay = new Map();
   r.sessions.forEach(x => byDay.set(x.date, (byDay.get(x.date) || 0) + (Number(x.hours) || 0)));
-  let cum = 0; const pts = [[X(d0), Y(0)]];
-  [...byDay.keys()].sort().forEach(k => { cum += byDay.get(k); pts.push([X(parse(k)), Y(cum), k, cum]); });
-  const line = pts.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
-  const lastP = pts[pts.length - 1];
-  s += `<polygon class="area" points="${line} ${lastP[0].toFixed(1)},${Y(0)} ${pts[0][0].toFixed(1)},${Y(0)}"/>`;
-  s += `<polyline class="series" points="${line}"/>`;
-  s += `<circle class="dot" cx="${lastP[0]}" cy="${lastP[1]}" r="4.5"/>`;
+  let cum = 0; const p = [[X(d0), Y(0)]];
+  [...byDay.keys()].sort().forEach(k => { cum += byDay.get(k); p.push([X(parse(k)), Y(cum), k, cum]); });
+  const line = p.map(q => q[0].toFixed(1) + "," + q[1].toFixed(1)).join(" ");
+  const lastP = p[p.length - 1];
+  s += `<polygon class="area" points="${line} ${lastP[0].toFixed(1)},${Y(0)} ${p[0][0].toFixed(1)},${Y(0)}"/>`;
+  s += `<polyline class="series" points="${line}"/><circle class="dot" cx="${lastP[0]}" cy="${lastP[1]}" r="4.5"/>`;
   s += `<text class="lab" x="${lastP[0] + 8}" y="${lastP[1] - 8}">${nf0.format(r.H)} h</text>`;
-  pts.slice(1).forEach(p => { s += `<circle class="hit" cx="${p[0]}" cy="${p[1]}" r="7" data-tip="${esc(fmtDate(p[2]) + ": " + nf1.format(p[3]) + " h cumulative")}"/>`; });
+  p.slice(1).forEach(q => { s += `<circle class="hit" cx="${q[0]}" cy="${q[1]}" r="7" data-tip="${esc(fmtDate(q[2]) + ": " + nf1.format(q[3]) + " h cumulative")}"/>`; });
   return s + "</svg>";
 }
 
@@ -544,7 +707,9 @@ function hoursChart(r) {
 const app = document.getElementById("app");
 const tip = document.getElementById("tip");
 let tab = "overview";
-const ui = { showAllSessions: {}, clearArmed: false, reportScope: "all" };
+const ui = { open: {}, clearArmed: false, reportScope: "all", newCarry: true, delArmed: null };
+function isOpen(key, dflt) { return key in ui.open ? ui.open[key] : !!dflt; }
+function det(key, dflt) { return `data-key="${key}"${isOpen(key, dflt) ? " open" : ""}`; }
 
 function setTab(t, push) {
   tab = t;
@@ -560,22 +725,23 @@ function banner() {
   return `<div class="banner"><span><b>You are looking at example data.</b> Nothing here is yours yet. Start fresh to track your own preparation; it is saved in this browser only.</span>
     <span class="acts"><button class="btn" data-act="start-fresh">Start with my own data</button><button class="btn ghost" data-act="keep-example">Keep the example and edit it</button></span></div>`;
 }
+function tName(r, tid) { return tid === "mixed" ? "Mixed / review" : (r.T.find(t => t.id === tid) || { name: tid }).name; }
+function statusPill(st) { return `<span class="pill ${st === "passed" ? "good" : st === "failed" ? "bad" : st === "studying" ? "info" : st === "awaiting" ? "warn" : ""}">${STATUS[st]}</span>`; }
 
 function probBlock(r) {
-  const st = r.lv.status;
-  if (st === "passed" || st === "not-passed") {
-    return `<div class="big"><span class="label">Result</span><span class="pct" style="color:var(--${st === "passed" ? "good" : "bad"})">${st === "passed" ? "Passed" : "Not passed"}</span>
-      <span class="small muted">Exam taken ${fmtDate(r.lv.examDate)}. Last mock average ${pct(r.M)}.</span></div>`;
+  if (r.status === "passed" || r.status === "failed") {
+    return `<div class="big"><span class="label">Result</span><span class="pct" style="color:var(--${r.status === "passed" ? "good" : "bad"})">${r.status === "passed" ? "Passed" : "Not passed"}</span>
+      <span class="small muted">Exam taken ${fmtDate(r.at.examDate)}. The back-check below compares the estimate with your result.</span></div>`;
   }
   if (r.P == null) {
     return `<div class="big"><span class="label">Chance of passing</span><span class="pct muted">—</span><span class="pill">${r.band.t}</span>
-      <span class="small muted">Add a mock exam, or practice scores for topics worth at least 30% of the exam, to get an estimate.</span></div>`;
+      <span class="small muted">Record a mock exam, or practice scores for sections worth at least 30% of the exam, to get an estimate.</span></div>`;
   }
   const col = r.band.k ? `var(--${r.band.k})` : "var(--ink)";
-  return `<div class="big"><span class="label">Chance of passing${r.upcoming ? " on exam day" : ""}</span>
+  return `<div class="big"><span class="label">${r.status === "awaiting" ? "Pre-exam estimate" : "Chance of passing on exam day"}</span>
     <span class="pct" style="color:${col}">${nf0.format(r.P * 100)}%</span>
     <span class="pill ${r.band.k}">${r.band.t}</span>
-    <span class="small muted">Expected score ${pct(r.Eexam)} against an assumed pass mark of ${r.mps}% (±${nf1.format(r.sigma)} pts).</span></div>`;
+    <span class="small muted">Projected score ${pct(r.Eexam)} against an assumed pass mark of ${r.mps}%. Pass rate for ${r.L.name}: ${r.L.passNote}.</span></div>`;
 }
 
 function kpis(r) {
@@ -586,36 +752,198 @@ function kpis(r) {
   k.push(["Weekly pace", nf1.format(r.rate) + " h", need != null ? `last 4 weeks · need ${nf1.format(need)} h/week` : "average of the last 4 weeks"]);
   k.push(["Syllabus covered", pct(r.C * 100, 0), r.upcoming ? pct(r.Cx * 100, 0) + " projected by exam day" : "weighted by exam weight", r.C, r.upcoming ? r.Cx : null]);
   k.push(["Latest mock", r.mocks.length ? pct(+r.mocks[r.mocks.length - 1].score) : "—", r.mocks.length ? r.mocks.length + " taken · weighted average " + pct(r.M) : "none taken yet"]);
-  k.push(["Expected score now", pct(r.Enow), r.Enow == null ? "needs mock or practice scores" : r.slope != null ? `trend ${r.slope >= 0 ? "+" : ""}${nf1.format(r.slope)} pts/week` : "from " + (r.source === "practice" ? "practice scores" : "mock scores")]);
+  const mg = r.Eexam == null ? null : r.Eexam - r.mps;
+  k.push(["Projected score", pct(r.Eexam), mg == null ? "needs mock or practice scores" : nf1.format(Math.abs(mg)) + " pts " + (mg >= 0 ? "above" : "below") + " the pass mark"]);
   return '<div class="kpis">' + k.map(([l, v, s, b, pj]) => `<div class="kpi"><span class="label">${l}</span><span class="v">${v}</span>${b != null ? `<div class="bar">${pj != null ? `<i class="proj" style="width:${clamp(pj, 0, 1) * 100}%"></i>` : ""}<i style="width:${clamp(b, 0, 1) * 100}%"></i></div>` : ""}<span class="s">${s}</span></div>`).join("") + "</div>";
 }
 
+function buildSteps(r) {
+  const steps = [];
+  steps.push({ n: 1, k: "Current level", v: r.Enow, lvl: true, note: r.source === "mocks" ? `Weighted average of your last ${Math.min(5, r.mocks.length)} mock${r.mocks.length > 1 ? "s" : ""}, latest counting most` : "Practice scores on studied sections; unstudied material at the guessing rate (" + pct(r.g, 0) + ")" });
+  steps.push({ n: 2, k: "Syllabus still to cover", v: r.covUp, note: r.upcoming ? `Coverage ${pct(r.C * 100, 0)} → ${pct(r.Cx * 100, 0)} at ${nf1.format(r.rate)} h/week; new material counted at 80% of your level` : "No study time left before the exam" });
+  steps.push({ n: 3, k: "Momentum", v: r.gain, note: !r.upcoming ? "No study time left before the exam" : r.slope != null ? `Mock trend ${r.slope >= 0 ? "+" : "−"}${nf1.format(Math.abs(r.slope))} pts/week, half carried forward, capped` : "Revision hours ahead (a mock trend needs 3 mocks)" });
+  steps.push({ n: 4, k: "Hours shortfall", v: r.penalty, note: r.upcoming ? `${hrs(r.Hx)} projected against ${hrs(r.target)} target; applies below 75%` : "No study time left before the exam" });
+  steps.push({ n: 5, k: "Back-check", v: r.calib, note: r.at.result ? "Not applied to an exam already sat" : r.cal.n ? `Real scores averaged ${pts(r.cal.mean)} against the estimate on ${r.cal.n} past exam${r.cal.n > 1 ? "s" : ""}; shrunk for small samples${state.useBackcheck ? "" : " (switched off)"}` : "No past exam results recorded yet" });
+  return steps;
+}
+
+function buildView(r) {
+  if (r.Enow == null) return `<div class="empty">The build-up appears once you record a mock exam or practice scores.</div>`;
+  const max = 12;
+  const row = s => {
+    let bar;
+    if (s.lvl) bar = `<div class="wbar lvl"><i class="lvl" style="width:${clamp(s.v, 0, 100)}%"></i></div>`;
+    else { const w = clamp(Math.abs(s.v || 0) / max, 0, 1) * 50; bar = `<div class="wbar"><i class="${(s.v || 0) >= 0 ? "up" : "down"}" style="width:${w}%"></i></div>`; }
+    return `<div class="step"><span class="no">${s.n}</span><div class="what"><b>${s.k}</b><span>${esc(s.note)}</span></div>${bar}<span class="v ${s.lvl ? "" : (s.v || 0) > 0.05 ? "pos" : (s.v || 0) < -0.05 ? "neg" : ""}">${s.lvl ? pct(s.v) : pts(s.v)}</span></div>`;
+  };
+  const margin = r.Eexam - r.mps;
+  return `<div class="build">${buildSteps(r).map(row).join("")}
+    <div class="step total"><span class="no">=</span><div class="what"><b>Projected exam-day score</b><span>Equals the weighted sum of the section projections below</span></div><div class="wbar lvl"><i class="lvl" style="width:${clamp(r.Eexam, 0, 100)}%"></i></div><span class="v">${pct(r.Eexam)}</span></div>
+    <div class="step"><span class="no">6</span><div class="what"><b>Margin to pass mark</b><span>Assumed pass mark ${r.mps}% (CFA Institute does not publish it)</span></div><div class="wbar"><i class="${margin >= 0 ? "up" : "down"}" style="width:${clamp(Math.abs(margin) / max, 0, 1) * 50}%"></i></div><span class="v ${margin >= 0 ? "pos" : "neg"}">${pts(margin)}</span></div>
+    <div class="step"><span class="no">7</span><div class="what"><b>Uncertainty</b><span>Exam-day noise ${nf1.format(r.sBase)}, mock inconsistency ${nf1.format(r.sCons)}, time to exam ${nf1.format(r.sTime)}, combined</span></div><div></div><span class="v">±${nf1.format(r.sigma)}</span></div>
+    <div class="step total"><span class="no">=</span><div class="what"><b>Chance of passing</b><span>Probability that the exam-day score lands above the pass mark</span></div><div></div><span class="v">${pct(r.P * 100, 0)}</span></div>
+  </div>
+  ${r.cal.n && !r.at.result ? `<label class="check"><input id="use-bc" type="checkbox" data-act-change="backcheck"${state.useBackcheck ? " checked" : ""}> Apply the back-check from my past exams</label>` : ""}`;
+}
+
+function sectionsTable(r, id, editable) {
+  return `<table class="rt">
+    <thead><tr><th>Section</th><th class="n">Exam weight</th><th>Readings covered</th><th>Confidence</th><th class="n">Practice %</th><th class="n">Latest mock</th><th class="n">Now</th><th class="n">Exam day</th><th class="n">Hours</th></tr></thead>
+    <tbody>${r.rows.map(t => `<tr>
+      <td class="first">${esc(t.name)}</td>
+      <td class="n" data-l="Exam weight">${t.lo}–${t.hi}%</td>
+      <td data-l="Covered" class="wide">${editable ? `<div class="cov"><input id="cov-${id}-${t.id}" type="range" min="0" max="100" step="5" value="${t.cov}" data-topic="${t.id}" data-tf="cov" data-lv="${id}" aria-label="${esc(t.name)} readings covered"><output>${t.cov}%</output></div>` : pct(t.cov, 0)}</td>
+      <td data-l="Confidence">${editable ? `<select id="conf-${id}-${t.id}" data-topic="${t.id}" data-tf="conf" data-lv="${id}" aria-label="${esc(t.name)} confidence">${[0, 1, 2, 3, 4, 5].map(v => `<option value="${v}"${t.conf === v ? " selected" : ""}>${v === 0 ? "–" : v + "/5"}</option>`).join("")}</select>` : (t.conf ? t.conf + "/5" : "—")}</td>
+      <td class="n" data-l="Practice %">${editable ? `<input id="prac-${id}-${t.id}" type="number" min="0" max="100" step="1" value="${t.prac == null ? "" : t.prac}" data-topic="${t.id}" data-tf="prac" data-lv="${id}" aria-label="${esc(t.name)} practice score" placeholder="—">` : pct(t.prac, 0)}</td>
+      <td class="n" data-l="Latest mock">${t.mockScore == null ? '<span class="muted">—</span>' : pct(t.mockScore, 0)}</td>
+      <td class="n" data-l="Now">${t.now == null ? "—" : `<span class="chip ${scoreClass(t.now, r.mps)}">${pct(t.now, 0)}</span>`}</td>
+      <td class="n" data-l="Exam day">${t.exam == null ? "—" : `<span class="chip ${scoreClass(t.exam, r.mps)}">${pct(t.exam, 0)}</span>`}</td>
+      <td class="n" data-l="Hours">${nf1.format(t.hours)}</td></tr>`).join("")}</tbody>
+  </table>`;
+}
+
+function sessionGroups(r, id, editable) {
+  if (!r.sessions.length) return "";
+  const groups = new Map();
+  r.sessions.forEach(x => { const k = iso(weekStart(parse(x.date))); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(x); });
+  const keys = [...groups.keys()].sort().reverse();
+  const week = (k, i) => {
+    const list = groups.get(k).slice().sort((a, b) => b.date.localeCompare(a.date));
+    const h = list.reduce((s, x) => s + (Number(x.hours) || 0), 0);
+    const by = {}; list.forEach(x => { by[x.topic] = (by[x.topic] || 0) + (Number(x.hours) || 0); });
+    const top = Object.entries(by).sort((a, b) => b[1] - a[1])[0];
+    return `<details class="grp" ${det("w-" + r.at.id + "-" + k, i === 0 && editable)}>
+      <summary><span class="t">Week of ${fmtDate(k)}<small>Mostly ${esc(tName(r, top[0]))}</small></span><span class="m">${list.length} session${list.length > 1 ? "s" : ""} · ${nf1.format(h)} h</span></summary>
+      <div class="body"><ul class="sess">${list.map(x => `<li><span class="d">${fmtDate(x.date)}</span><span class="w">${esc(tName(r, x.topic))}<small>${esc(x.kind)}${x.notes ? " · " + esc(x.notes) : ""}</small></span><span class="h">${nf1.format(+x.hours)} h</span>${editable ? `<button class="x" data-act="del-session" data-lv="${id}" data-id="${x.id}" aria-label="Delete session">×</button>` : "<span></span>"}</li>`).join("")}</ul></div>
+    </details>`;
+  };
+  // Latest six weeks shown individually; older weeks folded into one expandable group
+  const recent = keys.slice(0, 6), older = keys.slice(6);
+  let html = recent.map(week).join("");
+  if (older.length) {
+    const oh = older.reduce((s, k) => s + groups.get(k).reduce((t, x) => t + (Number(x.hours) || 0), 0), 0);
+    const on = older.reduce((s, k) => s + groups.get(k).length, 0);
+    html += `<details class="grp" ${det("old-" + r.at.id, false)}><summary><span class="t">Earlier weeks<small>${fmtDate(older[older.length - 1])} to ${fmtDate(addDays(parse(older[0]), 6))}</small></span><span class="m">${on} sessions · ${nf1.format(oh)} h</span></summary><div class="body groups">${older.map((k, i) => week(k, i + 6)).join("")}</div></details>`;
+  }
+  return `<div class="groups">${html}</div>`;
+}
+
+function mockGroups(r, id, editable) {
+  if (!r.mocks.length) return "";
+  return `<div class="groups">${r.mocks.slice().reverse().map(m => {
+    const tps = Object.entries(m.topics || {}).filter(([, v]) => num(v) != null);
+    return `<details class="grp" ${det("m-" + m.id, false)}>
+      <summary><span class="t">${esc(m.provider || "Mock exam")}<small>${fmtDate(m.date)}</small></span><span class="m"><span class="chip ${scoreClass(+m.score, r.mps)}">${pct(+m.score)}</span>${pts(+m.score - r.mps)}</span></summary>
+      <div class="body">${tps.length ? `<div class="tgrid">${tps.map(([k, v]) => `<div><span>${esc(tName(r, k))}</span><span class="chip ${scoreClass(+v, r.mps)}">${pct(+v, 0)}</span></div>`).join("")}</div>` : '<span class="small muted">No section scores recorded for this mock.</span>'}
+      ${editable ? `<div><button class="btn quiet" data-act="del-mock" data-lv="${id}" data-id="${m.id}">Delete this mock</button></div>` : ""}</div>
+    </details>`;
+  }).join("")}</div>`;
+}
+
+function backcheckView(r) {
+  const b = r.back;
+  if (!b) return "";
+  const passed = b.outcome === "passed";
+  const pr = b.Ppred == null ? "—" : nf0.format(b.Ppred * 100) + "%";
+  const verdict = b.Ppred == null ? "There was not enough data before the exam to make an estimate." :
+    (passed ? (b.Ppred >= 0.5 ? `The estimate called it: ${pr} chance of passing, and you passed.` : `You beat the estimate: it gave you ${pr} and you passed.`)
+            : (b.Ppred < 0.5 ? `The estimate called it: ${pr} chance of passing, and you did not pass.` : `The estimate was too optimistic: it gave you ${pr} and you did not pass.`));
+  const chk = { match: '<span class="pill good">Matched</span>', over: '<span class="pill warn">Estimate too high</span>', under: '<span class="pill info">Estimate too low</span>' };
+  return `<p>${esc(verdict)}</p>
+  <div class="bc">
+    <div><span class="label">Estimated score</span><span class="v">${pct(b.pred)}</span><span class="s">model on exam day</span></div>
+    <div><span class="label">Actual score</span><span class="v">${pct(b.actual)}</span><span class="s">${b.actualSrc === "entered" ? "as you entered it" : b.actualSrc === "bands" ? "estimated from section bands" : "add a score or section bands"}</span></div>
+    <div><span class="label">Estimate error</span><span class="v ${b.err == null ? "" : Math.abs(b.err) <= 3 ? "pos" : "neg"}">${pts(b.err)}</span><span class="s">actual minus estimate</span></div>
+    <div><span class="label">Pass mark</span><span class="v">${pct(b.mpsUsed, 0)}</span><span class="s">${b.mpsReported != null ? "reported or estimated for that session" : "assumed (no session figure entered)"}</span></div>
+    <div><span class="label">Your margin</span><span class="v ${b.margin == null ? "" : b.margin >= 0 ? "pos" : "neg"}">${pts(b.margin)}</span><span class="s">actual against pass mark</span></div>
+    <div><span class="label">Session pass rate</span><span class="v">${pct(b.passRate, 0)}</span><span class="s">${b.passRate == null ? "add it from the CFA Institute results release" : "of candidates passed"}</span></div>
+  </div>
+  <table class="rt">
+    <thead><tr><th>Section</th><th class="n">Weight</th><th class="n">Estimated on exam day</th><th>Your result band</th><th>Check</th></tr></thead>
+    <tbody>${b.sections.map(s => `<tr><td class="first">${esc(s.r.name)}</td><td class="n" data-l="Weight">${s.r.lo}–${s.r.hi}%</td><td class="n" data-l="Estimated">${s.r.exam == null ? "—" : `<span class="chip ${scoreClass(s.r.exam, b.mpsUsed)}">${pct(s.r.exam, 0)}</span>`}</td><td data-l="Result band">${s.b ? s.b.t : '<span class="muted">—</span>'}</td><td data-l="Check">${s.chk ? chk[s.chk] : '<span class="muted">—</span>'}</td></tr>`).join("")}</tbody>
+  </table>`;
+}
+
+function resultForm(r, id, at) {
+  const res = at.result || {};
+  return `<form class="form-row" data-form="result" data-lv="${id}" data-at="${at.id}">
+    <label class="field"><span>Outcome</span><select id="ro-${at.id}" name="outcome"><option value="passed"${res.outcome === "passed" ? " selected" : ""}>Passed</option><option value="failed"${res.outcome === "failed" ? " selected" : ""}>Did not pass</option></select></label>
+    <label class="field"><span>Session pass rate (%)</span><input id="rp-${at.id}" name="passRate" type="number" min="0" max="100" step="1" value="${res.passRate == null ? "" : res.passRate}" placeholder="e.g. 44"></label>
+    <label class="field"><span>Pass mark for that session (%)</span><input id="rm-${at.id}" name="mps" type="number" min="40" max="90" step="0.1" value="${res.mps == null ? "" : res.mps}" placeholder="${r.mps}"></label>
+    <label class="field"><span>Your score, if known (%)</span><input id="ra-${at.id}" name="actual" type="number" min="0" max="100" step="0.1" value="${res.actual == null ? "" : res.actual}" placeholder="optional"></label>
+    <details class="mock-topics" ${det("rb-" + at.id, true)}><summary>Section result bands from your score report</summary>
+      <div class="mt-grid">${r.T.map(t => `<label class="field"><span>${esc(t.name)}</span><select id="rb-${at.id}-${t.id}" name="b_${t.id}"><option value="">—</option>${Object.entries(BANDS).map(([k, v]) => `<option value="${k}"${res.bands && res.bands[t.id] === k ? " selected" : ""}>${v.t}</option>`).join("")}</select></label>`).join("")}</div>
+    </details>
+    <div><button class="btn" type="submit">${at.result ? "Update result" : "Save result"}</button></div>
+  </form>
+  <p class="small muted">CFA Institute publishes the pass rate for each session but not the pass mark, so enter your own estimate of the pass mark if you have one. Without a score, the back-check estimates it from your section bands.</p>`;
+}
+
+function attemptHistory(id) {
+  const lv = state.levels[id];
+  const past = lv.attempts.slice(0, -1);
+  if (!past.length) return "";
+  return `<section class="panel">
+    <div class="panel-head"><h2>Previous attempts</h2><span class="small muted">Kept separate: their hours, mocks and results do not count towards your current attempt.</span></div>
+    <div class="groups">${past.map((a, i) => {
+      const r = compute(id, a, { calib: false });
+      const confirm = ui.delArmed === a.id;
+      return `<details class="grp" ${det("a-" + a.id, false)}>
+        <summary><span class="t">Attempt ${i + 1} · ${a.examDate ? fmtMonth(a.examDate) : "no date"}<small>${nf0.format(r.H)} h · ${r.mocks.length} mocks · estimate ${pct(r.Eexam)}${r.back && r.back.actual != null ? " · actual " + pct(r.back.actual) : ""}${r.back && r.back.passRate != null ? " · session pass rate " + pct(r.back.passRate, 0) : ""}</small></span><span class="m">${statusPill(r.status)}</span></summary>
+        <div class="body">
+          ${r.back ? backcheckView(r) : '<span class="small muted">No result recorded.</span>'}
+          <details class="inline" ${det("ae-" + a.id, false)}><summary>Edit result</summary>${resultForm(r, id, a)}</details>
+          <details class="inline" ${det("as-" + a.id, false)}><summary>Sessions and mocks from this attempt</summary><div style="display:grid;gap:12px;margin-top:10px">${sessionGroups(r, id, false) || '<span class="small muted">No sessions.</span>'}${mockGroups(r, id, false)}</div></details>
+          <div class="acts-row">${confirm ? `<button class="btn danger" data-act="del-attempt" data-lv="${id}" data-id="${a.id}">Yes, delete attempt ${i + 1}</button><button class="btn quiet" data-act="del-attempt-cancel">Cancel</button>` : `<button class="btn quiet" data-act="del-attempt-arm" data-id="${a.id}">Delete this attempt</button>`}</div>
+        </div>
+      </details>`;
+    }).join("")}</div>
+  </section>`;
+}
+
 function levelView(id) {
-  const r = compute(id), lv = r.lv, L = r.L;
+  const r = compute(id), at = r.at, L = r.L;
+  const lv = state.levels[id];
+  const n = lv.attempts.length;
+  const done = r.status === "passed" || r.status === "failed";
   const topicOpts = r.T.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join("") + '<option value="mixed">Mixed / review</option>';
-  const tName = tid => tid === "mixed" ? "Mixed / review" : (r.T.find(t => t.id === tid) || { name: tid }).name;
-  const showAll = ui.showAllSessions[id];
-  const sess = r.sessions.slice().reverse();
-  const shown = showAll ? sess : sess.slice(0, 10);
+  const showResult = done || r.status === "awaiting";
 
   return `${banner()}
   <div class="hero">
-    <span class="label">${STATUS[lv.status]} · ${esc(L.format)}</span>
+    <span class="label">${n > 1 ? "Attempt " + n + " · " : ""}${STATUS[r.status]} · ${esc(L.format)}</span>
     <h1>CFA ${L.name}</h1>
   </div>
 
   <div class="verdict">${probBlock(r)}${kpis(r)}</div>
 
+  ${showResult ? `<section class="panel">
+    <div class="panel-head"><h2>${done ? "Exam result and back-check" : "Record your exam result"}</h2>${done ? statusPill(r.status) : ""}</div>
+    ${done ? backcheckView(r) + `<details class="inline" ${det("re-" + at.id, false)}><summary>Edit result</summary>${resultForm(r, id, at)}</details>` : resultForm(r, id, at)}
+    ${r.status === "failed" ? `<div class="note acts-row" style="justify-content:space-between"><span>Start a new attempt to track your resit. This attempt's sessions, mocks and result move to <b>Previous attempts</b>.</span>
+      <span class="acts-row"><label class="check"><input id="carry-${id}" type="checkbox" data-act-change="carry"${ui.newCarry ? " checked" : ""}> Carry over readings covered and confidence</label><button class="btn" data-act="new-attempt" data-lv="${id}">Start attempt ${n + 1}</button></span></div>` : ""}
+    ${r.status === "passed" ? `<div class="note">${L.name} is complete. ${id < 3 ? `Set up <button class="link" data-act="go" data-tab="l${id + 1}">${LEVELS[id + 1].name}</button> next.` : "Congratulations on finishing the CFA exams."}</div>` : ""}
+  </section>` : ""}
+
   <section class="panel">
     <div class="panel-head"><h2>Exam settings</h2><span class="small muted">Changes save automatically.</span></div>
     <div class="settings">
-      <label class="field"><span>Status</span><select id="st-${id}" data-set="status" data-lv="${id}">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}"${lv.status === k ? " selected" : ""}>${v}</option>`).join("")}</select></label>
-      <label class="field"><span>Exam date</span><input id="ed-${id}" type="date" data-set="examDate" data-lv="${id}" value="${esc(lv.examDate)}"></label>
-      <label class="field"><span>Target study hours</span><input id="th-${id}" type="number" min="50" max="1000" step="10" data-set="targetHours" data-lv="${id}" value="${esc(lv.targetHours)}"></label>
-      <label class="field"><span>Assumed pass mark (%)</span><input id="mp-${id}" type="number" min="50" max="90" step="1" data-set="mps" data-lv="${id}" value="${esc(lv.mps)}"></label>
-      ${id === 3 ? `<label class="field"><span>Pathway</span><select id="pw-${id}" data-set="pathway" data-lv="3">${Object.entries(PATHWAYS).map(([k, v]) => `<option value="${k}"${lv.pathway === k ? " selected" : ""}>${v}</option>`).join("")}</select></label>` : ""}
+      <label class="field"><span>Exam date</span><input id="ed-${id}" type="date" data-set="examDate" data-lv="${id}" value="${esc(at.examDate)}"></label>
+      <label class="field"><span>Target study hours</span><input id="th-${id}" type="number" min="50" max="1000" step="10" data-set="targetHours" data-lv="${id}" value="${esc(at.targetHours)}"></label>
+      <label class="field"><span>Assumed pass mark (%)</span><input id="mp-${id}" type="number" min="40" max="90" step="1" data-set="mps" data-lv="${id}" value="${esc(at.mps)}"></label>
+      ${id === 3 ? `<label class="field"><span>Pathway</span><select id="pw-3" data-set="pathway" data-lv="3">${Object.entries(PATHWAYS).map(([k, v]) => `<option value="${k}"${lv.pathway === k ? " selected" : ""}>${v}</option>`).join("")}</select></label>` : ""}
     </div>
-    <p class="small muted">CFA Institute does not publish the minimum passing score. Candidates commonly estimate it at 65–70%; CFA Institute suggests at least 300 hours of study per level.</p>
+    <p class="small muted">CFA Institute does not publish the minimum passing score; candidates commonly estimate it at 65–70%. Once you record past results, the back-check shows how your real scores compared with the estimate.</p>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>How the estimate is built</h2><span class="small muted">Each step adds to or takes from your current level.</span></div>
+    ${buildView(r)}
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Sections</h2><span class="small muted">Weights are CFA Institute's published ranges. <b>Now</b> and <b>Exam day</b> are your estimated section scores.</span></div>
+    ${sectionsTable(r, id, !done)}
   </section>
 
   <div class="grid2">
@@ -631,108 +959,89 @@ function levelView(id) {
     </section>
   </div>
 
-  <section class="panel">
-    <div class="panel-head"><h2>Topics</h2><span class="small muted">Weights are CFA Institute's published ranges. Score uses your latest mock topic score, otherwise your practice score.</span></div>
-    <div class="tbl-wrap"><table class="topics">
-      <thead><tr><th>Topic</th><th class="n">Exam weight</th><th>Readings covered</th><th>Confidence</th><th class="n">Practice %</th><th class="n">Latest mock</th><th class="n">Hours</th></tr></thead>
-      <tbody>${r.rows.map(t => `<tr>
-        <td>${esc(t.name)}</td>
-        <td class="n">${t.lo}–${t.hi}%</td>
-        <td><div class="cov"><input id="cov-${id}-${t.id}" type="range" min="0" max="100" step="5" value="${t.cov}" data-topic="${t.id}" data-tf="cov" data-lv="${id}" aria-label="${esc(t.name)} readings covered"><output>${t.cov}%</output></div></td>
-        <td><select id="conf-${id}-${t.id}" data-topic="${t.id}" data-tf="conf" data-lv="${id}" aria-label="${esc(t.name)} confidence">${[0, 1, 2, 3, 4, 5].map(v => `<option value="${v}"${t.conf === v ? " selected" : ""}>${v === 0 ? "–" : v + "/5"}</option>`).join("")}</select></td>
-        <td class="n"><input id="prac-${id}-${t.id}" type="number" min="0" max="100" step="1" value="${t.prac == null ? "" : t.prac}" data-topic="${t.id}" data-tf="prac" data-lv="${id}" aria-label="${esc(t.name)} practice score" placeholder="—"></td>
-        <td class="n">${t.mockScore == null ? '<span class="muted">—</span>' : `<span class="score-chip ${scoreClass(t.mockScore, r.mps)}">${pct(t.mockScore, 0)}</span>`}</td>
-        <td class="n mono">${nf1.format(t.hours)}</td></tr>`).join("")}</tbody>
-    </table></div>
-  </section>
-
-  <section class="panel">
+  ${!done ? `<section class="panel">
     <div class="panel-head"><h2>Where to focus next</h2><span class="small muted">Ranked by exam weight × gap to the pass mark, coverage and confidence.</span></div>
     ${r.focus.length ? `<ol class="focus">${r.focus.map((f, i) => `<li><b>${i + 1}</b><span><strong>${esc(f.r.name)}</strong> <span class="muted small">(${f.r.lo}–${f.r.hi}% of the exam)</span></span><span class="small muted">${esc(f.why.join(", "))}</span></li>`).join("")}</ol>` : '<div class="empty">Nothing stands out. Keep taking mocks to confirm.</div>'}
-  </section>
+  </section>` : ""}
 
   <div class="grid2">
     <section class="panel">
-      <div class="panel-head"><h2>Log a study session</h2></div>
-      <form class="form-row" data-form="session" data-lv="${id}">
+      <div class="panel-head"><h2>Study sessions</h2><span class="small muted">${r.sessions.length} sessions · ${nf1.format(r.H)} h</span></div>
+      ${!done ? `<form class="form-row" data-form="session" data-lv="${id}">
         <label class="field"><span>Date</span><input id="sd-${id}" name="date" type="date" required value="${iso(today())}"></label>
         <label class="field"><span>Hours</span><input id="sh-${id}" name="hours" type="number" min="0.25" max="16" step="0.25" required value="2"></label>
-        <label class="field"><span>Topic</span><select id="stp-${id}" name="topic">${topicOpts}</select></label>
+        <label class="field"><span>Section</span><select id="stp-${id}" name="topic">${topicOpts}</select></label>
         <label class="field"><span>Activity</span><select id="sk-${id}" name="kind">${KINDS.map(k => `<option>${k}</option>`).join("")}</select></label>
         <label class="field" style="grid-column:1/-1"><span>Notes (optional)</span><input id="sn-${id}" name="notes" type="text" maxlength="200" placeholder="e.g. Reading 23, end-of-chapter questions"></label>
         <div><button class="btn" type="submit">Add session</button></div>
-      </form>
-      ${sess.length ? `<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Topic</th><th>Activity</th><th class="n">Hours</th><th></th></tr></thead><tbody>
-        ${shown.map(x => `<tr><td class="mono">${fmtDate(x.date)}</td><td>${esc(tName(x.topic))}${x.notes ? `<div class="small muted">${esc(x.notes)}</div>` : ""}</td><td>${esc(x.kind)}</td><td class="n">${nf1.format(+x.hours)}</td><td><button class="x" data-act="del-session" data-lv="${id}" data-id="${x.id}" aria-label="Delete session">×</button></td></tr>`).join("")}
-      </tbody></table></div>${sess.length > 10 ? `<button class="link" data-act="toggle-sessions" data-lv="${id}">${showAll ? "Show the latest 10" : "Show all " + sess.length + " sessions"}</button>` : ""}` : ""}
+      </form>` : ""}
+      ${sessionGroups(r, id, !done)}
     </section>
 
     <section class="panel">
-      <div class="panel-head"><h2>Record a mock exam</h2></div>
-      <form class="form-row" data-form="mock" data-lv="${id}">
+      <div class="panel-head"><h2>Mock exams</h2><span class="small muted">${r.mocks.length} recorded</span></div>
+      ${!done ? `<form class="form-row" data-form="mock" data-lv="${id}">
         <label class="field"><span>Date</span><input id="md-${id}" name="date" type="date" required value="${iso(today())}"></label>
         <label class="field"><span>Overall score (%)</span><input id="ms-${id}" name="score" type="number" min="0" max="100" step="0.1" required></label>
-        <label class="field" style="grid-column:span 2"><span>Provider or name</span><input id="mpv-${id}" name="provider" type="text" maxlength="80" placeholder="e.g. CFA Institute mock A"></label>
-        <details class="mock-topics"><summary>Add topic scores (optional, improves the estimate)</summary>
+        <label class="field" style="grid-column:1/-1"><span>Provider or name</span><input id="mpv-${id}" name="provider" type="text" maxlength="80" placeholder="e.g. CFA Institute mock A"></label>
+        <details class="mock-topics" ${det("mf-" + id, false)}><summary>Add section scores (optional, sharpens the section estimates)</summary>
           <div class="mt-grid">${r.T.map(t => `<label class="field"><span>${esc(t.name)}</span><input id="mt-${id}-${t.id}" name="t_${t.id}" type="number" min="0" max="100" step="1" placeholder="%"></label>`).join("")}</div>
         </details>
         <div><button class="btn" type="submit">Add mock</button></div>
-      </form>
-      ${r.mocks.length ? `<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Mock</th><th class="n">Score</th><th class="n">vs pass</th><th></th></tr></thead><tbody>
-        ${r.mocks.slice().reverse().map(m => `<tr><td class="mono">${fmtDate(m.date)}</td><td>${esc(m.provider || "Mock exam")}</td><td class="n"><span class="score-chip ${scoreClass(+m.score, r.mps)}">${pct(+m.score)}</span></td><td class="n mono">${(+m.score - r.mps >= 0 ? "+" : "") + nf1.format(+m.score - r.mps)}</td><td><button class="x" data-act="del-mock" data-lv="${id}" data-id="${m.id}" aria-label="Delete mock">×</button></td></tr>`).join("")}
-      </tbody></table></div>` : ""}
+      </form>` : ""}
+      ${mockGroups(r, id, !done)}
     </section>
   </div>
 
-  <section class="panel">
-    <details class="method"><summary>How the pass estimate works</summary>
-      <ol>
-        <li><b>Current score.</b> A weighted average of your last five mocks, with the most recent counting most. When topic scores cover at least half the exam weight, 30% of the estimate comes from those topic scores, weighted by each topic's share of the exam. With no mocks, practice scores on studied topics are blended with a guessing rate (${pct(L.guess, 0)}) for material not yet covered.</li>
-        <li><b>Exam-day projection.</b> Your pace over the last four weeks is carried forward to the exam date. Extra hours raise syllabus coverage at the rate you have achieved so far. Newly covered material is assumed to score 80% as well as what you already know; material still uncovered scores at the guessing rate. A mock trend (from three or more mocks) adds up to +4 or −3 points, capped at +2 when coverage is still rising sharply. Finishing below 75% of your target hours costs up to 4 points.</li>
-        <li><b>Chance of passing.</b> The projected score is compared with your assumed pass mark using a normal distribution. Its spread starts at 5 points with mocks (7 without), and widens with inconsistent mock scores and with more weeks to go.</li>
-      </ol>
-      <p style="margin-top:8px">Treat the result as a guide. CFA Institute sets the pass mark after each exam and does not publish it.</p>
-    </details>
-  </section>`;
+  ${attemptHistory(id)}`;
 }
 
 function overviewView() {
-  const rs = [1, 2, 3].map(compute);
-  const active = rs.filter(r => r.upcoming && r.lv.status === "studying").sort((a, b) => a.daysLeft - b.daysLeft)[0];
-  const totalH = rs.reduce((s, r) => s + r.H, 0);
-  const passed = rs.filter(r => r.lv.status === "passed").length;
+  const rs = [1, 2, 3].map(id => compute(id));
+  const active = rs.filter(r => r.upcoming).sort((a, b) => a.daysLeft - b.daysLeft)[0];
+  const totalH = [1, 2, 3].reduce((s, id) => s + state.levels[id].attempts.reduce((t, a) => t + a.sessions.reduce((u, x) => u + (Number(x.hours) || 0), 0), 0), 0);
+  const passed = rs.filter(r => r.status === "passed").length;
   let headline;
-  if (active) headline = `${active.L.name} in ${active.daysLeft} days. ${active.P != null ? "Chance of passing: " + nf0.format(active.P * 100) + "%." : "Add a mock to get a pass estimate."}`;
+  if (active) headline = `${active.L.name} in ${active.daysLeft} days. ${active.P != null ? "Chance of passing: " + nf0.format(active.P * 100) + "%." : "Record a mock to get a pass estimate."}`;
   else if (passed === 3) headline = "All three levels passed.";
   else headline = "Set an exam date on a level page to start tracking.";
+  const cal = calibration();
 
   return `${banner()}
   <div class="hero">
-    <span class="label">${state.name ? esc(state.name) + " · " : ""}${passed} of 3 levels passed · ${nf0.format(totalH)} hours logged in total</span>
+    <span class="label">${state.name ? esc(state.name) + " · " : ""}${passed} of 3 levels passed · ${nf0.format(totalH)} hours logged across all attempts</span>
     <h1>${esc(headline)}</h1>
     <label class="field" style="max-width:320px"><span>Your name (shown on reports)</span><input id="cand-name" type="text" maxlength="80" data-set="name" value="${esc(state.name)}" placeholder="Your name"></label>
   </div>
 
-  <div class="journey">${rs.map(r => `<div><span class="label">${r.L.name}</span><span class="pill ${r.lv.status === "passed" ? "good" : r.lv.status === "not-passed" ? "bad" : r.lv.status === "studying" ? "info" : ""}">${STATUS[r.lv.status]}</span><span class="small muted">${r.exam ? (r.upcoming ? "Exam " : "Exam taken ") + fmtDate(r.exam) : "No exam date set"}</span></div>`).join("")}</div>
+  <div class="journey">${rs.map(r => { const n = state.levels[r.id].attempts.length; return `<div><span class="label">${r.L.name}${n > 1 ? " · attempt " + n : ""}</span>${statusPill(r.status)}<span class="small muted">${r.exam ? (r.upcoming ? "Exam " : "Exam taken ") + fmtDate(r.exam) : "No exam date set"}</span></div>`; }).join("")}</div>
 
-  <div class="grid3">${rs.map(r => `<article class="level-card">
+  <div class="grid3">${rs.map(r => { const n = state.levels[r.id].attempts.length; const done = r.status === "passed" || r.status === "failed"; return `<article class="level-card">
     <header><div><span class="label">CFA</span><div class="roman">${r.L.roman}</div></div><span class="pill ${r.band.k}">${r.band.t}</span></header>
     <dl>
       <dt>Exam date</dt><dd>${r.exam ? fmtDate(r.exam) : "—"}</dd>
       <dt>Days to go</dt><dd>${r.upcoming ? r.daysLeft : "—"}</dd>
-      <dt>Chance of passing</dt><dd>${r.lv.status === "passed" ? "Passed" : r.P == null ? "—" : nf0.format(r.P * 100) + "%"}</dd>
-      <dt>Expected score</dt><dd>${pct(r.Eexam)}</dd>
+      <dt>Chance of passing</dt><dd>${r.status === "passed" ? "Passed" : done || r.P == null ? "—" : nf0.format(r.P * 100) + "%"}</dd>
+      <dt>Projected score</dt><dd>${done ? "—" : pct(r.Eexam)}</dd>
       <dt>Latest mock</dt><dd>${r.mocks.length ? pct(+r.mocks[r.mocks.length - 1].score) : "—"}</dd>
+      <dt>Attempts</dt><dd>${n}</dd>
     </dl>
-    <div style="display:grid;gap:5px"><div style="display:flex;justify-content:space-between" class="small"><span class="muted">Hours</span><span class="mono">${nf0.format(r.H)} / ${nf0.format(r.target)}</span></div><div class="bar"><i style="width:${clamp(r.H / r.target, 0, 1) * 100}%"></i></div></div>
+    <div style="display:grid;gap:5px"><div style="display:flex;justify-content:space-between" class="small"><span class="muted">Hours (this attempt)</span><span class="mono">${nf0.format(r.H)} / ${nf0.format(r.target)}</span></div><div class="bar"><i style="width:${clamp(r.H / r.target, 0, 1) * 100}%"></i></div></div>
     <div style="display:grid;gap:5px"><div style="display:flex;justify-content:space-between" class="small"><span class="muted">Syllabus covered</span><span class="mono">${pct(r.C * 100, 0)}</span></div><div class="bar"><i style="width:${r.C * 100}%"></i></div></div>
     <div><button class="btn ghost" data-act="go" data-tab="l${r.id}">Open ${r.L.name}</button></div>
-  </article>`).join("")}</div>
+  </article>`; }).join("")}</div>
+
+  ${cal.n ? `<section class="panel">
+    <div class="panel-head"><h2>Back-check across your exams</h2><span class="small muted">How the estimate compared with your real results</span></div>
+    <table class="rt"><thead><tr><th>Exam</th><th class="n">Estimate</th><th class="n">Actual</th><th class="n">Error</th></tr></thead>
+    <tbody>${cal.list.map(x => `<tr><td class="first">${LEVELS[x.lid].name}, attempt ${x.n}</td><td class="n" data-l="Estimate">${pct(x.pred)}</td><td class="n" data-l="Actual">${pct(x.actual)}</td><td class="n" data-l="Error">${pts(x.err)}</td></tr>`).join("")}</tbody></table>
+    <p class="small muted">Average error ${pts(cal.mean)}. ${state.useBackcheck ? `Current estimates are adjusted by ${pts(cal.adj)}.` : "The adjustment is switched off."}</p>
+  </section>` : ""}
 
   <section class="panel">
     <div class="panel-head"><h2>Your data</h2></div>
     <p class="small muted" style="max-width:70ch">Everything is stored in this browser on this device. Download a CSV from Reports to keep a copy.</p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <div class="acts-row">
       <button class="btn quiet" data-act="load-example">Load example data</button>
       ${ui.clearArmed ? '<button class="btn danger" data-act="clear-confirm">Yes, delete everything</button><button class="btn quiet" data-act="clear-cancel">Cancel</button>' : '<button class="btn quiet" data-act="clear-arm">Delete all my data</button>'}
     </div>
@@ -740,13 +1049,13 @@ function overviewView() {
 }
 
 function reportsView() {
-  const rs = [1, 2, 3].map(compute);
+  const rs = [1, 2, 3].map(id => compute(id));
   return `${banner()}
   <div class="hero"><span class="label">Reports</span><h1>Export your progress</h1>
-    <p>The PDF report summarises performance, study time, topic strengths and your current chance of passing. The CSV holds every session, mock and topic record for Excel or Google Sheets.</p></div>
+    <p>The PDF report covers performance, the estimate build-up, estimated section scores, study time, previous attempts with their back-check, and your current chance of passing. The CSV holds every session, mock, section and result record for Excel or Google Sheets.</p></div>
   <section class="panel">
-    <div class="form-row" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),max-content))">
-      <label class="field"><span>Include</span><select id="rep-scope" data-act-change="scope">
+    <div class="acts-row" style="align-items:end">
+      <label class="field"><span>Include</span><select id="rep-scope">
         <option value="all"${ui.reportScope === "all" ? " selected" : ""}>All levels</option>
         ${[1, 2, 3].map(i => `<option value="${i}"${ui.reportScope === String(i) ? " selected" : ""}>${LEVELS[i].name} only</option>`).join("")}
       </select></label>
@@ -755,11 +1064,11 @@ function reportsView() {
     </div>
   </section>
   <section class="panel">
-    <div class="panel-head"><h2>Summary</h2><span class="small muted">As of ${fmtDate(today())}</span></div>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>Level</th><th>Status</th><th>Exam date</th><th class="n">Hours</th><th class="n">Covered</th><th class="n">Mocks</th><th class="n">Latest mock</th><th class="n">Expected score</th><th class="n">Chance of passing</th><th>Assessment</th></tr></thead>
-      <tbody>${rs.map(r => `<tr><td>${r.L.name}</td><td>${STATUS[r.lv.status]}</td><td class="mono">${r.exam ? fmtDate(r.exam) : "—"}</td><td class="n">${nf0.format(r.H)} / ${nf0.format(r.target)}</td><td class="n">${pct(r.C * 100, 0)}</td><td class="n">${r.mocks.length}</td><td class="n">${r.mocks.length ? pct(+r.mocks[r.mocks.length - 1].score) : "—"}</td><td class="n">${pct(r.Eexam)}</td><td class="n">${r.lv.status === "passed" ? "—" : r.P == null ? "—" : nf0.format(r.P * 100) + "%"}</td><td><span class="pill ${r.band.k}">${r.band.t}</span></td></tr>`).join("")}</tbody>
-    </table></div>
+    <div class="panel-head"><h2>Summary</h2><span class="small muted">Current attempt for each level, as of ${fmtDate(today())}</span></div>
+    <table class="rt">
+      <thead><tr><th>Level</th><th>Status</th><th>Exam date</th><th class="n">Hours</th><th class="n">Covered</th><th class="n">Mocks</th><th class="n">Projected score</th><th class="n">Chance of passing</th><th>Assessment</th></tr></thead>
+      <tbody>${rs.map(r => { const done = r.status === "passed" || r.status === "failed"; return `<tr><td class="first">${r.L.name}${state.levels[r.id].attempts.length > 1 ? " · attempt " + state.levels[r.id].attempts.length : ""}</td><td data-l="Status">${STATUS[r.status]}</td><td data-l="Exam date">${r.exam ? fmtDate(r.exam) : "—"}</td><td class="n" data-l="Hours">${nf0.format(r.H)} / ${nf0.format(r.target)}</td><td class="n" data-l="Covered">${pct(r.C * 100, 0)}</td><td class="n" data-l="Mocks">${r.mocks.length}</td><td class="n" data-l="Projected">${done ? "—" : pct(r.Eexam)}</td><td class="n" data-l="Chance">${done || r.P == null ? "—" : nf0.format(r.P * 100) + "%"}</td><td data-l="Assessment"><span class="pill ${r.band.k}">${r.band.t}</span></td></tr>`; }).join("")}</tbody>
+    </table>
   </section>`;
 }
 
@@ -780,12 +1089,14 @@ function toast(msg, withUndo) {
   toastTimer = setTimeout(() => { el.hidden = true; undo = null; }, 6000);
 }
 function commit() { save(); render(); }
+function findAttempt(lvId, atId) { return state.levels[lvId].attempts.find(a => a.id === atId); }
 
 document.querySelector("nav.tabs").addEventListener("click", e => { const b = e.target.closest("button[data-tab]"); if (b) setTab(b.dataset.tab, true); });
+document.addEventListener("toggle", e => { const d = e.target; if (d && d.dataset && d.dataset.key) ui.open[d.dataset.key] = d.open; }, true);
 
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-act]");
-  if (!b || b.tagName === "SELECT") return;
+  if (!b || b.tagName === "SELECT" || b.tagName === "INPUT") return;
   const act = b.dataset.act, lvId = b.dataset.lv;
   if (act === "go") setTab(b.dataset.tab, true);
   else if (act === "start-fresh") { state = blankState(); commit(); toast("Example cleared. Your data now saves in this browser."); }
@@ -794,13 +1105,25 @@ document.addEventListener("click", e => {
   else if (act === "clear-arm") { ui.clearArmed = true; render(); }
   else if (act === "clear-cancel") { ui.clearArmed = false; render(); }
   else if (act === "clear-confirm") { ui.clearArmed = false; state = blankState(); commit(); toast("All data deleted."); }
-  else if (act === "toggle-sessions") { ui.showAllSessions[lvId] = !ui.showAllSessions[lvId]; render(); }
   else if (act === "del-session" || act === "del-mock") {
-    const list = state.levels[lvId][act === "del-session" ? "sessions" : "mocks"];
+    const list = cur(lvId)[act === "del-session" ? "sessions" : "mocks"];
     const i = list.findIndex(x => x.id === b.dataset.id);
     if (i >= 0) { undo = { list, item: list[i], i }; list.splice(i, 1); commit(); toast(act === "del-session" ? "Session deleted." : "Mock deleted.", true); }
   }
   else if (act === "undo" && undo) { undo.list.splice(undo.i, 0, undo.item); undo = null; commit(); document.getElementById("toast").hidden = true; }
+  else if (act === "new-attempt") {
+    const lv = state.levels[lvId], prev = cur(lvId), a = blankAttempt(Number(lvId));
+    a.targetHours = prev.targetHours; a.mps = prev.mps;
+    if (ui.newCarry) Object.keys(prev.topics).forEach(k => { a.topics[k] = { cov: prev.topics[k].cov, conf: prev.topics[k].conf, prac: null }; });
+    lv.attempts.push(a);
+    commit(); window.scrollTo({ top: 0 }); toast("Attempt " + lv.attempts.length + " started. Set your new exam date.");
+  }
+  else if (act === "del-attempt-arm") { ui.delArmed = b.dataset.id; render(); }
+  else if (act === "del-attempt-cancel") { ui.delArmed = null; render(); }
+  else if (act === "del-attempt") {
+    const list = state.levels[lvId].attempts, i = list.findIndex(a => a.id === b.dataset.id);
+    if (i >= 0 && list.length > 1) { undo = { list, item: list[i], i }; list.splice(i, 1); ui.delArmed = null; commit(); toast("Attempt deleted.", true); }
+  }
   else if (act === "pdf") exportPdf();
   else if (act === "csv") exportCsv();
 });
@@ -813,18 +1136,21 @@ document.addEventListener("input", e => {
 document.addEventListener("change", e => {
   const t = e.target;
   if (t.id === "rep-scope") { ui.reportScope = t.value; return; }
+  if (t.dataset.actChange === "carry") { ui.newCarry = t.checked; return; }
+  if (t.dataset.actChange === "backcheck") { state.useBackcheck = t.checked; commit(); return; }
   if (t.dataset.set) {
-    if (t.dataset.set === "name") { state.name = t.value.trim(); save(); render(); return; }
-    const lv = state.levels[t.dataset.lv];
+    if (t.dataset.set === "name") { state.name = t.value.trim(); commit(); return; }
+    if (t.dataset.set === "pathway") { state.levels[3].pathway = t.value; commit(); return; }
+    const at = cur(t.dataset.lv);
     let v = t.value;
     if (t.dataset.set === "targetHours") v = clamp(Number(v) || LEVELS[t.dataset.lv].hours, 50, 1000);
-    if (t.dataset.set === "mps") v = clamp(Number(v) || LEVELS[t.dataset.lv].mps, 50, 90);
-    lv[t.dataset.set] = v;
+    if (t.dataset.set === "mps") v = clamp(Number(v) || LEVELS[t.dataset.lv].mps, 40, 90);
+    at[t.dataset.set] = v;
     commit();
     return;
   }
   if (t.dataset.tf) {
-    const tp = state.levels[t.dataset.lv].topics[t.dataset.topic];
+    const tp = cur(t.dataset.lv).topics[t.dataset.topic];
     if (t.dataset.tf === "prac") tp.prac = t.value === "" ? null : clamp(Number(t.value), 0, 100);
     else tp[t.dataset.tf] = Number(t.value);
     commit();
@@ -835,33 +1161,37 @@ document.addEventListener("submit", e => {
   const f = e.target.closest("form[data-form]");
   if (!f) return;
   e.preventDefault();
-  const lv = state.levels[f.dataset.lv];
+  const lvId = f.dataset.lv, at = f.dataset.at ? findAttempt(lvId, f.dataset.at) : cur(lvId);
+  if (!at) return;
   const fd = new FormData(f);
   if (f.dataset.form === "session") {
     const h = Number(fd.get("hours"));
     if (!fd.get("date") || !(h > 0)) { toast("Enter a date and a number of hours above zero."); return; }
-    lv.sessions.push({ id: uid(), date: fd.get("date"), hours: h, topic: fd.get("topic"), kind: fd.get("kind"), notes: String(fd.get("notes") || "").trim() });
-    if (lv.status === "not-started") lv.status = "studying";
+    at.sessions.push({ id: uid(), date: fd.get("date"), hours: h, topic: fd.get("topic"), kind: fd.get("kind"), notes: String(fd.get("notes") || "").trim() });
     commit(); toast("Session added.");
-  } else {
-    const sc = Number(fd.get("score"));
-    if (!fd.get("date") || fd.get("score") === "" || isNaN(sc)) { toast("Enter a date and an overall score."); return; }
+  } else if (f.dataset.form === "mock") {
+    const sc = num(fd.get("score"));
+    if (!fd.get("date") || sc == null) { toast("Enter a date and an overall score."); return; }
     const topics = {};
-    topicsFor(Number(f.dataset.lv), lv).forEach(t => { const v = fd.get("t_" + t.id); if (v !== null && v !== "") topics[t.id] = clamp(Number(v), 0, 100); });
-    lv.mocks.push({ id: uid(), date: fd.get("date"), provider: String(fd.get("provider") || "").trim(), score: clamp(sc, 0, 100), topics });
-    if (lv.status === "not-started") lv.status = "studying";
+    topicsFor(Number(lvId), state.levels[lvId].pathway).forEach(t => { const v = num(fd.get("t_" + t.id)); if (v != null) topics[t.id] = clamp(v, 0, 100); });
+    at.mocks.push({ id: uid(), date: fd.get("date"), provider: String(fd.get("provider") || "").trim(), score: clamp(sc, 0, 100), topics });
     commit(); toast("Mock added.");
+  } else if (f.dataset.form === "result") {
+    const bands = {};
+    topicsFor(Number(lvId), state.levels[lvId].pathway).forEach(t => { const v = fd.get("b_" + t.id); if (v) bands[t.id] = v; });
+    const n = k => { const v = num(fd.get(k)); return v == null ? null : clamp(v, 0, 100); };
+    at.result = { outcome: fd.get("outcome"), passRate: n("passRate"), mps: n("mps"), actual: n("actual"), bands };
+    commit(); toast("Result saved.");
   }
 });
 
-// Tooltips
 document.addEventListener("pointermove", e => {
   const h = e.target.closest && e.target.closest("[data-tip]");
   if (!h) { tip.hidden = true; return; }
   tip.textContent = h.getAttribute("data-tip");
   tip.hidden = false;
   const w = tip.offsetWidth;
-  tip.style.left = Math.min(window.innerWidth - w - 8, e.clientX + 12) + "px";
+  tip.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, e.clientX + 12)) + "px";
   tip.style.top = (e.clientY - 38) + "px";
 });
 
@@ -887,26 +1217,41 @@ function scopeIds() { return ui.reportScope === "all" ? [1, 2, 3] : [Number(ui.r
 function stamp() { return iso(today()); }
 
 function exportCsv() {
-  const cols = ["level", "record_type", "date", "topic", "activity_or_provider", "hours", "score_pct", "coverage_pct", "confidence", "practice_pct", "exam_weight", "metric", "value", "notes"];
+  const cols = ["level", "attempt", "record_type", "date", "section", "activity_or_provider", "hours", "score_pct", "projected_now_pct", "projected_exam_pct", "coverage_pct", "confidence", "practice_pct", "exam_weight", "metric", "value", "notes"];
   const rows = [cols];
   const q = v => { const s = v == null ? "" : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-  const r2 = v => v == null ? "" : Math.round(v * 10) / 10;
+  const r1 = v => v == null || isNaN(v) ? "" : Math.round(v * 10) / 10;
+  const row = o => rows.push(cols.map(c => o[c] == null ? "" : o[c]));
   scopeIds().forEach(id => {
-    const r = compute(id), L = r.L;
-    const tn = tid => tid === "mixed" ? "Mixed / review" : (r.T.find(t => t.id === tid) || { name: tid }).name;
-    const sum = (m, v) => rows.push([L.name, "summary", stamp(), "", "", "", "", "", "", "", "", m, v, ""]);
-    sum("status", STATUS[r.lv.status]); sum("exam_date", r.lv.examDate); sum("days_to_exam", r.upcoming ? r.daysLeft : "");
-    sum("hours_logged", r2(r.H)); sum("target_hours", r.target); sum("projected_hours_at_exam", r2(r.Hx)); sum("weekly_pace_last_4_weeks", r2(r.rate));
-    sum("syllabus_covered_pct", r2(r.C * 100)); sum("projected_coverage_pct", r2(r.Cx * 100));
-    sum("mocks_taken", r.mocks.length); sum("weighted_mock_average_pct", r2(r.M));
-    sum("expected_score_now_pct", r2(r.Enow)); sum("expected_score_exam_day_pct", r2(r.Eexam)); sum("assumed_pass_mark_pct", r.mps);
-    sum("pass_probability_pct", r.P == null ? "" : r2(r.P * 100)); sum("assessment", r.band.t);
-    r.rows.forEach(t => rows.push([L.name, "topic", "", t.name, "", r2(t.hours), t.score == null ? "" : t.score, t.cov, t.conf || "", t.prac == null ? "" : t.prac, t.lo + "-" + t.hi + "%", "", "", ""]));
-    r.mocks.forEach(m => {
-      rows.push([L.name, "mock", m.date, "Overall", m.provider, "", m.score, "", "", "", "", "", "", ""]);
-      Object.entries(m.topics || {}).forEach(([tid, v]) => rows.push([L.name, "mock_topic", m.date, tn(tid), m.provider, "", v, "", "", "", "", "", "", ""]));
+    const L = LEVELS[id], lv = state.levels[id];
+    lv.attempts.forEach((at, ai) => {
+      const isCur = ai === lv.attempts.length - 1;
+      const r = compute(id, at, isCur ? {} : { calib: false });
+      const base = { level: L.name, attempt: ai + 1 };
+      const sum = (m, v) => row(Object.assign({}, base, { record_type: "summary", date: stamp(), metric: m, value: v }));
+      sum("status", STATUS[r.status]); sum("exam_date", at.examDate); sum("days_to_exam", r.upcoming ? r.daysLeft : "");
+      sum("hours_logged", r1(r.H)); sum("target_hours", r.target); sum("projected_hours_at_exam", r1(r.Hx)); sum("weekly_pace_last_4_weeks", r1(r.rate));
+      sum("syllabus_covered_pct", r1(r.C * 100)); sum("projected_coverage_pct", r1(r.Cx * 100));
+      sum("mocks_taken", r.mocks.length); sum("weighted_mock_average_pct", r1(r.M));
+      buildSteps(r).forEach(s => sum("step" + s.n + "_" + s.k.toLowerCase().replace(/[^a-z]+/g, "_"), r1(s.v)));
+      sum("projected_exam_day_score_pct", r1(r.Eexam)); sum("assumed_pass_mark_pct", r.mps); sum("uncertainty_pts", r1(r.sigma));
+      sum("pass_probability_pct", r.P == null ? "" : r1(r.P * 100)); sum("assessment", r.band.t);
+      r.rows.forEach(t => row(Object.assign({}, base, { record_type: "section", section: t.name, hours: r1(t.hours), score_pct: t.measured == null ? "" : t.measured, projected_now_pct: r1(t.now), projected_exam_pct: r1(t.exam), coverage_pct: t.cov, confidence: t.conf || "", practice_pct: t.prac == null ? "" : t.prac, exam_weight: t.lo + "-" + t.hi + "%" })));
+      r.mocks.forEach(m => {
+        row(Object.assign({}, base, { record_type: "mock", date: m.date, section: "Overall", activity_or_provider: m.provider, score_pct: m.score }));
+        Object.entries(m.topics || {}).forEach(([tid, v]) => row(Object.assign({}, base, { record_type: "mock_section", date: m.date, section: tName(r, tid), activity_or_provider: m.provider, score_pct: v })));
+      });
+      r.sessions.forEach(x => row(Object.assign({}, base, { record_type: "session", date: x.date, section: tName(r, x.topic), activity_or_provider: x.kind, hours: x.hours, notes: x.notes })));
+      if (r.back) {
+        const b = r.back;
+        const res = (m, v) => row(Object.assign({}, base, { record_type: "result", date: at.examDate, metric: m, value: v }));
+        res("outcome", b.outcome === "passed" ? "Passed" : "Did not pass"); res("session_pass_rate_pct", b.passRate == null ? "" : b.passRate);
+        res("pass_mark_pct", r1(b.mpsUsed)); res("pass_mark_source", b.mpsReported != null ? "reported/estimated" : "assumed");
+        res("actual_score_pct", r1(b.actual)); res("actual_score_source", b.actualSrc || ""); res("estimated_score_pct", r1(b.pred));
+        res("estimate_error_pts", r1(b.err)); res("margin_to_pass_mark_pts", r1(b.margin)); res("pre_exam_pass_probability_pct", b.Ppred == null ? "" : r1(b.Ppred * 100));
+        b.sections.forEach(s => row(Object.assign({}, base, { record_type: "result_section", date: at.examDate, section: s.r.name, projected_exam_pct: r1(s.r.exam), exam_weight: s.r.lo + "-" + s.r.hi + "%", metric: "result_band", value: s.b ? s.b.t : "", notes: s.chk === "match" ? "matched" : s.chk === "over" ? "estimate too high" : s.chk === "under" ? "estimate too low" : "" })));
+      }
     });
-    r.sessions.forEach(x => rows.push([L.name, "session", x.date, tn(x.topic), x.kind, x.hours, "", "", "", "", "", "", "", x.notes]));
   });
   const csv = "﻿" + rows.map(r => r.map(q).join(",")).join("\r\n");
   saveFile(`cfa-prep-data-${ui.reportScope === "all" ? "all-levels" : "level-" + ui.reportScope}-${stamp()}.csv`, new Blob([csv], { type: "text/csv" }));
@@ -919,128 +1264,156 @@ function exportPdf() {
   const INK = [19, 26, 36], MUTED = [110, 122, 140], ACC = [20, 85, 143], LINE = [217, 223, 231], PROJ = [122, 91, 181];
   const BAND = { good: [29, 122, 76], warn: [154, 98, 0], bad: [179, 54, 46], "": [110, 122, 140] };
   const ids = scopeIds();
-  const rs = ids.map(compute);
-  const ascii = s => String(s).replace(/[–—]/g, "-").replace(/[·]/g, "|").replace(/×/g, "x");
+  const ascii = s => String(s == null ? "" : s).replace(/[–—]/g, "-").replace(/−/g, "-").replace(/·/g, "|").replace(/×/g, "x").replace(/→/g, "->").replace(/±/g, "+/-");
   let y = M;
 
   function head(title, sub) {
     doc.setFillColor(...ACC); doc.rect(0, 0, PW, 6, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...MUTED);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...MUTED);
     doc.text("CFA PREP TRACKER", M, M);
     doc.setFont("helvetica", "normal");
     doc.text(ascii((state.name ? state.name + "  |  " : "") + "Generated " + fmtDate(today())), PW - M, M, { align: "right" });
-    doc.setFont("times", "bold"); doc.setFontSize(22); doc.setTextColor(...INK);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(20); doc.setTextColor(...INK);
     doc.text(ascii(title), M, M + 30);
     doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(...MUTED);
     doc.text(ascii(sub), M, M + 47);
     y = M + 66;
   }
   function h2(t) {
-    if (y > 760) { doc.addPage(); y = M; }
+    if (y > 740) { doc.addPage(); y = M; }
     doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(...INK); doc.text(ascii(t), M, y); y += 8;
   }
-  function table(head, body, opts) {
+  function table(hd, body, opts) {
     doc.autoTable(Object.assign({
-      startY: y, head: [head], body: body.map(r => r.map(c => ascii(c))), margin: { left: M, right: M },
+      startY: y, head: [hd.map(ascii)], body: body.map(r => r.map(c => ascii(c))), margin: { left: M, right: M },
       styles: { font: "helvetica", fontSize: 8.5, cellPadding: 4, textColor: INK, lineColor: LINE, lineWidth: 0.5 },
       headStyles: { fillColor: [234, 238, 243], textColor: MUTED, fontStyle: "bold", fontSize: 7.5 },
       theme: "grid"
     }, opts || {}));
     y = doc.lastAutoTable.finalY + 20;
   }
+  const right = cols => { const o = {}; cols.forEach(c => { o[c] = { halign: "right" }; }); return o; };
   function chart(r) {
-    const h = 150, x0 = M + 26, w = CW - 26 - 70, top = y + 6;
+    const h = 140, x0 = M + 26, w = CW - 26 - 74;
+    if (y + h + 40 > 800) { doc.addPage(); y = M; }
+    const top = y + 8;
     if (!r.mocks.length) { doc.setFontSize(9); doc.setTextColor(...MUTED); doc.text("No mock exams recorded yet.", M, y + 12); y += 30; return; }
     const d0 = parse(r.mocks[0].date);
-    let d1 = r.upcoming ? r.exam : parse(r.mocks[r.mocks.length - 1].date);
+    const d1 = r.upcoming ? r.exam : parse(r.mocks[r.mocks.length - 1].date);
     const span = Math.max(14 * DAY, d1 - d0), a = +d0 - span * 0.05, b = +d1 + span * 0.05;
     const lo = Math.min(r.mps, ...r.mocks.map(m => +m.score)) < 45 ? 20 : 40;
     const X = d => x0 + w * ((+d - a) / (b - a)), Y = v => top + h * (1 - (v - lo) / (100 - lo));
-    doc.setFontSize(7); doc.setTextColor(...MUTED); doc.setLineWidth(0.5); doc.setDrawColor(...LINE);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(...MUTED); doc.setLineWidth(0.5); doc.setDrawColor(...LINE);
     for (let v = lo; v <= 100; v += 10) { doc.line(x0, Y(v), x0 + w, Y(v)); doc.text(String(v), x0 - 5, Y(v) + 2.5, { align: "right" }); }
     for (let i = 0; i <= 4; i++) { const d = new Date(a + (b - a) * i / 4); doc.text(fmtShort(d), X(d), top + h + 12, { align: "center" }); }
     doc.setDrawColor(...INK); doc.setLineDashPattern([4, 3], 0); doc.setLineWidth(1);
-    doc.line(x0, Y(r.mps), x0 + w, Y(r.mps));
-    doc.setLineDashPattern([], 0);
+    doc.line(x0, Y(r.mps), x0 + w, Y(r.mps)); doc.setLineDashPattern([], 0);
     doc.setFontSize(8); doc.setTextColor(...INK); doc.text("Pass " + r.mps + "%", x0 + w + 6, Y(r.mps) + 3);
     doc.setDrawColor(...ACC); doc.setLineWidth(1.6);
-    const pts = r.mocks.map(m => [X(parse(m.date)), Y(+m.score)]);
-    for (let i = 1; i < pts.length; i++) doc.line(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]);
-    doc.setFillColor(...ACC); pts.forEach(p => doc.circle(p[0], p[1], 2.6, "F"));
+    const p = r.mocks.map(m => [X(parse(m.date)), Y(+m.score)]);
+    for (let i = 1; i < p.length; i++) doc.line(p[i - 1][0], p[i - 1][1], p[i][0], p[i][1]);
+    doc.setFillColor(...ACC); p.forEach(q => doc.circle(q[0], q[1], 2.6, "F"));
     if (r.upcoming && r.Eexam != null) {
-      const p = pts[pts.length - 1], px = X(r.exam), py = Y(r.Eexam);
-      doc.setDrawColor(...PROJ); doc.setLineDashPattern([4, 3], 0); doc.line(p[0], p[1], px, py); doc.setLineDashPattern([], 0);
+      const q = p[p.length - 1], px = X(r.exam), py = Y(r.Eexam);
+      doc.setDrawColor(...PROJ); doc.setLineDashPattern([4, 3], 0); doc.line(q[0], q[1], px, py); doc.setLineDashPattern([], 0);
       doc.setFillColor(255, 255, 255); doc.circle(px, py, 3.2, "FD");
-      doc.setTextColor(...PROJ); doc.text("Exam " + nf1.format(r.Eexam) + "%", px + 6, py - 5);
+      const close = Math.abs(r.Eexam - r.mps) < 6;
+      doc.setTextColor(...PROJ); doc.text("Exam " + nf1.format(r.Eexam) + "%", px + 6, close ? (r.Eexam < r.mps ? py + 12 : py - 8) : py - 5);
     }
     y = top + h + 30;
   }
+  function backcheckTables(r) {
+    const b = r.back;
+    table(["Estimated score", "Actual score", "Error", "Pass mark", "Margin", "Session pass rate", "Pre-exam chance"], [[pct(b.pred), b.actual == null ? "-" : pct(b.actual) + (b.actualSrc === "bands" ? " (from bands)" : ""), pts(b.err), pct(b.mpsUsed, 0) + (b.mpsReported != null ? "" : " (assumed)"), pts(b.margin), pct(b.passRate, 0), b.Ppred == null ? "-" : nf0.format(b.Ppred * 100) + "%"]]);
+    if (b.sections.some(s => s.b)) table(["Section", "Weight", "Estimated on exam day", "Result band", "Check"], b.sections.map(s => [s.r.name, s.r.lo + "-" + s.r.hi + "%", pct(s.r.exam, 0), s.b ? s.b.t : "-", s.chk === "match" ? "Matched" : s.chk === "over" ? "Estimate too high" : s.chk === "under" ? "Estimate too low" : "-"]), { columnStyles: right([1, 2]) });
+  }
 
+  const rs = ids.map(id => compute(id));
   if (ids.length > 1) {
     head("Preparation report: all levels", "Status, performance and pass expectations across CFA Levels I, II and III");
-    h2("Summary");
-    table(["Level", "Status", "Exam date", "Hours", "Covered", "Mocks", "Latest mock", "Expected score", "Pass chance", "Assessment"],
-      rs.map(r => [r.L.name, STATUS[r.lv.status], r.exam ? fmtDate(r.exam) : "-", nf0.format(r.H) + " / " + nf0.format(r.target), pct(r.C * 100, 0), String(r.mocks.length), r.mocks.length ? pct(+r.mocks[r.mocks.length - 1].score) : "-", pct(r.Eexam), r.lv.status === "passed" || r.P == null ? "-" : nf0.format(r.P * 100) + "%", r.band.t]));
+    h2("Summary (current attempt per level)");
+    table(["Level", "Attempt", "Status", "Exam date", "Hours", "Covered", "Mocks", "Projected", "Pass chance", "Assessment"],
+      rs.map(r => { const done = r.status === "passed" || r.status === "failed"; return [r.L.name, String(state.levels[r.id].attempts.length), STATUS[r.status], r.exam ? fmtDate(r.exam) : "-", nf0.format(r.H) + " / " + nf0.format(r.target), pct(r.C * 100, 0), String(r.mocks.length), done ? "-" : pct(r.Eexam), done || r.P == null ? "-" : nf0.format(r.P * 100) + "%", r.band.t]; }));
+    const cal = calibration();
+    if (cal.n) {
+      h2("Back-check across your exams");
+      table(["Exam", "Estimate", "Actual", "Error"], cal.list.map(x => [LEVELS[x.lid].name + ", attempt " + x.n, pct(x.pred), pct(x.actual), pts(x.err)]), { columnStyles: right([1, 2, 3]) });
+    }
   }
 
   rs.forEach((r, idx) => {
     if (ids.length > 1 || idx > 0) { doc.addPage(); y = M; }
-    head("CFA " + r.L.name + " preparation report", r.L.format + (r.id === 3 ? " | " + PATHWAYS[r.lv.pathway] + " pathway" : ""));
-    // Verdict
+    const nAt = state.levels[r.id].attempts.length;
+    head("CFA " + r.L.name + " preparation report", (nAt > 1 ? "Attempt " + nAt + " | " : "") + r.L.format + (r.id === 3 ? " | " + PATHWAYS[state.levels[3].pathway] + " pathway" : ""));
     const bc = BAND[r.band.k] || BAND[""];
+    const done = r.status === "passed" || r.status === "failed";
     doc.setFillColor(243, 245, 248); doc.setDrawColor(...LINE); doc.roundedRect(M, y, CW, 64, 4, 4, "FD");
     doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...MUTED);
-    doc.text(r.lv.status === "passed" || r.lv.status === "not-passed" ? "RESULT" : "CHANCE OF PASSING", M + 14, y + 18);
-    doc.setFont("times", "bold"); doc.setFontSize(26); doc.setTextColor(...bc);
-    const big = r.lv.status === "passed" ? "Passed" : r.lv.status === "not-passed" ? "Not passed" : r.P == null ? "n/a" : nf0.format(r.P * 100) + "%";
-    doc.text(big, M + 14, y + 48);
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
-    doc.text(r.band.t, M + 150, y + 26);
+    doc.text(done ? "RESULT" : "CHANCE OF PASSING", M + 14, y + 18);
+    doc.setFontSize(24); doc.setTextColor(...bc);
+    doc.text(done ? (r.status === "passed" ? "Passed" : "Not passed") : r.P == null ? "n/a" : nf0.format(r.P * 100) + "%", M + 14, y + 48);
+    doc.setFontSize(10); doc.text(r.band.t, M + 160, y + 24);
     doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...INK);
-    const verdict = r.lv.status === "passed" ? "Exam taken " + fmtDate(r.lv.examDate) + "." :
+    const verdict = done ? "Exam taken " + fmtDate(r.at.examDate) + ". See the back-check below." :
       r.Eexam == null ? "Record a mock exam or practice scores to estimate your chance of passing." :
-      "Expected " + (r.upcoming ? "exam-day " : "") + "score " + pct(r.Eexam) + " against an assumed pass mark of " + r.mps + "% (spread +/-" + nf1.format(r.sigma) + " pts).";
-    doc.text(doc.splitTextToSize(ascii(verdict), CW - 170), M + 150, y + 42);
+      "Projected exam-day score " + pct(r.Eexam) + " against an assumed pass mark of " + r.mps + "% (" + pts(r.Eexam - r.mps) + ", uncertainty +/-" + nf1.format(r.sigma) + " pts). Pass rate for " + r.L.name + ": " + r.L.passNote + ".";
+    doc.text(doc.splitTextToSize(ascii(verdict), CW - 180), M + 160, y + 38);
     y += 88;
+
+    if (done && r.back) { h2("Result and back-check"); backcheckTables(r); }
 
     h2("Key figures");
     const need = weeklyNeeded(r);
     table(["Measure", "Value", "Measure", "Value"], [
-      ["Status", STATUS[r.lv.status], "Exam date", r.exam ? fmtDate(r.exam) + (r.upcoming ? " (" + r.daysLeft + " days)" : "") : "Not set"],
+      ["Status", STATUS[r.status], "Exam date", r.exam ? fmtDate(r.exam) + (r.upcoming ? " (" + r.daysLeft + " days)" : "") : "Not set"],
       ["Hours logged", nf1.format(r.H) + " h of " + nf0.format(r.target) + " h", "Projected by exam day", r.upcoming ? nf0.format(r.Hx) + " h" : "-"],
       ["Weekly pace (last 4 weeks)", nf1.format(r.rate) + " h", "Weekly hours needed for target", need != null ? nf1.format(need) + " h" : "-"],
       ["Syllabus covered", pct(r.C * 100, 0), "Projected coverage at exam", r.upcoming ? pct(r.Cx * 100, 0) : "-"],
       ["Mocks taken", String(r.mocks.length), "Weighted mock average", pct(r.M)],
-      ["Expected score now", pct(r.Enow), "Mock trend", r.slope == null ? "needs 3 mocks" : (r.slope >= 0 ? "+" : "") + nf1.format(r.slope) + " pts/week"]
+      ["Mock trend", r.slope == null ? "needs 3 mocks" : (r.slope >= 0 ? "+" : "-") + nf1.format(Math.abs(r.slope)) + " pts/week", "Assumed pass mark", r.mps + "%"]
     ], { columnStyles: { 0: { textColor: MUTED }, 2: { textColor: MUTED } } });
+
+    if (r.Enow != null) {
+      h2(done ? "How the pre-exam estimate was built" : "How the estimate is built");
+      const st = buildSteps(r).map(s => [String(s.n), s.k, s.note, s.lvl ? pct(s.v) : pts(s.v)]);
+      st.push(["=", "Projected exam-day score", "Weighted sum of the section projections", pct(r.Eexam)]);
+      st.push(["6", "Margin to pass mark", "Assumed pass mark " + r.mps + "%", pts(r.Eexam - r.mps)]);
+      st.push(["7", "Uncertainty", "Exam-day noise " + nf1.format(r.sBase) + ", mock inconsistency " + nf1.format(r.sCons) + ", time to exam " + nf1.format(r.sTime), "+/-" + nf1.format(r.sigma)]);
+      st.push(["=", "Chance of passing", "Probability the score lands above the pass mark", pct(r.P * 100, 0)]);
+      table(["#", "Step", "Basis", "Effect"], st, { columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 120, fontStyle: "bold" }, 3: { halign: "right", cellWidth: 60 } } });
+    }
 
     h2("Mock exam scores");
     chart(r);
 
-    h2("Topics");
-    table(["Topic", "Weight", "Covered", "Confidence", "Practice", "Latest mock", "Hours"],
-      r.rows.map(t => [t.name, t.lo + "-" + t.hi + "%", t.cov + "%", t.conf ? t.conf + "/5" : "-", t.prac == null ? "-" : t.prac + "%", t.mockScore == null ? "-" : t.mockScore + "%", nf1.format(t.hours)]),
-      { columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" }, 5: { halign: "right" }, 6: { halign: "right" } },
-        didParseCell: d => { if (d.section === "body" && d.column.index === 5) { const v = parseFloat(d.cell.raw); if (!isNaN(v)) d.cell.styles.textColor = BAND[scoreClass(v, r.mps)]; } } });
+    h2("Sections: estimated scores");
+    table(["Section", "Weight", "Covered", "Conf.", "Practice", "Latest mock", "Now", "Exam day", "Hours"],
+      r.rows.map(t => [t.name, t.lo + "-" + t.hi + "%", t.cov + "%", t.conf ? t.conf + "/5" : "-", t.prac == null ? "-" : t.prac + "%", t.mockScore == null ? "-" : t.mockScore + "%", pct(t.now, 0), pct(t.exam, 0), nf1.format(t.hours)]),
+      { columnStyles: right([1, 2, 3, 4, 5, 6, 7, 8]),
+        didParseCell: d => { if (d.section === "body" && (d.column.index === 6 || d.column.index === 7)) { const v = parseFloat(d.cell.raw); if (!isNaN(v)) { d.cell.styles.textColor = BAND[scoreClass(v, r.mps)]; d.cell.styles.fontStyle = "bold"; } } } });
 
     if (r.mocks.length) {
       h2("Mock exam history");
-      table(["Date", "Mock", "Score", "vs pass mark"], r.mocks.map(m => [fmtDate(m.date), m.provider || "Mock exam", pct(+m.score), (+m.score - r.mps >= 0 ? "+" : "") + nf1.format(+m.score - r.mps) + " pts"]),
-        { columnStyles: { 2: { halign: "right" }, 3: { halign: "right" } } });
+      table(["Date", "Mock", "Score", "vs pass mark"], r.mocks.map(m => [fmtDate(m.date), m.provider || "Mock exam", pct(+m.score), pts(+m.score - r.mps)]), { columnStyles: right([2, 3]) });
     }
     if (r.sessions.length) {
       h2("Study time by activity");
-      table(["Activity", "Hours", "Share"], Object.entries(r.byKind).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, nf1.format(v), pct(v / r.H * 100, 0)]),
-        { columnStyles: { 1: { halign: "right" }, 2: { halign: "right" } }, tableWidth: CW * 0.6 });
+      table(["Activity", "Hours", "Share"], Object.entries(r.byKind).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, nf1.format(v), pct(v / r.H * 100, 0)]), { columnStyles: right([1, 2]), tableWidth: CW * 0.6 });
     }
-    if (r.lv.status === "studying" || r.lv.status === "not-started") {
+    if (!done && r.focus.length) {
       h2("Where to focus next");
-      if (r.focus.length) table(["#", "Topic", "Weight", "Why"], r.focus.map((f, i) => [String(i + 1), f.r.name, f.r.lo + "-" + f.r.hi + "%", f.why.join(", ")]), { columnStyles: { 0: { cellWidth: 20 } } });
-      else { doc.setFontSize(9); doc.setTextColor(...MUTED); doc.text("Nothing stands out.", M, y + 4); y += 20; }
+      table(["#", "Section", "Weight", "Why"], r.focus.map((f, i) => [String(i + 1), f.r.name, f.r.lo + "-" + f.r.hi + "%", f.why.join(", ")]), { columnStyles: { 0: { cellWidth: 20 } } });
+    }
+    const past = state.levels[r.id].attempts.slice(0, -1);
+    if (past.length) {
+      h2("Previous attempts");
+      table(["Attempt", "Exam", "Outcome", "Hours", "Mocks", "Estimate", "Actual", "Pass mark", "Pass rate"], past.map((a, i) => {
+        const pr = compute(r.id, a, { calib: false }), b = pr.back;
+        return ["Attempt " + (i + 1), a.examDate ? fmtMonth(a.examDate) : "-", STATUS[pr.status], nf0.format(pr.H), String(pr.mocks.length), pct(pr.Eexam), b && b.actual != null ? pct(b.actual) : "-", b ? pct(b.mpsUsed, 0) : "-", b && b.passRate != null ? pct(b.passRate, 0) : "-"];
+      }), { columnStyles: right([3, 4, 5, 6, 7, 8]) });
     }
   });
 
-  // Footer on every page
   const n = doc.getNumberOfPages();
   for (let i = 1; i <= n; i++) {
     doc.setPage(i);
@@ -1048,16 +1421,15 @@ function exportPdf() {
     doc.text("Pass estimates are a study aid, not an official prediction. CFA Institute does not publish the minimum passing score. Not affiliated with CFA Institute.", M, 820);
     doc.text(i + " / " + n, PW - M, 820, { align: "right" });
   }
-  const name = `cfa-prep-report-${ui.reportScope === "all" ? "all-levels" : "level-" + ui.reportScope}-${stamp()}.pdf`;
-  saveFile(name, doc.output("blob"));
+  saveFile(`cfa-prep-report-${ui.reportScope === "all" ? "all-levels" : "level-" + ui.reportScope}-${stamp()}.pdf`, doc.output("blob"));
 }
 
 /* ---------- Boot ---------- */
+const TABS = ["overview", "l1", "l2", "l3", "reports"];
 let start = "overview";
 const hash = (location.hash || "").slice(1);
-if (["overview", "l1", "l2", "l3", "reports"].includes(hash)) start = hash;
-else { try { const t = localStorage.getItem(KEY + ":tab"); if (t) start = t; } catch (e) { /* ignore */ } }
-if (!["overview", "l1", "l2", "l3", "reports"].includes(start)) start = "overview";
+if (TABS.includes(hash)) start = hash;
+else { try { const t = localStorage.getItem(KEY + ":tab"); if (TABS.includes(t)) start = t; } catch (e) { /* ignore */ } }
 setTab(start, false);
 })();
 </script>
