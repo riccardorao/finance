@@ -16,6 +16,11 @@ answers three questions, one per tab:
 
 ![Performance tab, built from the synthetic sample](docs/sample-record.png)
 
+> **Also in this repository:** [`household/`](household/README.md) is a separate, simpler tool for household accounts
+> (BCC and Hype). It runs as a single offline HTML page that imports bank exports or a PSD2 bank link. It runs checks
+> on past transactions (reconciliation, double charges, price rises, missing pension) and makes suggestions.
+> Build it with `npm run household`.
+
 The screenshots in `docs/` come from the **synthetic sample** in `data/sample`. They are not real
 account data.
 

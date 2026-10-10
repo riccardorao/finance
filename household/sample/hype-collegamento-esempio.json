@@ -1,0 +1,25 @@
+{
+  "format": "household-transactions",
+  "version": 1,
+  "generated": "2026-10-01T08:00:00Z",
+  "source": "enablebanking",
+  "accounts": [
+    {
+      "name": "Hype",
+      "bank": "Hype",
+      "iban": "IT00X0000000000000000000000",
+      "balance": { "date": "2026-09-30", "amount": "312.50" },
+      "transactions": [
+        { "date": "2026-07-04", "desc": "Ricarica da IBAN BCC", "amount": "400.00", "ref": "e1" },
+        { "date": "2026-07-10", "desc": "NETFLIX.COM", "amount": "-13.99", "ref": "e2" },
+        { "date": "2026-07-19", "desc": "ENI STATION 4412", "amount": "-61.20", "ref": "e3" },
+        { "date": "2026-07-22", "desc": "PIZZERIA DA MARIO", "amount": "-38.00", "ref": "e4" },
+        { "date": "2026-08-04", "desc": "Ricarica da IBAN BCC", "amount": "400.00", "ref": "e5" },
+        { "date": "2026-08-10", "desc": "NETFLIX.COM", "amount": "-13.99", "ref": "e6" },
+        { "date": "2026-08-21", "desc": "TELEPASS SPA", "amount": "-24.10", "ref": "e7" },
+        { "date": "2026-08-21", "desc": "TELEPASS SPA", "amount": "-24.10", "ref": "e8" },
+        { "date": "2026-09-10", "desc": "NETFLIX.COM", "amount": "-15.99", "ref": "e9" }
+      ]
+    }
+  ]
+}
