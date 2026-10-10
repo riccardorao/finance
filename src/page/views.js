@@ -217,7 +217,9 @@ function renderBookPublic() {
   const U = M.D.public.unlock || {};
   const cov = M.H.filter((h) => h.sc);
   const dLo = Math.min(-0.2, ...cov.map((h) => h.sc.bear)), dHi = Math.max(0.2, ...cov.map((h) => h.sc.bull));
-  const PX = (v) => 19 + ((v - dLo) / (dHi - dLo)) * 62;
+  const PX = (v) => 9 + ((v - dLo) / (dHi - dLo)) * 82; // inset so the end balls stay inside the column, as in the private book
+  // bear, weighted and bull positions, pushed apart just enough that the three balls never overlap
+  const balls = (a, b, c) => { const G = 19, x = [PX(a), PX(b), PX(c)]; x[1] = Math.max(x[1], x[0] + G); x[2] = Math.max(x[2], x[1] + G); const over = x[2] - 91; if (over > 0) { x[2] -= over; x[1] = Math.min(x[1], x[2] - G); x[0] = Math.min(x[0], x[1] - G); } return x; };
   const sectors = {}; M.H.forEach((h) => { sectors[h.sector] = (sectors[h.sector] || 0) + h.weight; });
   const href = safeUrl(U.href) || (/^mailto:[^\s"'<>]+$/.test(U.href || '') ? U.href : null);
   root.innerHTML = `
@@ -232,7 +234,7 @@ function renderBookPublic() {
         <span class="c-m muted">${esc(h.region)}</span>
         <span class="n"><b>${(h.weight * 100).toFixed(1)}%</b></span>
         <span class="n">${h.pnl != null ? pctSpan(h.pnlPct, 1) : '–'}</span>
-        <span class="c-m c-rng">${sc ? `<span class="rng" role="img" aria-label="Bear ${fmtSignedPct(sc.bear, 0)}, weighted ${fmtSignedPct(mid, 0)}, bull ${fmtSignedPct(sc.bull, 0)}"><i class="z" style="left:${PX(0)}%"></i><i class="seg" style="left:${PX(sc.bear)}%;width:${PX(sc.bull) - PX(sc.bear)}%"></i><i class="d bear" style="left:${PX(sc.bear)}%"></i><i class="t" style="left:${PX(mid)}%"></i><i class="d bull" style="left:${PX(sc.bull)}%"></i><em class="lb neg" style="right:calc(${100 - PX(sc.bear)}% + 7px)">${fmtSignedPct(sc.bear, 0)}</em><em class="lb bs" style="left:${PX(mid)}%">${fmtSignedPct(mid, 0)}</em><em class="lb pos" style="left:calc(${PX(sc.bull)}% + 7px)">${fmtSignedPct(sc.bull, 0)}</em></span>` : '<small class="muted">no analyst coverage</small>'}</span>
+        <span class="c-m c-rng">${sc ? `<span class="rng" role="img" aria-label="Bear ${fmtSignedPct(sc.bear, 0)}, weighted ${fmtSignedPct(mid, 0)}, bull ${fmtSignedPct(sc.bull, 0)}">${((x) => `<i class="seg" style="left:${x[0]}%;width:${x[2] - x[0]}%"></i><em class="ball bear" style="left:${x[0]}%">${fmtSignedPct(sc.bear, 0)}</em><em class="ball mid" style="left:${x[1]}%">${fmtSignedPct(mid, 0)}</em><em class="ball bull" style="left:${x[2]}%">${fmtSignedPct(sc.bull, 0)}</em>`)(balls(sc.bear, mid, sc.bull))}</span>` : '<small class="muted">no analyst coverage</small>'}</span>
         ${sc ? `<small class="rng-m">12-month range ${fmtSignedPct(sc.bear, 0)} · ${fmtSignedPct(mid, 0)} · ${fmtSignedPct(sc.bull, 0)}</small>` : ''}
       </div>`; }).join('')}
     <div class="book-f"><span class="foot-n">Weight: share of the stock portfolio today. Unrealised: gain or loss on what I still hold, against what I paid. 12-month range, left to right: the bear case, the weighted outcome (25% bear, 50% average analyst target, 25% bull) and the bull case (the highest analyst target), rounded to a whole per cent. Region is broad on purpose.</span></div>
