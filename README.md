@@ -193,3 +193,22 @@ marked `"killDraft": true` shows a *draft* tag on the page until you confirm it 
 - The broker exposes no daily history of account value, so it is rebuilt from the trades and market prices.
   It matches the broker's own figures to within about 2%.
 - Everything on the page is information about one account, not investment advice.
+
+## CFA Prep Tracker (`cfa/cfa-tracker.html`)
+
+A standalone page for following CFA Level I, II and III preparation. It has no build step and no dependencies
+beyond jsPDF (loaded from cdnjs for the PDF report), so the file can be dropped onto any website as is.
+
+| Page | What is on it |
+|---|---|
+| **Overview** | Where each level stands, the next exam and the chance of passing it |
+| **Level I / II / III** | Exam settings (date, target hours, assumed pass mark, Level III pathway), chance of passing, mock-score and study-hour charts, a topic grid with CFA Institute's exam weights, coverage, confidence and practice scores, focus suggestions, and logs for study sessions and mock exams |
+| **Reports** | PDF report and CSV export for one level or all three |
+
+Each visitor's data is stored in their own browser (`localStorage`), so nobody sees anyone else's figures and
+nothing is sent to a server. First-time visitors see clearly labelled example data with a button to start fresh.
+
+The pass estimate blends a recency-weighted mock average, topic scores weighted by exam weight, syllabus
+coverage projected to exam day at the current weekly pace, the mock trend, and a penalty for finishing well
+short of the target hours. The projected score is compared with an assumed pass mark (CFA Institute does not
+publish it) through a normal distribution. The page explains the method under *How the pass estimate works*.
