@@ -97,9 +97,9 @@ function render() {
 }
 async function boot() {
   DATA_SNAP = prepare(DATA); DATA_ACTIVE = DATA_SNAP;
-  let start = (location.hash || '').slice(1);
-  if (!TABS.some((t) => t[0] === start)) { try { start = localStorage.getItem('pm-tab') || ''; } catch (e) { start = ''; } }
-  if (TABS.some((t) => t[0] === start)) state.tab = start;
+  // always open on the Portfolio tab, whatever the link's hash or the last visit
+  state.tab = 'book';
+  try { if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* hash is a convenience */ }
   render();
   window.addEventListener('hashchange', () => setTab(location.hash.slice(1), false));
   watchResearch();

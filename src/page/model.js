@@ -16,8 +16,8 @@ const px = (x) => (x >= 100 ? fmtNum(x, 2) : x >= 10 ? fmtNum(x, 2) : fmtNum(x, 
 const dayMs = (s) => Date.parse(s.length === 10 ? s + 'T12:00:00Z' : s.length === 16 ? s + ':00Z' : s);
 
 /* ---------- state ---------- */
-const TABS = [['record', 'Performance'], ['book', 'Portfolio'], ['risk', 'Outlook']];
-const state = { tab: 'record', bench: 'MSCI', tf: '1Y', measure: 'twr', hz: 12, obench: 'SPX', open: null, preset: 'analyst', mode: 'snapshot', statusMsg: '', tableView: {}, commentary: {}, dbReady: false };
+const TABS = [['book', 'Portfolio'], ['record', 'Performance'], ['risk', 'Outlook']];
+const state = { tab: 'book', bp: '1D', bench: 'SPX', tf: '1Y', measure: 'twr', hz: 12, open: null, preset: 'analyst', mode: 'snapshot', statusMsg: '', tableView: {}, commentary: {}, dbReady: false };
 /* scenario probabilities: bull, base, bear */
 const PRESETS = { analyst: { label: 'Consensus', p: [0.25, 0.5, 0.25] }, cautious: { label: 'Cautious', p: [0.15, 0.45, 0.4] }, stress: { label: 'Stress', p: [0.05, 0.35, 0.6] } };
 const REF_MU = 0.07; // assumed long-run annual return for the benchmark reference
@@ -368,18 +368,19 @@ function tableTwin(head, rowsArr) {
 
 /* ---------- fan chart: log-normal range of outcomes ---------- */
 const isoDay = (t) => new Date(t).toISOString().slice(0, 10);
-const Zq = [-1.645, -0.674, 0, 0.674, 1.645];
+const Zq = [-3, -2, -1, 0, 1, 2, 3]; // outcome bands at ±1σ, ±2σ and ±3σ around the median
+const ZL = ['−3σ', '−2σ', '−1σ', 'Median', '+1σ', '+2σ', '+3σ'];
 function fanPoints(V0, mu, sigma, steps, perYear = 12) {
   const m = Math.log(1 + mu) - (sigma * sigma) / 2;
   return Array.from({ length: steps + 1 }, (_, k) => { const t = k / perYear; return Zq.map((z) => V0 * Math.exp(m * t + z * sigma * Math.sqrt(t))); });
 }
 function fanChart(host, w, o) {
-  const h = o.height || 290, m = { l: 50, r: 16, t: 12, b: 26 }, C = o.color || 'var(--accent)', RC = o.ref.color || 'var(--ink3)';
+  const h = o.height || 290, m = { l: 50, r: w < 520 ? 88 : 104, t: 12, b: 26 }, C = o.color || 'var(--accent)', RC = o.ref.color || 'var(--ink3)';
   const iw = w - m.l - m.r, ih = h - m.t - m.b, N = o.months;
-  const F = fanPoints(o.V0, o.mu, o.sigma, N), Rf = fanPoints(o.V0, o.ref.mu, o.ref.sigma, N).map((q) => q[2]);
+  const F = fanPoints(o.V0, o.mu, o.sigma, N), Rf = fanPoints(o.V0, o.ref.mu, o.ref.sigma, N).map((q) => q[3]);
   // drawn on a finer grid than the monthly tooltip points, so short horizons curve smoothly
-  const S = 10, FF = fanPoints(o.V0, o.mu, o.sigma, N * S, 12 * S), RF = fanPoints(o.V0, o.ref.mu, o.ref.sigma, N * S, 12 * S).map((q) => q[2]);
-  const lo = Math.min(...F.map((q) => q[0]), ...Rf), hi = Math.max(...F.map((q) => q[4]), ...Rf);
+  const S = 10, FF = fanPoints(o.V0, o.mu, o.sigma, N * S, 12 * S), RF = fanPoints(o.V0, o.ref.mu, o.ref.sigma, N * S, 12 * S).map((q) => q[3]);
+  const lo = Math.min(...F.map((q) => q[0]), ...Rf), hi = Math.max(...F.map((q) => q[6]), ...Rf);
   const ticks = niceTicks(lo, hi, 5), y0 = ticks[0], y1 = ticks[ticks.length - 1];
   const X = (k) => m.l + (k / N) * iw, Y = (v) => m.t + (1 - (v - y0) / (y1 - y0 || 1)) * ih;
   const XF = (j) => X(j / S);
@@ -388,14 +389,17 @@ function fanChart(host, w, o) {
   const d0 = new Date(o.t0), mt = (k) => Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth() + k, d0.getUTCDate());
   let g = '';
   ticks.forEach((tv) => { const y = Math.round(Y(tv)) + 0.5; g += `<line class="gl" x1="${m.l}" x2="${m.l + iw}" y1="${y}" y2="${y}"/><text x="${m.l - 8}" y="${y + 4}" text-anchor="end">${PUB ? Math.round(tv) : Math.round(tv / 1000) + 'k'}</text>`; });
-  const step = N <= 6 ? 1 : N <= 12 ? (iw < 380 ? 4 : 2) : (iw < 380 ? 6 : 3);
+  const fit = Math.max(2, Math.floor(iw / 62)), step = [1, 2, 3, 4, 6, 12].find((s) => N / s <= fit) || 12; // as many month labels as fit
   for (let k = 0; k <= N; k += step) g += `<text x="${X(k)}" y="${h - 6}" text-anchor="middle">${k === 0 ? 'Today' : esc(mlabel(mt(k)))}</text>`;
   const yb = Math.round(Y(o.V0)) + 0.5;
   g += `<line class="base" x1="${m.l}" x2="${m.l + iw}" y1="${yb}" y2="${yb}" stroke-dasharray="2 3"/>`;
-  g += `<path d="${area(4, 0)}" fill="${C}" opacity="0.11"/><path d="${area(3, 1)}" fill="${C}" opacity="0.2"/>`;
+  g += `<path d="${area(6, 0)}" fill="${C}" opacity="0.07"/><path d="${area(5, 1)}" fill="${C}" opacity="0.1"/><path d="${area(4, 2)}" fill="${C}" opacity="0.16"/>`;
   g += `<path d="${path(RF)}" fill="none" stroke="${RC}" stroke-width="1.75" stroke-dasharray="5 4"/>`;
-  g += `<path d="${path(FF.map((q) => q[2]))}" fill="none" stroke="${C}" stroke-width="2.25"/>`;
-  [0, 2, 4].forEach((j) => { const v = F[N][j]; g += `<text x="${X(N) - 4}" y="${Y(v) + (j === 0 ? 14 : j === 4 ? -6 : -6)}" text-anchor="end" style="fill:var(--ink2);font-weight:600">${['5%', '', '95%'][j / 2]}${j === 2 ? '' : ' · '}${money0(v)}</text>`; });
+  g += `<path d="${path(FF.map((q) => q[3]))}" fill="none" stroke="${C}" stroke-width="2.25"/>`;
+  // end labels in the right margin, top (+3σ) to bottom (−3σ), spaced so they never overlap
+  const ends = Zq.map((_, j) => ({ j, y: Y(F[N][j]) + 4 })).reverse();
+  ends.forEach((e, i) => { if (i && e.y - ends[i - 1].y < 13) e.y = ends[i - 1].y + 13; });
+  ends.forEach((e) => { g += `<text x="${X(N) + 6}" y="${e.y.toFixed(1)}" style="fill:${e.j === 3 ? C : 'var(--ink2)'};font-weight:${e.j === 3 ? 700 : 500}">${ZL[e.j] === 'Median' ? '' : ZL[e.j] + ' '}${money0(F[N][e.j])}</text>`; });
   g += `<line class="xh" id="fxh" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" style="display:none"/><rect id="fov" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" tabindex="0" role="img" aria-label="${esc(o.aria)}"/>`;
   host.innerHTML = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${g}</svg>`;
   const svg = host.firstChild, ov = svg.querySelector('#fov'), xh = svg.querySelector('#fxh');
@@ -403,7 +407,7 @@ function fanChart(host, w, o) {
   const show = (k, cx, cy) => {
     cur = k; const xx = X(k); xh.setAttribute('x1', xx); xh.setAttribute('x2', xx); xh.style.display = '';
     const q = F[k], r = svg.getBoundingClientRect();
-    showTip(`<div class="th">${k === 0 ? 'Today' : dfmt(isoDay(mt(k))) + ` · ${k} month${k > 1 ? 's' : ''}`}</div>${trow(C, '1 in 20 better than', money0(q[4]))}${trow(C, 'Middle half', `${money0(q[1])} – ${money0(q[3])}`)}${trow(C, 'Median', money0(q[2]), 1)}${trow(C, '1 in 20 worse than', money0(q[0]))}${trow(RC, o.ref.label + ' median', money0(Rf[k]), 1)}`, cx != null ? cx : r.left + xx, cy != null ? cy : r.top + m.t + 20);
+    showTip(`<div class="th">${k === 0 ? 'Today' : dfmt(isoDay(mt(k))) + ` · ${k} month${k > 1 ? 's' : ''}`}</div>${[6, 5, 4, 3, 2, 1, 0].map((j) => trow(C, ZL[j], money0(q[j]), j === 3 ? 1 : 0)).join('')}${trow(RC, o.ref.label + ' median', money0(Rf[k]), 1)}`, cx != null ? cx : r.left + xx, cy != null ? cy : r.top + m.t + 20);
   };
   const near = (cx) => { const r = svg.getBoundingClientRect(); return Math.max(0, Math.min(N, Math.round(((cx - r.left - m.l) / iw) * N))); };
   ov.addEventListener('pointermove', (e) => show(near(e.clientX), e.clientX, e.clientY));
@@ -413,4 +417,3 @@ function fanChart(host, w, o) {
   ov.addEventListener('keydown', (e) => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); show(Math.max(0, Math.min(N, (cur < 0 ? N : cur) + (e.key === 'ArrowRight' ? 1 : -1)))); });
   return F;
 }
-
