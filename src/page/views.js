@@ -258,7 +258,7 @@ function renderRisk() {
     <div class="seg" role="group" aria-label="Scenario odds">${Object.entries(PRESETS).map(([k, v]) => `<button data-pre="${k}" aria-pressed="${k === state.preset}">${v.label}</button>`).join('')}</div>
   </div>
   <div class="kpis4">
-    ${kpi('Expected, ' + hzL, fmtSignedPct(exp, 0), cls(exp), `${exp >= 0 ? '+' : ''}${fmtEUR0(exp * V)}<br>${esc(bName)} ${fmtSignedPct(bExp, 0)} at historical pace`)}
+    ${kpi('Expected, ' + hzL, fmtSignedPct(exp, 0), cls(exp), `${esc(bName)} ${fmtSignedPct(bExp, 0)} at historical pace`)}
     ${kpi('Range at ±1<span style="text-transform:none">σ</span>', `<span class="${cls(q(-1))}">${fmtSignedPct(q(-1), 0)}</span> <span class="muted">to</span> <span class="${cls(q(1))}">${fmtSignedPct(q(1), 0)}</span>`, '', `±2σ: ${fmtSignedPct(q(-2), 0)} to ${fmtSignedPct(q(2), 0)}<br>±3σ: ${fmtSignedPct(q(-3), 0)} to ${fmtSignedPct(q(3), 0)}`)}
     ${kpi('Chance of beating ' + esc(bName), Math.round(pBeat * 100) + '%', pBeat >= 0.5 ? 'pos' : 'neg', `over ${hzL}, correlation ${fmtNum(rho, 2)}`)}
     ${kpi('Volatility', (sigma * 100).toFixed(0) + '%', '', `${esc(bName)} ${(bVol * 100).toFixed(0)}% · beta ${fmtNum(beta, 2)}`)}
