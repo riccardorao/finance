@@ -220,12 +220,13 @@ readings covered and confidence carried over if you choose); the old attempt's s
    80% of the candidate's level, uncovered material at the guessing rate.
 3. Momentum: half the mock trend carried forward (capped).
 4. Hours shortfall: up to −4 points when projected hours fall below 75% of target.
-5. Back-check: the average gap between estimate and real score on past exams, shrunk for small samples (can be
-   switched off).
+5. Back-check: the average margin error on past exams, shrunk for small samples (can be switched off).
 
 The projected score is compared with the assumed pass mark (CFA Institute does not publish it) through a normal
 distribution whose spread combines exam-day noise, mock inconsistency and time to the exam.
 
 **Back-check.** For a sat exam the user records the outcome, the session pass rate, their estimate of the pass
-mark, their score if known and the section result bands from the score report. The page compares the estimate
-with the actual score (entered, or estimated from the bands) for the exam overall and for each section.
+mark, their score if known and the section result bands from the score report. The score and the pass mark are
+both absolute numbers, so the back-check reads them as one margin (score minus pass mark) and compares it with
+the estimated margin before the exam (estimate minus assumed pass mark). Each section's estimate is also checked
+against its result band.

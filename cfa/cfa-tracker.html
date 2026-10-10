@@ -482,8 +482,8 @@ function calibration() {
     const act = actualOf(lid, a);
     if (!act) return;
     const r = compute(lid, a, { calib: false });
-    if (r.Eexam == null) return;
-    list.push({ lid, n: i + 1, pred: r.Eexam, actual: act.v, err: act.v - r.Eexam });
+    if (r.Eexam == null || !r.back) return;
+    list.push({ lid, n: i + 1, predMargin: r.back.predMargin, margin: r.back.margin, err: r.back.err });
   }));
   const n = list.length;
   const mean = n ? list.reduce((s, x) => s + x.err, 0) / n : 0;
@@ -625,8 +625,10 @@ function compute(id, at, opts) {
     const mpsUsed = rmps != null ? rmps : mps;
     back = {
       outcome: at.result.outcome, passRate: num(at.result.passRate), mpsUsed, mpsReported: rmps,
-      actual: act ? act.v : null, actualSrc: act ? act.src : null, pred: Eexam, err: act && Eexam != null ? act.v - Eexam : null,
-      Ppred: P, margin: act ? act.v - mpsUsed : null,
+      actual: act ? act.v : null, actualSrc: act ? act.src : null, pred: Eexam, mpsAssumed: mps,
+      predMargin: Eexam != null ? Eexam - mps : null, margin: act ? act.v - mpsUsed : null,
+      err: act && Eexam != null ? (act.v - mpsUsed) - (Eexam - mps) : null,
+      Ppred: P,
       sections: rows.map(r => {
         const bd = BANDS[at.result.bands && at.result.bands[r.id]];
         let chk = null;
@@ -763,7 +765,7 @@ function buildSteps(r) {
   steps.push({ n: 2, k: "Syllabus still to cover", v: r.covUp, note: r.upcoming ? `Coverage ${pct(r.C * 100, 0)} → ${pct(r.Cx * 100, 0)} at ${nf1.format(r.rate)} h/week; new material counted at 80% of your level` : "No study time left before the exam" });
   steps.push({ n: 3, k: "Momentum", v: r.gain, note: !r.upcoming ? "No study time left before the exam" : r.slope != null ? `Mock trend ${r.slope >= 0 ? "+" : "−"}${nf1.format(Math.abs(r.slope))} pts/week, half carried forward, capped` : "Revision hours ahead (a mock trend needs 3 mocks)" });
   steps.push({ n: 4, k: "Hours shortfall", v: r.penalty, note: r.upcoming ? `${hrs(r.Hx)} projected against ${hrs(r.target)} target; applies below 75%` : "No study time left before the exam" });
-  steps.push({ n: 5, k: "Back-check", v: r.calib, note: r.at.result ? "Not applied to an exam already sat" : r.cal.n ? `Real scores averaged ${pts(r.cal.mean)} against the estimate on ${r.cal.n} past exam${r.cal.n > 1 ? "s" : ""}; shrunk for small samples${state.useBackcheck ? "" : " (switched off)"}` : "No past exam results recorded yet" });
+  steps.push({ n: 5, k: "Back-check", v: r.calib, note: r.at.result ? "Not applied to an exam already sat" : r.cal.n ? `Your actual margin averaged ${pts(r.cal.mean)} against the estimated margin on ${r.cal.n} past exam${r.cal.n > 1 ? "s" : ""}; shrunk for small samples${state.useBackcheck ? "" : " (switched off)"}` : "No past exam results recorded yet" });
   return steps;
 }
 
@@ -849,15 +851,17 @@ function backcheckView(r) {
     (passed ? (b.Ppred >= 0.5 ? `The estimate called it: ${pr} chance of passing, and you passed.` : `You beat the estimate: it gave you ${pr} and you passed.`)
             : (b.Ppred < 0.5 ? `The estimate called it: ${pr} chance of passing, and you did not pass.` : `The estimate was too optimistic: it gave you ${pr} and you did not pass.`));
   const chk = { match: '<span class="pill good">Matched</span>', over: '<span class="pill warn">Estimate too high</span>', under: '<span class="pill info">Estimate too low</span>' };
+  const odd = b.margin != null && ((passed && b.margin < 0) || (!passed && b.margin >= 0));
   return `<p>${esc(verdict)}</p>
   <div class="bc">
-    <div><span class="label">Estimated score</span><span class="v">${pct(b.pred)}</span><span class="s">model on exam day</span></div>
-    <div><span class="label">Actual score</span><span class="v">${pct(b.actual)}</span><span class="s">${b.actualSrc === "entered" ? "as you entered it" : b.actualSrc === "bands" ? "estimated from section bands" : "add a score or section bands"}</span></div>
-    <div><span class="label">Estimate error</span><span class="v ${b.err == null ? "" : Math.abs(b.err) <= 3 ? "pos" : "neg"}">${pts(b.err)}</span><span class="s">actual minus estimate</span></div>
-    <div><span class="label">Pass mark</span><span class="v">${pct(b.mpsUsed, 0)}</span><span class="s">${b.mpsReported != null ? "reported or estimated for that session" : "assumed (no session figure entered)"}</span></div>
-    <div><span class="label">Your margin</span><span class="v ${b.margin == null ? "" : b.margin >= 0 ? "pos" : "neg"}">${pts(b.margin)}</span><span class="s">actual against pass mark</span></div>
+    <div><span class="label">Your score</span><span class="v">${pct(b.actual)}</span><span class="s">${b.actualSrc === "entered" ? "as you entered it" : b.actualSrc === "bands" ? "estimated from section bands" : "add a score or section bands"}</span></div>
+    <div><span class="label">Pass mark</span><span class="v">${pct(b.mpsUsed)}</span><span class="s">${b.mpsReported != null ? "for that session, as you entered it" : "assumed (no session figure entered)"}</span></div>
+    <div><span class="label">Actual margin</span><span class="v ${b.margin == null ? "" : b.margin >= 0 ? "pos" : "neg"}">${pts(b.margin)}</span><span class="s">score minus pass mark</span></div>
+    <div><span class="label">Estimated margin</span><span class="v ${b.predMargin == null ? "" : b.predMargin >= 0 ? "pos" : "neg"}">${pts(b.predMargin)}</span><span class="s">${b.pred == null ? "no estimate before the exam" : "estimate " + pct(b.pred) + " against assumed " + pct(b.mpsAssumed, 0)}</span></div>
+    <div><span class="label">Margin error</span><span class="v ${b.err == null ? "" : Math.abs(b.err) <= 3 ? "pos" : "neg"}">${pts(b.err)}</span><span class="s">actual minus estimated margin</span></div>
     <div><span class="label">Session pass rate</span><span class="v">${pct(b.passRate, 0)}</span><span class="s">${b.passRate == null ? "add it from the CFA Institute results release" : "of candidates passed"}</span></div>
   </div>
+  ${odd ? `<div class="note">Your outcome and margin disagree: you ${passed ? "passed with a score below" : "did not pass with a score at or above"} the pass mark entered. Check the score and pass mark figures.</div>` : ""}
   <table class="rt">
     <thead><tr><th>Section</th><th class="n">Weight</th><th class="n">Estimated on exam day</th><th>Your result band</th><th>Check</th></tr></thead>
     <tbody>${b.sections.map(s => `<tr><td class="first">${esc(s.r.name)}</td><td class="n" data-l="Weight">${s.r.lo}–${s.r.hi}%</td><td class="n" data-l="Estimated">${s.r.exam == null ? "—" : `<span class="chip ${scoreClass(s.r.exam, b.mpsUsed)}">${pct(s.r.exam, 0)}</span>`}</td><td data-l="Result band">${s.b ? s.b.t : '<span class="muted">—</span>'}</td><td data-l="Check">${s.chk ? chk[s.chk] : '<span class="muted">—</span>'}</td></tr>`).join("")}</tbody>
@@ -889,7 +893,7 @@ function attemptHistory(id) {
       const r = compute(id, a, { calib: false });
       const confirm = ui.delArmed === a.id;
       return `<details class="grp" ${det("a-" + a.id, false)}>
-        <summary><span class="t">Attempt ${i + 1} · ${a.examDate ? fmtMonth(a.examDate) : "no date"}<small>${nf0.format(r.H)} h · ${r.mocks.length} mocks · estimate ${pct(r.Eexam)}${r.back && r.back.actual != null ? " · actual " + pct(r.back.actual) : ""}${r.back && r.back.passRate != null ? " · session pass rate " + pct(r.back.passRate, 0) : ""}</small></span><span class="m">${statusPill(r.status)}</span></summary>
+        <summary><span class="t">Attempt ${i + 1} · ${a.examDate ? fmtMonth(a.examDate) : "no date"}<small>${nf0.format(r.H)} h · ${r.mocks.length} mocks ${r.back && r.back.predMargin != null ? " · estimated margin " + pts(r.back.predMargin) : ""}${r.back && r.back.margin != null ? " · actual margin " + pts(r.back.margin) : ""}${r.back && r.back.passRate != null ? " · session pass rate " + pct(r.back.passRate, 0) : ""}</small></span><span class="m">${statusPill(r.status)}</span></summary>
         <div class="body">
           ${r.back ? backcheckView(r) : '<span class="small muted">No result recorded.</span>'}
           <details class="inline" ${det("ae-" + a.id, false)}><summary>Edit result</summary>${resultForm(r, id, a)}</details>
@@ -1032,10 +1036,10 @@ function overviewView() {
   </article>`; }).join("")}</div>
 
   ${cal.n ? `<section class="panel">
-    <div class="panel-head"><h2>Back-check across your exams</h2><span class="small muted">How the estimate compared with your real results</span></div>
-    <table class="rt"><thead><tr><th>Exam</th><th class="n">Estimate</th><th class="n">Actual</th><th class="n">Error</th></tr></thead>
-    <tbody>${cal.list.map(x => `<tr><td class="first">${LEVELS[x.lid].name}, attempt ${x.n}</td><td class="n" data-l="Estimate">${pct(x.pred)}</td><td class="n" data-l="Actual">${pct(x.actual)}</td><td class="n" data-l="Error">${pts(x.err)}</td></tr>`).join("")}</tbody></table>
-    <p class="small muted">Average error ${pts(cal.mean)}. ${state.useBackcheck ? `Current estimates are adjusted by ${pts(cal.adj)}.` : "The adjustment is switched off."}</p>
+    <div class="panel-head"><h2>Back-check across your exams</h2><span class="small muted">Margin = score minus pass mark, the distance that decided each result</span></div>
+    <table class="rt"><thead><tr><th>Exam</th><th class="n">Estimated margin</th><th class="n">Actual margin</th><th class="n">Margin error</th></tr></thead>
+    <tbody>${cal.list.map(x => `<tr><td class="first">${LEVELS[x.lid].name}, attempt ${x.n}</td><td class="n" data-l="Estimated margin">${pts(x.predMargin)}</td><td class="n" data-l="Actual margin">${pts(x.margin)}</td><td class="n" data-l="Margin error">${pts(x.err)}</td></tr>`).join("")}</tbody></table>
+    <p class="small muted">Average margin error ${pts(cal.mean)}. ${state.useBackcheck ? `Current estimates are adjusted by ${pts(cal.adj)}.` : "The adjustment is switched off."}</p>
   </section>` : ""}
 
   <section class="panel">
@@ -1247,8 +1251,8 @@ function exportCsv() {
         const res = (m, v) => row(Object.assign({}, base, { record_type: "result", date: at.examDate, metric: m, value: v }));
         res("outcome", b.outcome === "passed" ? "Passed" : "Did not pass"); res("session_pass_rate_pct", b.passRate == null ? "" : b.passRate);
         res("pass_mark_pct", r1(b.mpsUsed)); res("pass_mark_source", b.mpsReported != null ? "reported/estimated" : "assumed");
-        res("actual_score_pct", r1(b.actual)); res("actual_score_source", b.actualSrc || ""); res("estimated_score_pct", r1(b.pred));
-        res("estimate_error_pts", r1(b.err)); res("margin_to_pass_mark_pts", r1(b.margin)); res("pre_exam_pass_probability_pct", b.Ppred == null ? "" : r1(b.Ppred * 100));
+        res("actual_score_pct", r1(b.actual)); res("actual_score_source", b.actualSrc || ""); res("estimated_score_pct", r1(b.pred)); res("assumed_pass_mark_pct", r1(b.mpsAssumed));
+        res("actual_margin_pts", r1(b.margin)); res("estimated_margin_pts", r1(b.predMargin)); res("margin_error_pts", r1(b.err)); res("pre_exam_pass_probability_pct", b.Ppred == null ? "" : r1(b.Ppred * 100));
         b.sections.forEach(s => row(Object.assign({}, base, { record_type: "result_section", date: at.examDate, section: s.r.name, projected_exam_pct: r1(s.r.exam), exam_weight: s.r.lo + "-" + s.r.hi + "%", metric: "result_band", value: s.b ? s.b.t : "", notes: s.chk === "match" ? "matched" : s.chk === "over" ? "estimate too high" : s.chk === "under" ? "estimate too low" : "" })));
       }
     });
@@ -1324,7 +1328,7 @@ function exportPdf() {
   }
   function backcheckTables(r) {
     const b = r.back;
-    table(["Estimated score", "Actual score", "Error", "Pass mark", "Margin", "Session pass rate", "Pre-exam chance"], [[pct(b.pred), b.actual == null ? "-" : pct(b.actual) + (b.actualSrc === "bands" ? " (from bands)" : ""), pts(b.err), pct(b.mpsUsed, 0) + (b.mpsReported != null ? "" : " (assumed)"), pts(b.margin), pct(b.passRate, 0), b.Ppred == null ? "-" : nf0.format(b.Ppred * 100) + "%"]]);
+    table(["Your score", "Pass mark", "Actual margin", "Estimated margin", "Margin error", "Session pass rate", "Pre-exam chance"], [[b.actual == null ? "-" : pct(b.actual) + (b.actualSrc === "bands" ? " (from bands)" : ""), pct(b.mpsUsed) + (b.mpsReported != null ? "" : " (assumed)"), pts(b.margin), pts(b.predMargin), pts(b.err), pct(b.passRate, 0), b.Ppred == null ? "-" : nf0.format(b.Ppred * 100) + "%"]]);
     if (b.sections.some(s => s.b)) table(["Section", "Weight", "Estimated on exam day", "Result band", "Check"], b.sections.map(s => [s.r.name, s.r.lo + "-" + s.r.hi + "%", pct(s.r.exam, 0), s.b ? s.b.t : "-", s.chk === "match" ? "Matched" : s.chk === "over" ? "Estimate too high" : s.chk === "under" ? "Estimate too low" : "-"]), { columnStyles: right([1, 2]) });
   }
 
@@ -1337,7 +1341,7 @@ function exportPdf() {
     const cal = calibration();
     if (cal.n) {
       h2("Back-check across your exams");
-      table(["Exam", "Estimate", "Actual", "Error"], cal.list.map(x => [LEVELS[x.lid].name + ", attempt " + x.n, pct(x.pred), pct(x.actual), pts(x.err)]), { columnStyles: right([1, 2, 3]) });
+      table(["Exam", "Estimated margin", "Actual margin", "Margin error"], cal.list.map(x => [LEVELS[x.lid].name + ", attempt " + x.n, pts(x.predMargin), pts(x.margin), pts(x.err)]), { columnStyles: right([1, 2, 3]) });
     }
   }
 
@@ -1407,10 +1411,10 @@ function exportPdf() {
     const past = state.levels[r.id].attempts.slice(0, -1);
     if (past.length) {
       h2("Previous attempts");
-      table(["Attempt", "Exam", "Outcome", "Hours", "Mocks", "Estimate", "Actual", "Pass mark", "Pass rate"], past.map((a, i) => {
+      table(["Attempt", "Exam", "Outcome", "Hours", "Mocks", "Score", "Pass mark", "Margin", "Est. margin", "Pass rate"], past.map((a, i) => {
         const pr = compute(r.id, a, { calib: false }), b = pr.back;
-        return ["Attempt " + (i + 1), a.examDate ? fmtMonth(a.examDate) : "-", STATUS[pr.status], nf0.format(pr.H), String(pr.mocks.length), pct(pr.Eexam), b && b.actual != null ? pct(b.actual) : "-", b ? pct(b.mpsUsed, 0) : "-", b && b.passRate != null ? pct(b.passRate, 0) : "-"];
-      }), { columnStyles: right([3, 4, 5, 6, 7, 8]) });
+        return ["Attempt " + (i + 1), a.examDate ? fmtMonth(a.examDate) : "-", STATUS[pr.status], nf0.format(pr.H), String(pr.mocks.length), b && b.actual != null ? pct(b.actual) : "-", b ? pct(b.mpsUsed) : "-", b ? pts(b.margin) : "-", b ? pts(b.predMargin) : "-", b && b.passRate != null ? pct(b.passRate, 0) : "-"];
+      }), { columnStyles: right([3, 4, 5, 6, 7, 8, 9]) });
     }
   });
 
