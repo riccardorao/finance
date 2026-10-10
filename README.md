@@ -16,6 +16,11 @@ answers three questions, one per tab:
 
 ![Performance tab, built from the synthetic sample](docs/sample-record.png)
 
+> **Also in this repository:** [`household/`](household/README.md) is *Conti di Casa*, a separate household finance
+> tool. It is a single offline HTML page that reads the Excel, CSV or PDF exports from any bank. It covers spending
+> and budgets, one-off expenses and cash, savings opportunities, and a goals plan for the medium to long term.
+> Build it with `npm run household`.
+
 The screenshots in `docs/` come from the **synthetic sample** in `data/sample`. They are not real
 account data.
 
