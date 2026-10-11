@@ -97,7 +97,7 @@ function renderRecord() {
     <div class="headline"><span class="big2 ${cls(twr ? st.twr : st.gain)}">${twr ? fmtSignedPct(st.twr, 1) : fmtSignedEUR(st.gain)}</span><span class="muted">${twr ? 'time-weighted' : `money-weighted ${st.years > 1.05 ? fmtSignedPct(st.mwr, 1) + ' a year' : fmtSignedPct(st.mwrPeriod, 1)}`} · ${state.tf === 'SI' ? 'Max, since I started' : esc(TFL[state.tf])}</span>
       <span class="idxv"><i class="sw line" style="background:var(--fund)"></i>${FUND}</span>${sel.map((id) => `<span class="idxv"><i class="sw line" style="background:${IDX_COLOR[id]}"></i>${esc(idxName(id))} ${twr ? fmtSignedPct(st.idx[id].twr, 1) : fmtSignedEUR(st.idx[id].value - st.b.v + st.gain)}</span>`).join('')}</div>
     <div id="perfchart" class="chart"></div>
-    <div class="row-between" style="margin-top:6px"><span class="muted small">${twr ? 'Time-weighted: the return on my picks, however much money was in at the time.' : 'Money-weighted: what my actual money is worth, against putting the same money in each index on the same days.'}</span><button class="tablink" id="tv-perf">${state.tableView.perf ? 'Show chart' : 'View as table'}</button></div>
+    <div class="row-between" style="margin-top:6px"><span class="muted small">${PF.approxBefore && st.a.t < PF.approxBefore ? 'Dashed: estimated, because before ' + esc(dfmt(isoDay(PF.approxBefore), { day: undefined })) + ' only month-end prices exist for the holdings. ' : ''}${twr ? 'Time-weighted: the return on my picks, however much money was in at the time.' : 'Money-weighted: what my actual money is worth, against putting the same money in each index on the same days.'}</span><button class="tablink" id="tv-perf">${state.tableView.perf ? 'Show chart' : 'View as table'}</button></div>
   </div>
 
   <div class="panel" style="margin-top:14px">
@@ -121,7 +121,7 @@ function renderRecord() {
   const fl = PF.fl.filter((f) => f[0] > a.t && f[0] <= b.t);
   let series, yFmt, tipVal;
   if (twr) {
-    series = [{ v: pp.map((p) => (p.i / a.i - 1) * 100), color: 'var(--fund)', width: 2.25, label: FUND, fill: true, fillTo: 0, fillOpacity: 0.08 }]
+    series = [{ v: pp.map((p) => (p.i / a.i - 1) * 100), color: 'var(--fund)', width: 2.25, label: FUND, fill: true, fillTo: 0, fillOpacity: 0.08, approx: true }]
       .concat(sel.map((id) => ({ v: xs.map((t) => (PF.P[id](t) / PF.P[id](a.t) - 1) * 100), color: IDX_COLOR[id], width: 1.5, label: idxName(id) })));
     yFmt = (v) => Math.round(v) + '%'; tipVal = (v) => fmtSignedPct(v / 100, 1);
   } else {
@@ -129,7 +129,7 @@ function renderRecord() {
     const idxV = Object.fromEntries(sel.map((id) => [id, []])), money = [];
     let m = a.v;
     xs.forEach((t) => { while (k < fl.length && fl[k][0] <= t) { sel.forEach((id) => { unitsCum[id] += fl[k][1] / PF.P[id](fl[k][0]); }); m += fl[k][1]; k++; } sel.forEach((id) => idxV[id].push(unitsCum[id] * PF.P[id](t))); money.push(m); });
-    series = [{ v: pp.map((p) => p.v), color: 'var(--fund)', width: 2.25, label: FUND }]
+    series = [{ v: pp.map((p) => p.v), color: 'var(--fund)', width: 2.25, label: FUND, approx: true }]
       .concat(sel.map((id) => ({ v: idxV[id], color: IDX_COLOR[id], width: 1.5, label: 'Same money in ' + idxName(id) })))
       .concat([{ v: money, color: 'var(--ink3)', width: 1.25, dash: '4 4', label: 'Money in' }]);
     yFmt = (v) => (Math.abs(v) >= 1000 ? Math.round(v / 1000) + 'k' : String(Math.round(v))); tipVal = (v) => fmtEUR0(v);
@@ -137,7 +137,7 @@ function renderRecord() {
   mount($('#perfchart'), (h, w) => {
     if (state.tableView.perf) { h.innerHTML = tableTwin(['Date'].concat(series.map((s) => s.label)), xs.map((t, i) => [dfmt(isoDay(t))].concat(series.map((s) => (s.v[i] == null ? '–' : tipVal(s.v[i])))))); return; }
     lineChart(h, w, {
-      x: xs, series, height: w < 520 ? 280 : 380, yFmt, zero: twr ? 0 : null, yMin: twr ? null : 0, aria: FUND + ' against the S&P 500',
+      x: xs, series, approxBefore: PF.approxBefore, height: w < 520 ? 280 : 380, yFmt, zero: twr ? 0 : null, yMin: twr ? null : 0, aria: FUND + ' against the S&P 500',
       tip: (i) => `<div class="th">${dfmt(isoDay(xs[i]))}</div>${series.map((s) => (s.v[i] == null ? '' : trow(s.color, s.label, tipVal(s.v[i]), 1))).join('')}`,
     });
   });

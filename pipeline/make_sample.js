@@ -98,6 +98,9 @@ fs.writeFileSync(path.join(out, 'prices_monthly.json'), JSON.stringify(Object.fr
 // long-run growth of each index (the real figures come from pipeline/fetch_index_history.js)
 fs.writeFileSync(path.join(out, 'index_history.json'), JSON.stringify(Object.fromEntries(BENCH.map((b, i) => [b[2], { sym: 'synthetic', from: '1989-01', to: '2026-09', years: 37.7, cagr: 0.09, basis: 'price index in US dollars, excluding dividends' }])), null, 1));
 
+// the benchmark's daily closes (the real ones come from pipeline/fetch_index_history.js)
+{ const s = ser['IE00B5BMR087'].filter(([d]) => d < '2025-10-02'); fs.writeFileSync(path.join(out, 'index_daily.json'), JSON.stringify({ IE00B5BMR087: { sym: 'synthetic', ccy: 'EUR', d: s.map((x) => x[0]), p: s.map((x) => x[1]) } })); }
+
 const profile = JSON.parse(fs.readFileSync(path.join(__dirname, 'profile.template.json'), 'utf8'));
 fs.writeFileSync(path.join(out, 'profile.json'), JSON.stringify(profile, null, 1));
 console.log('sample written to', path.relative(process.cwd(), out), '·', holdings.length, 'holdings · value', total, '· net', net);

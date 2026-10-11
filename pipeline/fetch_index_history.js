@@ -38,4 +38,12 @@ async function closes(sym, t) {
     console.log(isin, sym, out[isin].start.join(' '), '→', out[isin].end.join(' '), (out[isin].cagr * 100).toFixed(1) + '% a year');
   }
   fs.writeFileSync(path.join(dir, 'index_history.json'), JSON.stringify(out, null, 1));
+  // the S&P 500 ETF's own daily closes in euro (Xetra listing), built into the viewer edition so the benchmark is
+  // daily even where the connector only has month ends
+  const r = await fetch('https://query2.finance.yahoo.com/v8/finance/chart/SXR8.DE?period1=1230768000&period2=' + Math.floor(Date.now() / 1000) + '&interval=1d', { headers: UA });
+  const res = (await r.json()).chart.result[0], c = res.indicators.quote[0].close;
+  const d = [], p = [];
+  res.timestamp.forEach((t, k) => { if (c[k] != null) { d.push(new Date((t + res.meta.gmtoffset) * 1000).toISOString().slice(0, 10)); p.push(+c[k].toFixed(3)); } });
+  fs.writeFileSync(path.join(dir, 'index_daily.json'), JSON.stringify({ IE00B5BMR087: { sym: 'SXR8.DE', ccy: res.meta.currency, d, p } }));
+  console.log('index_daily.json', d.length, 'closes', d[0], '→', d[d.length - 1]);
 })();

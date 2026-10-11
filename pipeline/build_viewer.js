@@ -16,6 +16,7 @@ const COMMENTS = require('../research/comments.js');
 
 const SPX = 'IE00B5BMR087';
 const hist = rd('index_history.json')[SPX];
+const idxDaily = rd('index_daily.json')[SPX];
 const ref = Object.fromEntries(rd('snapshot.json').holdings.map((h) => [h.isin, h.quoteMid || h.price]));
 const research = {};
 for (const [isin, r] of Object.entries(STOCKS)) if (ref[isin]) research[isin] = { ...r, refEur: ref[isin] };
@@ -23,6 +24,7 @@ const asOfDay = (rd('snapshot.json').meta.asOf || '').slice(0, 10);
 
 const DATA = {
   static: {
+    indexDaily: { d: idxDaily.d, p: idxDaily.p },
     indices: [{ id: 'SPX', name: 'S&P 500', isin: SPX, etf: 'iShares Core S&P 500', cagr: hist.cagr, cagrFrom: hist.from, cagrTo: hist.to, cagrBasis: hist.basis }],
     research,
     comments: COMMENTS,
@@ -30,7 +32,7 @@ const DATA = {
       fund: 'My portfolio',
       manager: '',
       exclusionNote: '',
-      valueNote: 'The value of the portfolio is rebuilt from every trade in your Scalable Capital account and closing prices from Scalable: every day for the last six months, every second day back to one year, and month ends before that, with your own trade prices filling in between. Days without a price are interpolated, so the older part of the chart is smoother than the recent part. Share splits are found by comparing your trade prices with the market.',
+      valueNote: 'The value of the portfolio is rebuilt from every trade in your Scalable Capital account and closing prices from Scalable: every day for the last six months, every second day back to one year, and month ends before that, with your own trade prices filling in between. Days without a price are interpolated, so the older part of the portfolio line is an estimate and is drawn dashed. The S&P 500 is daily throughout, from its own price history built into the page. Share splits are found by comparing your trade prices with the market.',
     },
   },
   profile: { fund: 'My portfolio', manager: '', exclusionNote: '', valueNote: '' },

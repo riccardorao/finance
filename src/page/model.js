@@ -176,7 +176,7 @@ function perfModel(D, asOf, total) {
     const a = meU[j - 1], b = meU[j];
     months.push({ t: b.t, ym: new Date(b.t).toISOString().slice(0, 7), r: b.i / a.i - 1, idx: Object.fromEntries(D.indices.map((x) => [x.id, P[x.id](b.t) / P[x.id](a.t) - 1])), partial: !isME(b.t) });
   }
-  return { pts, fl, P, win, stats, at, months, first, asOf };
+  return { pts, fl, P, win, stats, at, months, first, asOf, approxBefore: D.history.approxBefore || null };
 }
 
 /* 12-month scenarios per holding from sell-side targets. Targets are in dollars; they are converted at the
@@ -266,11 +266,16 @@ function lineChart(host, w, o) {
   (o.hlines || []).forEach((l) => { const y = Y(l.y); g += `<line x1="${m.l}" x2="${m.l + iw}" y1="${y}" y2="${y}" stroke="${l.color || 'var(--ink3)'}" stroke-width="1" stroke-dasharray="${l.dash === false ? '' : '4 3'}"/><text x="${m.l + iw}" y="${y - 5}" text-anchor="end" style="fill:${l.color || 'var(--ink3)'}">${esc(l.label)}</text>`; });
   const endLabels = [];
   o.series.forEach((s) => {
-    const pts = []; s.v.forEach((v, i) => { if (v != null) pts.push([X(xs[i]), Y(v)]); });
+    const pts = []; s.v.forEach((v, i) => { if (v != null) pts.push([X(xs[i]), Y(v), xs[i]]); });
     if (!pts.length) return;
     const path = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
+    // where the prices behind a series are only month ends, the line between them is an estimate: draw it dashed
+    const cut = s.approx && o.approxBefore ? pts.findIndex((p) => p[2] >= o.approxBefore) : -1;
     if (s.fill) g += `<path d="${path}L${pts[pts.length - 1][0].toFixed(1)} ${Y(Math.max(ymin, Math.min(ymax, s.fillTo != null ? s.fillTo : ymin))).toFixed(1)}L${pts[0][0].toFixed(1)} ${Y(Math.max(ymin, Math.min(ymax, s.fillTo != null ? s.fillTo : ymin))).toFixed(1)}Z" fill="${s.color}" opacity="${s.fillOpacity || 0.1}"/>`;
-    g += `<path d="${path}" fill="none" stroke="${s.color}" stroke-width="${s.width || 2}" stroke-linejoin="round" stroke-linecap="round"${s.dash ? ` stroke-dasharray="${s.dash}"` : ''}/>`;
+    const line = (d, dash, op) => `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.width || 2}" stroke-linejoin="round" stroke-linecap="round"${dash ? ` stroke-dasharray="${dash}"` : ''}${op ? ` opacity="${op}"` : ''}/>`;
+    const seg = (a) => a.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
+    if (cut > 0) g += line(seg(pts.slice(0, cut + 1)), '5 4', 0.75) + line(seg(pts.slice(cut)), s.dash, 0);
+    else g += line(path, s.dash, 0);
     if (s.dots) pts.forEach((p) => { g += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" fill="${s.color}" stroke="var(--panel)" stroke-width="2"/>`; });
     else { const e = pts[pts.length - 1]; g += `<circle cx="${e[0].toFixed(1)}" cy="${e[1].toFixed(1)}" r="4" fill="${s.color}" stroke="var(--panel)" stroke-width="2"/>`; }
     if (s.endLabel) { const e = pts[pts.length - 1]; endLabels.push({ x: e[0] + 8, y: e[1] + 4, t: s.endLabel, c: s.labelColor || s.color }); }

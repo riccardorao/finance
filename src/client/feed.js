@@ -310,7 +310,13 @@ const Feed = (() => {
     const secValue = holdings.reduce((s, h) => s + h.qty * h.price, 0);
     const cash = raw.cash && raw.cash.cash ? num(raw.cash.cash.cashBalance) : 0;
     const total = raw.overview && raw.overview.valuation ? num(raw.overview.valuation.total) : secValue + cash;
-    const bd = bench && bc ? toPts(bc.daily) : [];
+    let bd = bench && bc ? toPts(bc.daily) : [];
+    // the S&P 500's own daily history (public, built in) fills in before the connector's daily chart starts, scaled to meet it
+    const sd = S.indexDaily;
+    if (bd.length && sd && sd.d && sd.d.length) {
+      const t0 = bd[0][0], i0 = sd.d.findIndex((d) => Date.parse(d + 'T21:00:00Z') >= t0);
+      if (i0 > 0) { const k = bd[0][1] / sd.p[i0]; bd = sd.d.slice(0, i0).map((d, i) => [Date.parse(d + 'T21:00:00Z'), sd.p[i] * k]).concat(bd); }
+    }
     return {
       meta: { asOf: new Date(asOf).toISOString() },
       total, cash, pl: {},
@@ -319,7 +325,7 @@ const Feed = (() => {
       indices,
       benchMonthly: bench && bc ? { [bench.isin]: monthlySeries(bc.monthly) } : {},
       indexDaily: bench && bc ? { [bench.isin]: { d: bd.map((p) => day(p[0])), p: bd.map((p) => p[1]) } } : {},
-      history: H ? { points: H.points, external: H.external, scope: 'stocks', check: [] } : null,
+      history: H ? { points: H.points, external: H.external, scope: 'stocks', check: [], approxBefore: asOf - 366 * DAY } : null,
       flows: [],
       ledger: { summary: {}, realised: L.realised, divAll: L.divAll },
       profile: { ...(S.profile || {}) },
