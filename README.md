@@ -58,10 +58,48 @@ npm run test:sample     # sample build
 because the host wraps the page in its own skeleton. Open it directly in a browser and it still renders, with
 the browser filling in the missing tags.
 
+## Two editions
+
+| | Personal edition | Viewer edition |
+|---|---|---|
+| Build | `npm run build` -> `dist/portfolio.html` | `npm run viewer` -> `dist/viewer.html` |
+| Whose data | The one account in `data/private/`, built in | **Whoever opens it**, read from their own Scalable Capital account when the page loads |
+| Built-in personal data | Yes (never committed) | None. Only public research notes, the S&P 500's long-run growth and the reference prices for the analyst targets |
+| History | Daily prices from Yahoo Finance, theses and kill-switches from `profile.json` | Rebuilt in the browser from the viewer's transactions and Scalable's price charts: daily for the last 14 months, month ends before that |
+
+The viewer edition declares the `mcp` capability for the Scalable Capital connector (read-only tools only:
+holdings, overview, cash, quotes, news, transactions, charts and the portfolio list) and calls it with the
+**viewer's own credentials**, so each person sees their own account and nobody sees anyone else's. Because it
+needs a viewer-consented connector, claude.ai does not allow such a page to be shared publicly: share it with
+people in your organisation or invite them. They need the Scalable Capital connector connected in claude.ai.
+
+How it works, in `src/client/feed.js` (also run by `tests/feed.js` in Node):
+
+1. **Transactions** become ledger rows: trades, dividends, custody transfers (a transfer out that pairs with a
+   transfer in keeps its cost) and expiries. Crypto is skipped.
+2. **The equity book** is shares and ETFs. A position counts as leveraged when the broker types it as a derivative
+   or its name or ISIN says so (turbo, mini-future, knock-out, `DE000BB`); those are left out like crypto.
+3. **Prices** come from `get_security_chart`: the one-year chart is daily, the max chart is month ends. Where a
+   price series is missing the viewer's own trade prices fill in.
+4. **Share splits** are found, not configured: a trade priced at a clean multiple of the market price that day
+   (2, 3, 4, 5, 10, 20 ... or the inverse) was made before a split. It is only applied when it makes the share
+   count add up to what the broker says the viewer holds.
+5. **Cost and unrealised return** use the broker's own since-buy figure, the same as the personal edition's refresh.
+6. **Analyst coverage** exists only for the stocks in `research/stocks.js`. For other holdings the Analysts
+   column is empty, and the Outlook's expected return is the average over the covered positions (or the S&P 500's
+   long-run pace when none is covered).
+
+`npm run test:viewer` runs the browser-side pipeline against the synthetic sample (`data/sample/feed.json`, the
+connector's responses for the sample account) and renders the page with a mocked connector, including the refused,
+partly failing, not-connected and several-portfolios cases.
+
 ## Repository layout
 
 ```
 ├── src/
+│   ├── client/feed.js       Viewer edition: connector responses -> ledger, split detection, daily value history, data object
+│   ├── client/
+│   │   └── feed.js          Viewer edition: connector responses -> ledger, split detection, daily history
 │   ├── core.js              Analytics shared by the page and Node: returns, XIRR, Modified Dietz,
 │   │                        volatility, beta, drawdown, back-cast, risk contribution, formatters
 │   └── page/
@@ -69,6 +107,7 @@ the browser filling in the missing tags.
 │       ├── model.js         State, the derived model (TWR/MWR by period, risk, scenarios)
 │       │                    and the chart toolkit (line chart, fan chart, sparkline, tooltip)
 │       ├── views.js         The three tabs, the masthead and the method notes
+│       ├── viewer.js        Viewer edition: reads the viewer's own account when the page opens
 │       └── live.js          Live refresh from the Scalable Capital connector, the research
 │                            subscription, and boot
 ├── pipeline/
@@ -82,6 +121,7 @@ the browser filling in the missing tags.
 │   ├── add_prices.js        Appends month-end prices for one instrument to prices_monthly.json
 │   ├── build_data.js        snapshot + ledger + history + prices + profile + research -> data.json
 │   ├── build_page.js        data.json + src/ -> one self-contained HTML page
+│   ├── build_viewer.js      The viewer edition: the same page with no personal data built in
 │   ├── make_sample.js       Writes the synthetic sample account in data/sample/
 │   └── profile.template.json  Template for profile.json (manager name, positions)
 ├── research/
@@ -92,6 +132,8 @@ the browser filling in the missing tags.
 │   └── daily-research.md    The scheduled routine that refreshes the news on the page every morning
 ├── tests/
 │   ├── render.js            Renders every tab in Chromium; fails on console errors or sideways scroll
+│   ├── feed.js, viewer.js   Viewer edition: pipeline unit checks; page rendered against a mocked connector
+│   ├── mock_mcp.js          The mocked Scalable Capital connector (from data/sample/feed.json)
 │   └── live.js              Mocks the connector and the research store; checks refresh, partial
 │                            failure, refused permission, escaping and link safety
 ├── data/

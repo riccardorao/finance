@@ -69,8 +69,6 @@ function buildModel(D) {
   const secValue = C_sum(H.map((h) => h.value));
   H.forEach((h) => { h.weight = h.value / secValue; });
   const total = D.total;
-  const flows = D.flows.map((f) => ({ t: dayMs(f.d), amt: f.a, k: f.k })).sort((a, b) => a.t - b.t);
-  const firstFlow = flows[0].t;
   // series
   const SER = D.ser; // per-isin {d,p}
   const hIds = H.filter((h) => SER[h.isin] && SER[h.isin].p.length >= 20).map((h) => h.isin), bIds = D.benches.map((b) => b.isin);
@@ -100,30 +98,11 @@ function buildModel(D) {
       rc: rc.contrib, hm, ids: hIds,
     };
   }
-  // period table
-  const rows = {};
-  for (const p of PERIODS) {
-    const t0 = periodStart(p, asOf, firstFlow);
-    const md = modifiedDietz(D.pl[p], total, flows, t0, asOf);
-    rows[p] = { p, pnl: D.pl[p], ret: md.ret, vStart: md.vStart, net: md.net, t0, bench: Object.fromEntries(D.benches.map((b) => [b.id, b.perf[p] ? b.perf[p][0] : null])) };
-  }
-  const cfs = flows.map((f) => ({ t: f.t, amt: -f.amt })).concat([{ t: asOf, amt: total }]).sort((a, b) => a.t - b.t);
-  const irr = xirr(cfs);
-  rows.MAX = { p: 'MAX', pnl: D.pl.MAX, ret: irr, t0: firstFlow, annual: true };
-  // anchors for value chart
-  const netAt = (t) => C_sum(flows.filter((f) => f.t <= t).map((f) => f.amt));
-  const anchors = ['1Y', 'YTD', '6M', '3M', '1M', '1W', '1D'].map((p) => { const t = rows[p].t0; return { t, v: netAt(t) + D.pl.MAX - D.pl[p], p }; });
-  anchors.push({ t: asOf, v: total, p: 'now' });
-  const deposited = C_sum(flows.filter((f) => f.amt > 0 && f.k !== 'bon').map((f) => f.amt));
-  const withdrawn = -C_sum(flows.filter((f) => f.amt < 0).map((f) => f.amt));
   const unreal = C_sum(H.filter((h) => h.pnl != null).map((h) => h.pnl));
-  const L = D.ledger.summary;
-  const incomeDiv = C_sum(D.ledger.divAll.map((d) => d[2]));
   const hhi = C_sum(H.map((h) => (h.value / secValue) ** 2));
   H.forEach((h) => { h.sc = scenarios(h, risk); });
-  const lev = C_sum(D.ledger.realised.filter((r) => r.type === 'Leveraged & certificates').map((r) => r.pl));
-  const perf = perfModel(D, asOf, D.history.scope === 'stocks' ? secValue : total);
-  return { D, asOf, H, total, lev, perf, cash: D.cash, secValue, flows, firstFlow, risk, rows, irr, anchors, deposited, withdrawn, net: deposited - withdrawn, unreal, realised: L.realisedTotal + L.realisedCrypto, incomeDiv, hhi, effN: 1 / hhi };
+  const perf = D.history && D.history.points.length > 3 && D.indices.length ? perfModel(D, asOf, D.history.scope === 'stocks' ? secValue : total) : null;
+  return { D, asOf, H, total, perf, cash: D.cash, secValue, risk, unreal, hhi, effN: 1 / hhi };
 }
 const C_sum = (a) => a.reduce((s, x) => s + x, 0);
 
@@ -194,7 +173,7 @@ function perfModel(D, asOf, total) {
     const a = meU[j - 1], b = meU[j];
     months.push({ t: b.t, ym: new Date(b.t).toISOString().slice(0, 7), r: b.i / a.i - 1, idx: Object.fromEntries(D.indices.map((x) => [x.id, P[x.id](b.t) / P[x.id](a.t) - 1])), partial: !isME(b.t) });
   }
-  return { pts, fl, P, win, stats, at, months, first };
+  return { pts, fl, P, win, stats, at, months, first, asOf };
 }
 
 /* 12-month scenarios per holding from sell-side targets. Targets are in dollars; they are converted at the

@@ -12,7 +12,10 @@
     "build": "npm run ledger && npm run history && npm run data && npm run page",
     "sample": "node pipeline/make_sample.js data/sample && node pipeline/ledger.js data/sample && node pipeline/history.js data/sample && node pipeline/build_data.js data/sample && node pipeline/build_page.js data/sample dist/sample.html",
     "test": "node tests/render.js dist/portfolio.html test-output && node tests/live.js ok && node tests/live.js partial && node tests/live.js denied",
-    "test:sample": "node tests/render.js dist/sample.html test-output/sample && node tests/live.js ok data/sample test-output/sample/_wrapped.html"
+    "test:viewer": "node tests/feed.js && npm run viewer:sample && node tests/viewer.js",
+    "test:sample": "node tests/render.js dist/sample.html test-output/sample && node tests/live.js ok data/sample test-output/sample/_wrapped.html",
+    "viewer": "node pipeline/build_viewer.js data/private dist/viewer.html",
+    "viewer:sample": "node pipeline/build_viewer.js data/sample dist/viewer-sample.html"
   },
   "devDependencies": {
     "playwright": "^1.47.0"

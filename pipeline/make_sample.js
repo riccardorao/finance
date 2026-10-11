@@ -101,3 +101,37 @@ fs.writeFileSync(path.join(out, 'index_history.json'), JSON.stringify(Object.fro
 const profile = JSON.parse(fs.readFileSync(path.join(__dirname, 'profile.template.json'), 'utf8'));
 fs.writeFileSync(path.join(out, 'profile.json'), JSON.stringify(profile, null, 1));
 console.log('sample written to', path.relative(process.cwd(), out), '·', holdings.length, 'holdings · value', total, '· net', net);
+
+// ---- the same synthetic account as the Scalable Capital connector would return it (feed.json, for the viewer
+// edition's tests): transactions newest first, holdings, overview, cash, quotes, and one-year and max charts.
+const TFKEY = { '1D': 'INTRADAY', '1W': 'ONE_WEEK', '1M': 'ONE_MONTH', '3M': 'THREE_MONTHS', '6M': 'SIX_MONTHS', YTD: 'YEAR_TO_DATE', '1Y': 'ONE_YEAR', MAX: 'MAX', SB: 'SINCE_BUY' };
+const perfArr = (o) => Object.entries(o).map(([k, v]) => ({ timeframe: TFKEY[k], performance: v[0], simpleAbsoluteReturn: v[1] }));
+const stamp = (d) => d + 'T20:59:00.000Z';
+const feedTx = tx.map((l, n) => {
+  const [date, , k, i, q, a] = l.split(','); const t = date + ':00.000Z';
+  const base = { id: 'T' + n, status: 'SETTLED', currency: 'EUR', isCancellation: false, lastEventAt: t, custodian: 'SCALABLE', nonTradeSecurity: null, eltif: null };
+  const nm = (JSON.parse(fs.readFileSync(path.join(out, 'names.json'), 'utf8')))[i] || '';
+  if (k === 'buy' || k === 'sell') return { ...base, kind: 'security', category: 'SECURITY_TRANSACTION', description: nm, security: { isin: i, transactionType: 'SINGLE', quantity: String(q), amount: String(k === 'buy' ? -a : +a), side: k.toUpperCase(), limitPrice: null, stopPrice: null }, cash: null };
+  const ty = { dep: 'DEPOSIT', wdr: 'WITHDRAWAL', div: 'DISTRIBUTION', fee: 'FEE' }[k];
+  return { ...base, kind: 'cash', category: 'CASH_TRANSACTION', description: nm, security: null, cash: { relatedIsin: i || null, transactionType: ty, amount: String(k === 'wdr' || k === 'fee' ? -a : +a) } };
+}).sort((a, b) => (a.lastEventAt < b.lastEventAt ? 1 : -1));
+const dailyStart = '2025-10-02';
+const charts = {};
+for (const i of isins) {
+  const s = ser[i];
+  charts[i] = {
+    one_year: s.filter(([d]) => d >= dailyStart).map(([d, p]) => ({ midPrice: p, timestampUtc: stamp(d) })),
+    max: s.filter(([d]) => d < dailyStart || d === '2026-10-01').filter(([d]) => /-(28|29|30|31)$/.test(d) || d === '2026-10-01').map(([d, p]) => ({ midPrice: p, timestampUtc: stamp(d) })),
+  };
+}
+const quotes = {};
+for (const h of holdings) quotes[h.isin] = { security: { isin: h.isin, name: h.name, securityType: 'STOCK', quote: { midPrice: h.price, currency: 'EUR', performances: perfArr(h.perf) } } };
+BENCH.forEach(([id, name, isin]) => { quotes[isin] = { security: { isin, name, securityType: 'ETF', quote: { midPrice: last(isin), currency: 'EUR', performances: perfArr(snapshot.benches.find((b) => b.isin === isin).perf) } } }; });
+const feed = {
+  portfolioId: 'SAMPLE',
+  holdings: { portfolioId: 'SAMPLE', holdings: holdings.map((h) => ({ isin: h.isin, name: h.name, currentQuote: { currency: 'EUR', midPrice: h.price, timestamp: snapshot.meta.asOf }, position: { blocked: 0, filled: h.qty, pending: 0 } })), cryptoHoldings: [] },
+  overview: { portfolioId: 'SAMPLE', valuation: { total, securities: +sec.toFixed(2), crypto: 0 }, timestamps: { valuationTimestampUtc: snapshot.meta.asOf }, performance: Object.entries(pl).map(([k, v]) => ({ timeframe: TFKEY[k], simpleAbsoluteReturn: v })) },
+  cash: { cash: { cashBalance: cash } },
+  quotes, news: {}, transactions: feedTx, charts,
+};
+fs.writeFileSync(path.join(out, 'feed.json'), JSON.stringify(feed));
