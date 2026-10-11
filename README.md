@@ -65,7 +65,7 @@ the browser filling in the missing tags.
 | Build | `npm run build` -> `dist/portfolio.html` | `npm run viewer` -> `dist/viewer.html` |
 | Whose data | The one account in `data/private/`, built in | **Whoever opens it**, read from their own Scalable Capital account when the page loads |
 | Built-in personal data | Yes (never committed) | None. Only public research notes, the S&P 500's long-run growth and the reference prices for the analyst targets |
-| History | Daily prices from Yahoo Finance, theses and kill-switches from `profile.json` | Rebuilt in the browser from the viewer's transactions and Scalable's price charts: daily for the last 14 months, month ends before that |
+| History | Daily prices from Yahoo Finance, theses and kill-switches from `profile.json` | Rebuilt in the browser from the viewer's transactions and Scalable's price charts (see *Prices* below) |
 
 The viewer edition declares the `mcp` capability for the Scalable Capital connector (read-only tools only:
 holdings, overview, cash, quotes, news, transactions, charts and the portfolio list) and calls it with the
@@ -79,12 +79,17 @@ How it works, in `src/client/feed.js` (also run by `tests/feed.js` in Node):
    transfer in keeps its cost) and expiries. Crypto is skipped.
 2. **The equity book** is shares and ETFs. A position counts as leveraged when the broker types it as a derivative
    or its name or ISIN says so (turbo, mini-future, knock-out, `DE000BB`); those are left out like crypto.
-3. **Prices** come from `get_security_chart`: the one-year chart is daily, the max chart is month ends. Where a
-   price series is missing the viewer's own trade prices fill in.
+3. **Prices** come from `get_security_chart`, whose resolution depends on the window: the six-month chart is
+   daily, the one-year chart has every second trading day, and the max chart has month ends. The page lays the
+   six-month chart over the one-year chart, adds the viewer's own trade prices as extra points before that, and
+   interpolates between points. The value history is then computed for every weekday, so each deposit, buy and
+   sale lands on its own day in the time-weighted chain. Older history is therefore smoother than recent history.
+   Where a price series is missing altogether, trade prices stand in.
 4. **Share splits** are found, not configured: a trade priced at a clean multiple of the market price that day
-   (2, 3, 4, 5, 10, 20 ... or the inverse) was made before a split. It is only applied when it makes the share
-   count add up to what the broker says the viewer holds.
-5. **Cost and unrealised return** use the broker's own since-buy figure, the same as the personal edition's refresh.
+   (2, 3, 4, 5, 10, 20 ... or the inverse) was made before a split. It is applied when every such trade comes
+   before every trade at the market price, and the share count then adds up to what the broker says the viewer holds.
+5. **Cost and unrealised return** use the broker's own since-buy figure. Realised results use first in, first out,
+   taking lots at the same custodian first, which matches the personal edition's ledger to the cent.
 6. **Analyst coverage** exists only for the stocks in `research/stocks.js`. For other holdings the Analysts
    column is empty, and the Outlook's expected return is the average over the covered positions (or the S&P 500's
    long-run pace when none is covered).

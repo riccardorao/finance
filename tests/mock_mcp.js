@@ -26,7 +26,8 @@ module.exports = function mockSource(feed, mode) {
         }
         case 'get_security_chart': {
           const c = F.charts[input.isin]; if (!c || (MODE === 'partial' && input.isin.startsWith('US59'))) return err('tool_error', 'no chart');
-          const pts = input.timeframe === 'max' ? c.max : c.one_year;
+          const six = Date.parse(F.overview.timestamps.valuationTimestampUtc) - 183 * 864e5;
+          const pts = input.timeframe === 'max' ? c.max : input.timeframe === 'six_months' ? c.one_year.filter((x) => Date.parse(x.timestampUtc) > six) : c.one_year;
           return ok({ isin: input.isin, timeframe: input.timeframe, currency: 'EUR', closingReferencePoint: pts.length ? { midPrice: pts[0].midPrice, timestampUtc: pts[0].timestampUtc } : null, dataPoints: pts.slice(1) });
         }
         default: return err('bad_request', 'unknown tool ' + tool);

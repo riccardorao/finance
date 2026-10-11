@@ -30,7 +30,7 @@ const DATA = {
       fund: 'My portfolio',
       manager: '',
       exclusionNote: '',
-      valueNote: 'The value of the portfolio is rebuilt from every trade in your Scalable Capital account and daily closing prices: daily for the last 14 months, month ends before that (and your own trade prices where a price series is missing), so the older part of the chart is smoother. Share splits are found by comparing your trade prices with the market.',
+      valueNote: 'The value of the portfolio is rebuilt from every trade in your Scalable Capital account and closing prices from Scalable: every day for the last six months, every second day back to one year, and month ends before that, with your own trade prices filling in between. Days without a price are interpolated, so the older part of the chart is smoother than the recent part. Share splits are found by comparing your trade prices with the market.',
     },
   },
   profile: { fund: 'My portfolio', manager: '', exclusionNote: '', valueNote: '' },

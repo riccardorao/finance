@@ -84,17 +84,18 @@ async function loadAll() {
       state.progress = `Read ${tx.length} transactions…`; if (!M || !M.perf) showAllHist();
     } while (cursor && pages < 60);
     const plan = Feed.chartPlan(tx, h.value, bench && bench.isin, Date.parse((raw.overview && raw.overview.timestamps && raw.overview.timestamps.valuationTimestampUtc) || Date.now()));
-    const jobs = []; plan.forEach((p) => { jobs.push([p.isin, 'max']); if (p.daily) jobs.push([p.isin, 'one_year']); });
+    const jobs = []; plan.forEach((p) => { jobs.push([p.isin, 'max']); if (p.daily) jobs.push([p.isin, 'one_year']); if (p.recent) jobs.push([p.isin, 'six_months']); });
     let done = 0, chartFailed = 0; const charts = {};
     await pool(jobs, 6, async ([isin, tf]) => {
       try {
         const r = await callRead('get_security_chart', { isin, timeframe: tf });
         let pts = (r && r.dataPoints) || [];
-        if (tf === 'one_year' && r && r.closingReferencePoint) pts = [{ midPrice: r.closingReferencePoint.midPrice, timestampUtc: r.closingReferencePoint.timestampUtc }].concat(pts);
-        (charts[isin] = charts[isin] || {})[tf === 'max' ? 'monthly' : 'daily'] = pts;
+        if (r && r.closingReferencePoint) pts = [{ midPrice: r.closingReferencePoint.midPrice, timestampUtc: r.closingReferencePoint.timestampUtc }].concat(pts);
+        (charts[isin] = charts[isin] || {})[tf === 'max' ? 'monthly' : tf === 'six_months' ? 'six' : 'one'] = pts;
       } catch (e) { chartFailed++; }
       done++; state.progress = `Loading prices… ${done} of ${jobs.length}`; if (done % 8 === 0) { state.statusMsg = state.progress; renderHeader(); if (!M || !M.perf) showAllHist(); }
     });
+    Object.values(charts).forEach((c) => { c.daily = Feed.mergeDaily(c.one, c.six); }); // daily for six months, every second day before that
     DATA_ACTIVE = prepare(Feed.build({ ...raw, transactions: tx, charts }));
     state.hist = DATA_ACTIVE.history ? 'ready' : 'none';
     state.mode = 'live';

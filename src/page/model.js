@@ -120,12 +120,15 @@ function indexPriceFn(D, isin) {
   let pts = [];
   if (m) { const [y, mo] = m.start.split('-').map(Number); pts = m.p.map((p, k) => [Date.UTC(y, mo - 1 + k + 1, 0, 21), p]).filter((x) => x[0] < first); }
   pts = pts.concat(daily);
-  // last close on or before t (binary search)
+  // the close at t: exact on a close, else a geometric blend of the neighbouring closes (the connector's longer
+  // charts only have every second day, or only month ends), so a monthly series does not move in steps
   return (t) => {
     if (t <= pts[0][0]) return pts[0][1];
     let lo = 0, hi = pts.length - 1;
     while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (pts[mid][0] <= t + 36e5) lo = mid; else hi = mid - 1; }
-    return pts[lo][1];
+    const a = pts[lo], b = pts[lo + 1];
+    if (b && b[0] - a[0] <= 45 * MS && t > a[0] + 36e5 && t < b[0]) return Math.exp(Math.log(a[1]) + ((t - a[0]) / (b[0] - a[0])) * (Math.log(b[1]) - Math.log(a[1])));
+    return a[1];
   };
 }
 function perfModel(D, asOf, total) {

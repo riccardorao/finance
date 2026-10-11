@@ -75,6 +75,24 @@ const Feed = (() => {
     while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (pts[mid][0] <= t + 36e5) lo = mid; else hi = mid - 1; }
     return t - pts[lo][0] > maxAge ? null : pts[lo][1];
   }
+  // the close at time t, for a series that may only have a point every second trading day: exact when t falls on a
+  // close, a geometric blend of the neighbouring closes when they are at most five days apart, else the last close
+  function closeAt(pts, t) {
+    if (!pts || !pts.length || t < pts[0][0] - 3 * DAY) return null;
+    if (t < pts[0][0]) return pts[0][1];
+    let lo = 0, hi = pts.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (pts[mid][0] <= t + 36e5) lo = mid; else hi = mid - 1; }
+    const a = pts[lo], b = pts[lo + 1];
+    if (b && b[0] - a[0] <= 5 * DAY && t > a[0] + 36e5 && t < b[0]) return Math.exp(Math.log(a[1]) + ((t - a[0]) / (b[0] - a[0])) * (Math.log(b[1]) - Math.log(a[1])));
+    return t - a[0] > 7 * DAY ? null : a[1];
+  }
+  // daily closes of the last six months (the connector's six_months chart) laid over the thinner one-year chart
+  function mergeDaily(oneYear, sixMonths) {
+    const six = sixMonths || [], one = oneYear || [];
+    if (!six.length) return one;
+    const from = Date.parse(six[0].timestampUtc);
+    return one.filter((x) => Date.parse(x.timestampUtc) < from).concat(six);
+  }
   function geo(pts, t) {
     if (!pts || !pts.length || t < pts[0][0] - 3 * DAY || t > pts[pts.length - 1][0] + 40 * DAY) return null;
     if (t <= pts[0][0]) return pts[0][1];
@@ -83,10 +101,17 @@ const Feed = (() => {
   }
   const toPts = (arr) => (arr || []).map((p) => [Date.parse(p.timestampUtc), p.midPrice]).filter((p) => isFinite(p[0]) && p[1] > 0).sort((a, b) => a[0] - b[0]);
 
-  function priceFn(charts, rows) {
+  function priceFn(charts, rows, qtyOf) {
     const daily = {}, monthly = {}, trades = {};
     Object.entries(charts || {}).forEach(([isin, c]) => { daily[isin] = toPts(c.daily); monthly[isin] = toPts(c.monthly); });
-    rows.forEach((r) => { if (r.qty && r.amt && /buy|sell/.test(r.kind)) (trades[r.isin] = trades[r.isin] || []).push([r.t, r.amt / r.qty]); });
+    rows.forEach((r) => { if (r.qty && r.amt && /buy|sell/.test(r.kind)) (trades[r.isin] = trades[r.isin] || []).push([r.t, r.amt / (qtyOf ? qtyOf(r) : r.qty)]); });
+    // before the daily chart starts only month ends are known: the account's own trade prices are real prices on
+    // real days, so they join the month ends as extra points to interpolate between
+    if (qtyOf) Object.keys(monthly).forEach((isin) => {
+      const d0 = daily[isin] && daily[isin].length ? daily[isin][0][0] : Infinity;
+      const extra = (trades[isin] || []).filter((x) => x[0] < d0);
+      if (extra.length) monthly[isin] = monthly[isin].filter((m) => m[0] < d0).concat(extra).sort((a, b) => a[0] - b[0]);
+    });
     const nearTrade = (isin, t) => {
       const L = trades[isin]; if (!L) return null;
       let before = null, after = null;
@@ -96,7 +121,7 @@ const Feed = (() => {
     };
     // chartOnly: used to compare trade prices against the market (split detection), never falls back to trades
     return (isin, t, chartOnly) => {
-      let p = lastClose(daily[isin], t);
+      let p = closeAt(daily[isin], t);
       if (p == null) p = geo(monthly[isin], t);
       if (p == null && !chartOnly) p = nearTrade(isin, t);
       return p;
@@ -112,21 +137,21 @@ const Feed = (() => {
     rows.forEach((r) => { if (/^(buy|sell|exp|tout)$/.test(r.kind)) (byIsin[r.isin] = byIsin[r.isin] || []).push(r); });
     const factor = new Map(); const fixed = [];
     for (const [isin, rs] of Object.entries(byIsin)) {
-      const f = new Map();
+      const f = new Map(); let lastFlagged = -Infinity, firstPlain = Infinity;
       rs.forEach((r) => {
         if (!/buy|sell/.test(r.kind) || !(r.qty > 0 && r.amt > 0)) return;
         const cp = price(isin, r.t, true); if (!cp) return;
         const ratio = r.amt / r.qty / cp;
         if (ratio > 1.75 || ratio < 1 / 1.75) {
           let best = 1, bd = 9; for (const n of NICE) { const d = Math.abs(Math.log(ratio / n)); if (d < bd) { bd = d; best = n; } }
-          if (bd < 0.2) f.set(r, best);
-        }
+          if (bd < 0.2) { f.set(r, best); lastFlagged = Math.max(lastFlagged, r.t); }
+        } else if (Math.abs(Math.log(ratio)) < 0.3) firstPlain = Math.min(firstPlain, r.t);
       });
-      if (!f.size) continue;
-      const run = (use) => { let q = 0, minQ = 0; rs.forEach((r) => { const k = use && f.has(r) ? f.get(r) : 1; if (r.kind === 'buy') q += r.qty * k; else if (/sell|exp|tout/.test(r.kind) && r.kind !== 'tout') q -= r.qty * k; minQ = Math.min(minQ, q); }); return { q, minQ }; };
-      const target = finalQty[isin] || 0, a = run(false), b = run(true);
-      const fit = (x) => Math.abs(x.q - target) <= 1e-6 + 1e-3 * Math.max(1, target) && x.minQ > -1e-6;
-      if (fit(b) && !fit(a)) { f.forEach((v, r) => factor.set(r, v)); fixed.push(isin); }
+      // a split happened once: every trade at a split multiple comes before every trade at the market price
+      if (!f.size || lastFlagged >= firstPlain) continue;
+      const run = (use) => { let q = 0, minQ = 0; rs.forEach((r) => { const k = use && f.has(r) ? f.get(r) : 1; if (r.kind === 'buy') q += r.qty * k; else if (r.kind === 'sell' || r.kind === 'exp') q -= r.qty * k; minQ = Math.min(minQ, q); }); return { q, minQ }; };
+      const target = finalQty[isin] || 0, b = run(true);
+      if (Math.abs(b.q - target) <= 1e-6 + 1e-3 * Math.max(1, target) && b.minQ > -1e-6) { f.forEach((v, r) => factor.set(r, v)); fixed.push(isin); }
     }
     return { factor, fixed };
   }
@@ -135,9 +160,11 @@ const Feed = (() => {
   function ledger(rows, names, classes, qtyOf) {
     const lots = {}, realised = {}, events = {}, divAll = [];
     const eps = 1e-9;
-    const consume = (isin, qty) => {
+    // first in, first out, taking lots held with the same custodian as the sale first (this reproduces the broker's own cost)
+    const consume = (isin, qty, cust) => {
       const L = lots[isin] || []; let need = qty, cost = 0;
-      for (const lot of L) { if (need <= eps) break; if (lot.qty <= eps) continue; const take = Math.min(lot.qty, need), part = lot.cost * (take / lot.qty); cost += part; lot.cost -= part; lot.qty -= take; need -= take; }
+      const pick = (ok) => { for (const lot of L) { if (need <= eps) break; if (lot.qty <= eps || !ok(lot)) continue; const take = Math.min(lot.qty, need), part = lot.cost * (take / lot.qty); cost += part; lot.cost -= part; lot.qty -= take; need -= take; } };
+      pick((l) => l.cust === cust); pick(() => true);
       lots[isin] = L.filter((l) => l.qty > eps);
       return cost;
     };
@@ -145,11 +172,15 @@ const Feed = (() => {
       const q = qtyOf(r);
       if (r.kind === 'buy') { (lots[r.isin] = lots[r.isin] || []).push({ date: r.t, qty: q, cost: r.amt, cust: r.cust }); (events[r.isin] = events[r.isin] || []).push({ t: r.t, side: 'BUY' }); }
       else if (r.kind === 'sell' || r.kind === 'exp') {
-        const proceeds = r.kind === 'exp' ? 0 : r.amt, cost = consume(r.isin, q);
+        const proceeds = r.kind === 'exp' ? 0 : r.amt, cost = consume(r.isin, q, r.cust);
         const o = realised[r.isin] || (realised[r.isin] = { pl: 0, proceeds: 0 });
         o.pl += proceeds - cost; o.proceeds += proceeds;
         (events[r.isin] = events[r.isin] || []).push({ t: r.t, side: r.kind === 'exp' ? 'EXPIRED' : 'SELL' });
-      } else if (r.kind === 'tout') { /* moves between custody accounts: cost and date stay with the lots */ }
+      } else if (r.kind === 'tout') { // moves lots from the old custodian to Scalable: cost and date stay with them
+        let need = q; const L = lots[r.isin] || [], moved = [];
+        for (const lot of L) { if (need <= eps) break; if (lot.cust !== r.cust) continue; const take = Math.min(lot.qty, need), part = lot.cost * (take / lot.qty); moved.push({ date: lot.date, qty: take, cost: part, cust: 'S' }); lot.cost -= part; lot.qty -= take; need -= take; }
+        lots[r.isin] = L.filter((l) => l.qty > eps).concat(moved).sort((a, b) => a.date - b.date);
+      }
       else if (r.kind === 'div') divAll.push([day(r.t), r.isin, r.amt]);
     });
     const out = Object.entries(realised).map(([isin, o]) => {
@@ -161,17 +192,16 @@ const Feed = (() => {
   }
 
   /* ---------- the equity book's value history ----------
-     Daily on weekdays for the last 14 months, month ends before that. Money moving into the book (buys) counts as
+     On every weekday. Money moving into the book (buys) counts as
      an inflow; sales and dividends as an outflow; cash, fees, crypto and leveraged products are outside the book. */
   function history(rows, price, asOf, book, qtyOf) {
     const brows = rows.filter((r) => book(r.isin) && /^(buy|sell|exp|tout|div)$/.test(r.kind));
     if (!brows.some((r) => r.kind === 'buy')) return null;
     const first = brows.find((r) => r.kind === 'buy').t;
     const dates = new Set();
-    const d0 = new Date(first);
-    for (let y = d0.getUTCFullYear(), m = d0.getUTCMonth(); ; m++) { const t = Date.UTC(y, m + 1, 0, 21); if (t >= asOf) break; if (t > first) dates.add(t); }
-    const from = Math.max(first, asOf - 430 * DAY);
-    for (let t = Date.UTC(new Date(from).getUTCFullYear(), new Date(from).getUTCMonth(), new Date(from).getUTCDate(), 21); t < asOf; t += DAY) { const wd = new Date(t).getUTCDay(); if (wd > 0 && wd < 6) dates.add(t); }
+    // every weekday from the first purchase: where prices are sparse they are interpolated, so money moving in
+    // and out is placed on its own day and the time-weighted chain stays accurate
+    for (let t = Date.UTC(new Date(first).getUTCFullYear(), new Date(first).getUTCMonth(), new Date(first).getUTCDate(), 21); t < asOf; t += DAY) { const wd = new Date(t).getUTCDay(); if (wd > 0 && wd < 6) dates.add(t); }
     const o = new Date(asOf), at = (y, m, d) => Date.UTC(y, m, d, 20);
     [at(o.getUTCFullYear(), o.getUTCMonth(), o.getUTCDate() - 7), at(o.getUTCFullYear(), o.getUTCMonth() - 1, o.getUTCDate()), at(o.getUTCFullYear(), o.getUTCMonth() - 3, o.getUTCDate()), at(o.getUTCFullYear(), o.getUTCMonth() - 6, o.getUTCDate()), at(o.getUTCFullYear() - 1, 11, 31), at(o.getUTCFullYear() - 1, o.getUTCMonth(), o.getUTCDate() - 1)].forEach((t) => { if (t > first && t < asOf) dates.add(t); });
     dates.add(asOf);
@@ -223,9 +253,9 @@ const Feed = (() => {
     const { rows } = txRows(transactions || []);
     const names = {}; (transactions || []).forEach((x) => { const s = x.security || x.nonTradeSecurity; if (s && s.isin && x.description) names[s.isin] = x.description; });
     const plan = {};
-    rows.forEach((r) => { if (!r.isin || !/^(buy|sell|exp|tout)$/.test(r.kind)) return; if (!inBook(classOf(r.isin, names[r.isin] || r.desc, null))) return; const p = plan[r.isin] || (plan[r.isin] = { isin: r.isin, daily: false }); if (r.t > asOf - 380 * DAY) p.daily = true; });
-    ((holdingsFeed && holdingsFeed.holdings) || []).forEach((f) => { if (f.position && f.position.filled > 0) plan[f.isin] = { isin: f.isin, daily: true }; });
-    if (benchIsin) plan[benchIsin] = { isin: benchIsin, daily: true };
+    rows.forEach((r) => { if (!r.isin || !/^(buy|sell|exp|tout)$/.test(r.kind)) return; if (!inBook(classOf(r.isin, names[r.isin] || r.desc, null))) return; const p = plan[r.isin] || (plan[r.isin] = { isin: r.isin, daily: false, recent: false }); if (r.t > asOf - 380 * DAY) p.daily = true; if (r.t > asOf - 190 * DAY) p.recent = true; });
+    ((holdingsFeed && holdingsFeed.holdings) || []).forEach((f) => { if (f.position && f.position.filled > 0) plan[f.isin] = { isin: f.isin, daily: true, recent: true }; });
+    if (benchIsin) plan[benchIsin] = { isin: benchIsin, daily: true, recent: true };
     return Object.values(plan);
   }
 
@@ -248,7 +278,8 @@ const Feed = (() => {
     const { factor, fixed } = splitFactors(rows.filter((r) => bookSet(r.isin)), price, finalQty);
     const qtyOf = (r) => r.qty * (factor.get(r) || 1);
     const L = ledger(rows.filter((r) => bookSet(r.isin) || r.kind === 'dep' || r.kind === 'wdr'), names, classes, qtyOf);
-    const H = history(rows, price, asOf, bookSet, qtyOf);
+    const price2 = priceFn(raw.charts, rows, qtyOf); // with the trades as extra anchors, now that share counts are right
+    const H = history(rows, price2, asOf, bookSet, qtyOf);
     const quotes = raw.quotes || {};
     const holdings = []; const excluded = { n: 0, value: 0 };
     feed.forEach((f) => {
@@ -296,6 +327,6 @@ const Feed = (() => {
     };
   }
 
-  return { chartPlan, txRows, classOf, inBook, priceFn, splitFactors, ledger, history, dailySeries, monthlySeries, build, mapPerf, TFMAP };
+  return { mergeDaily, chartPlan, txRows, classOf, inBook, priceFn, splitFactors, ledger, history, dailySeries, monthlySeries, build, mapPerf, TFMAP };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = Feed;
