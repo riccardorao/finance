@@ -51,6 +51,8 @@ h2, h3, h4 { letter-spacing: -0.01em; }
 
 /* layout: sidebar on wide screens, a sticky strip on phones */
 .layout { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
+/* with the sidebar hidden (onboarding, quick start) the page takes the whole width */
+.layout:has(> #nav[hidden]) { grid-template-columns: minmax(0, 1fr); }
 .nav { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 18px; padding: 22px 14px; border-right: 1px solid var(--line); background: var(--panel); }
 .brand { display: flex; gap: 12px; align-items: center; padding: 0 8px; }
 .brand b { display: block; font-size: 18px; line-height: 1.2; }
@@ -352,3 +354,53 @@ button.li:hover { background: var(--inset); }
   .goal-facts { grid-template-columns: minmax(0, 1fr); }
   .cap-big { font-size: 30px; }
 }
+
+/* ---------- the front page in plain words: what is left, four habits, the split, what to do next ---------- */
+.flow { display: grid; gap: 8px; margin-top: 18px; position: relative; z-index: 1; }
+.flow-row { display: grid; grid-template-columns: 7.5em minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.flow-k { font-size: 15px; opacity: 0.85; }
+.flow-bar { height: 12px; background: rgba(255, 255, 255, 0.15); }
+.flow-bar i { display: block; height: 100%; }
+.flow-bar i.in { background: var(--in); }
+.flow-bar i.out { background: var(--out); }
+.flow-v { font-size: 18px; font-variant-numeric: tabular-nums; }
+.habits, .steps { list-style: none; margin: 0; padding: 0; }
+.habit { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.habit:last-child { border-bottom: 0; }
+.habit p { margin: 0; }
+.habit-mark { width: 12px; height: 12px; margin-top: 5px; }
+.habit.ok .habit-mark { background: var(--in); }
+.habit.no .habit-mark { background: var(--out); }
+.habit.na .habit-mark { border: 2px solid var(--ink3); box-sizing: border-box; }
+.steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 4px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.steps li:last-child { border-bottom: 0; }
+.steps li p { margin: 0; }
+.steps li .btn { grid-column: 2; justify-self: start; margin-top: 6px; }
+.step-n { display: grid; place-items: center; width: 26px; height: 26px; background: var(--ink); color: var(--panel); font-weight: 600; font-variant-numeric: tabular-nums; }
+.split-bars { display: grid; gap: 10px; margin: 6px 0 14px; }
+.split-row { display: grid; grid-template-columns: 9em minmax(0, 1fr); gap: 12px; align-items: center; }
+.split-k { font-size: 14px; color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.split-bar { display: flex; height: 22px; gap: 2px; }
+.split-row.guide .split-bar { height: 10px; opacity: 0.6; }
+.split-bar i, .split-legend .sw { display: block; }
+.split-bar .need, .split-legend .sw.need { background: var(--ink3); }
+.split-bar .want, .split-legend .sw.want { background: var(--out); }
+.split-bar .save, .split-legend .sw.save { background: var(--in); }
+.split-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.split-legend div { display: grid; gap: 2px; }
+.split-legend dt { font-size: 14px; color: var(--ink2); }
+.split-legend dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.quick-cta { margin-top: 18px; }
+.quick-note .banner-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.eur-in { display: flex; align-items: center; gap: 8px; }
+.eur-in input { flex: 1; min-width: 0; }
+.cat-ico:empty, .tx-ico:empty, .opp-ico:empty { display: none; }
+@media (max-width: 700px) {
+  .flow-row { grid-template-columns: 5.5em minmax(0, 1fr) auto; }
+  .split-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .split-legend { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* the quick-start form takes the full column, two fields a row where there is room */
+.onb.quick { width: 100%; }
+.onb.quick .actions { flex-wrap: wrap; }

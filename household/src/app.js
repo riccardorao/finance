@@ -29,10 +29,14 @@ const F = {
   cat: (id) => { const c = catById(S, id); return c[S.lang] || c.it || c.label || id; },
   list: (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + (S.lang === 'en' ? ' and ' : ' e ') + a[a.length - 1]),
 };
-const catIcon = (id) => catById(S, id).icon || '•';
+const catIcon = () => '';   // no emoji: the brand draws its own marks (see noPict below)
 const accName = (id) => (S.accounts.find((a) => a.id === id) || { name: '?' }).name;
 const goalColor = (g) => `var(--g${(Math.max(0, S.goals.findIndex((x) => x.id === g.id)) % 8) + 1})`;
-const goalIcon = (g) => (GOAL_TYPES.find((x) => x.id === g.type) || GOAL_TYPES[GOAL_TYPES.length - 1]).icon;
+const goalIcon = () => '';
+// Pictographs (emoji) never reach the page: categories, goals and profiles keep their icons in the data,
+// but the page is drawn in words and in the brand's own marks.
+const PICT = /(?:\p{Extended_Pictographic}|\uFE0F|\u200D|\u20E3)+\s?/gu;
+const noPict = (html) => html.replace(PICT, '');
 
 /* ---------- icons (24px line icons) ---------- */
 const ICON = {
@@ -64,16 +68,16 @@ function render() {
   $('#brand-sub').textContent = S.profile.name ? t('appName') : t('tagline');
   const findings = S.txns.length ? runChecks(S, today()) : [];
   const urgent = findings.filter((f) => f.level === 'alert' || f.level === 'warn').length;
-  $('#nav').hidden = onboarding;
+  $('#nav').hidden = onboarding || (UI.quick && !S.txns.length);
   $('#nav-list').innerHTML = TABS.map((k) => `<button class="nav-item" id="tab-${k}" aria-current="${UI.tab === k ? 'page' : 'false'}" data-act="tab" data-tab="${k}">${icon(k)}<span>${esc(t('nav.' + k))}</span>${k === 'checks' && urgent ? `<b class="badge">${urgent}</b>` : ''}</button>`).join('');
-  $('#banner').innerHTML = S.demo ? `<div class="banner"><span>🧪 ${esc(t('demoBanner'))}</span><button class="btn small" data-act="clear-demo">${esc(t('demoClear'))}</button></div>` : '';
+  $('#banner').innerHTML = S.demo ? `<div class="banner"><span>${esc(t('demoBanner'))}</span><button class="btn small" data-act="clear-demo">${esc(t('demoClear'))}</button></div>` : '';
   const views = { home: viewHome, moves: viewMoves, budget: viewBudget, save: viewSave, goals: viewGoals, checks: viewChecks, import: viewImport, settings: viewSettings };
-  $('#main').innerHTML = onboarding ? viewOnboarding() : views[UI.tab](findings);
+  $('#main').innerHTML = noPict(UI.quick ? viewQuick() : onboarding ? viewOnboarding() : views[UI.tab](findings));
   renderStatus();
 }
 function renderStatus() {
   const m = Store.mode();
-  $('#status').innerHTML = m === 'memory' ? `<span class="warn-text">${esc(t('savedMemory'))}</span>` : `🔒 ${esc(t('savedLocal'))}`;
+  $('#status').innerHTML = m === 'memory' ? `<span class="warn-text">${esc(t('savedMemory'))}</span>` : esc(t('savedLocal'));
 }
 const card = (title, sub, body, cls = '') => `<section class="card ${cls}">${title ? `<h3>${title}</h3>` : ''}${sub ? `<p class="sub">${sub}</p>` : ''}${body}</section>`;
 
@@ -88,9 +92,25 @@ function viewOnboarding() {
       <label class="field">${esc(t('onb.other'))}<input type="text" id="onb-other" maxlength="40"></label>
       <label class="check"><input type="checkbox" id="onb-cash" ${UI.onb.cash ? 'checked' : ''}> ${esc(t('onb.cash'))}</label>
       <div class="actions"><button class="btn primary big" data-act="onb-start">${esc(t('onb.start'))} →</button></div>
-      <div class="actions"><button class="link" data-act="demo">🧪 ${esc(t('onb.demo'))}</button><button class="link" data-act="restore">💾 ${esc(t('onb.restore'))}</button>
+      <div class="actions"><button class="link" data-act="demo">${esc(t('onb.demo'))}</button><button class="link" data-act="restore">${esc(t('onb.restore'))}</button>
       <button class="link" data-act="lang" data-lang="${S.lang === 'it' ? 'en' : 'it'}">${S.lang === 'it' ? 'English' : 'Italiano'}</button></div>
-    </div></section>`;
+    </div>
+    <div class="card quick-cta"><h3>${esc(t('quick.title'))}</h3><p class="sub">${esc(t('quick.sub'))}</p><div class="actions"><button class="btn" data-act="quick">${esc(t('quick.cta'))} →</button></div></div></section>`;
+}
+
+/* ---------- quick start: a normal month in a few figures, for a household without a bank file ----------
+   The figures become one estimated month for each of the last three months (on an account of their own), so
+   every section works at once; what is put by today becomes that account's balance. */
+const QUICK = [['inc', 'stipendio', 1], ['rent', 'casa', -1], ['bills', 'casa', -1], ['food', 'spesa', -1], ['transport', 'trasporti', -1],
+  ['phone', 'telefono', -1], ['health', 'salute', -1], ['fun', 'svago', -1], ['other', 'altro', -1]];
+const QUICK_ACC = 'acc_quick';
+function viewQuick() {
+  const f = S.profile.quick || {};
+  const field = (k) => `<label class="field">${esc(t('quick.' + k))}<span class="eur-in"><input type="number" id="q-${k}" min="0" step="10" inputmode="decimal" value="${f[k] ? f[k] / 100 : ''}" placeholder="0"><span aria-hidden="true">€</span></span></label>`;
+  return `<section class="onb quick">
+    <div class="onb-hero"><h2>${esc(t('quick.title'))}</h2><p>${esc(t('quick.sub'))}</p></div>
+    <div class="card"><div class="form-grid">${QUICK.map(([k]) => field(k)).join('')}${field('saved')}</div>
+      <div class="actions"><button class="btn primary big" data-act="quick-go">${esc(t('quick.go'))} →</button><button class="btn" data-act="quick-cancel">${esc(t('cancel'))}</button></div></div></section>`;
 }
 
 /* ---------- overview ---------- */
@@ -101,28 +121,56 @@ function currentMonth() {
 }
 function viewHome(findings) {
   if (!S.txns.length) {
-    return card(esc(t('imp.title')), esc(t('imp.formats')), `<div class="actions"><button class="btn primary big" data-act="tab" data-tab="import">${icon('import')} ${esc(t('imp.title'))}</button><button class="btn" data-act="demo">🧪 ${esc(t('onb.demo'))}</button></div>`);
+    return card(esc(t('imp.title')), esc(t('imp.formats')), `<div class="actions"><button class="btn primary big" data-act="tab" data-tab="import">${icon('import')} ${esc(t('imp.title'))}</button><button class="btn" data-act="quick">${esc(t('quick.cta'))}</button><button class="btn" data-act="demo">${esc(t('onb.demo'))}</button></div>`);
   }
   const month = currentMonth();
   const mm = monthly(S);
   const cur = mm[month] || { inc: 0, out: 0, extra: 0, cats: {} };
-  const prev = monthsRange(addMonths(month, -12), addMonths(month, -1)).filter((k) => mm[k]);
-  const avg = (f) => (prev.length ? prev.reduce((s, k) => s + f(mm[k]), 0) / prev.length : null);
   const isNow = month === monthOf(today());
   const left = cur.inc - cur.out;
-  const rate = cur.inc > 0 ? Math.max(0, left / cur.inc) : 0;
-  const stat = (label, val, avgV, cls, extra) => `<div class="hero-stat"><span>${esc(label)}</span><b class="${cls}">${esc(F.eur(val, 0))}</b>
-    <small>${extra ? esc(extra) + ' · ' : ''}${avgV != null ? esc(isNow ? `${t('avg12')} ${F.eur(avgV, 0)}` : t('vsAvg', { d: val - avgV })) : ''}</small></div>`;
+  // what is left, in words and as two bars: money in (øresund) and money out (terracotta), as in the 12-month chart
+  const flowMax = Math.max(cur.inc, cur.out, 1);
+  const flow = (cls, label, v) => `<div class="flow-row"><span class="flow-k">${esc(label)}</span><span class="flow-bar"><i class="${cls}" style="width:${(v / flowMax * 100).toFixed(1)}%"></i></span><b class="flow-v">${esc(F.eur(v, 0))}</b></div>`;
+  const label = isNow ? `${t(left >= 0 ? 'hero.leftNow' : 'hero.shortNow')} · ${t('soFar', { day: +today().slice(8, 10) })}` : t(left >= 0 ? 'hero.leftIn' : 'hero.shortIn', { month });
   const hero = `<section class="hero">
     <div class="hero-top"><button class="hero-nav" data-act="month" data-d="-1" aria-label="‹">‹</button>
-      <div><p class="hero-label">${esc(isNow ? t('hero.left') : t('hero.leftPast', { month }))}${isNow ? ` · ${esc(t('soFar', { day: +today().slice(8, 10) }))}` : ''}</p>
-      <p class="hero-big">${esc(F.eur(left, 0))}</p></div>
+      <div><p class="hero-label">${esc(label)}</p><p class="hero-big">${esc(F.eur(Math.abs(left), 0))}</p></div>
       <button class="hero-nav" data-act="month" data-d="1" aria-label="›" ${month >= monthOf(today()) ? 'disabled' : ''}>›</button></div>
-    <div class="hero-row">${stat(t('income'), cur.inc, avg((r) => r.inc), '')}${stat(t('spending'), cur.out, avg((r) => r.out), '', cur.extra ? `${t('extraSpending')} ${F.eur(cur.extra, 0)}` : '')}
-      <div class="hero-ring">${ring(rate, '#fff', 74, F.pct(rate))}<small>${esc(t('hero.saveRate'))}</small></div></div>
-    <p class="hero-month">${esc(F.month(month))}</p></section>`;
+    <div class="flow">${flow('in', t('income'), cur.inc)}${flow('out', t('spending'), cur.out)}</div>
+    ${cur.extra ? `<p class="hero-month">${esc(t('extraSpending'))} ${esc(F.eur(cur.extra, 0))}</p>` : ''}</section>`;
+  const quickNote = S.profile.quick ? `<div class="banner quick-note"><span>${esc(t('quick.note'))}</span><span class="banner-acts"><button class="btn small" data-act="quick">${esc(t('quick.edit'))}</button><button class="btn small primary" data-act="tab" data-tab="import">${esc(t('nav.import'))}</button></span></div>` : '';
 
-  const urgent = findings.filter((f) => f.level === 'alert' || f.level === 'warn').slice(0, 3);
+  // how the household's money is doing: four habits, yes or no, in a sentence each
+  const H = moneyHealth(S, today());
+  const habitText = (i) => (i.ok == null ? t(i.id === 'cushion' ? 'h.cushion.null' : 'h.null') : t(`h.${i.id}.${i.ok ? 'ok' : 'no'}`, i.p));
+  const okN = H.items.filter((i) => i.ok).length;
+  const health = card(esc(t('health.title')), esc(t('health.sub', { ok: okN })), `<ul class="habits">${H.items.map((i) => `<li class="habit ${i.ok == null ? 'na' : i.ok ? 'ok' : 'no'}"><span class="habit-mark" aria-hidden="true"></span><p>${esc(habitText(i))}</p></li>`).join('')}</ul>`, 'health');
+
+  // what to do next: at most three concrete steps, the one that matters most first
+  const steps = [];
+  const sp = H.split;
+  if (sp.months && sp.save < 0) steps.push({ text: t('next.deficit', { amt: -sp.save }), act: 'tab', tab: 'save', cta: t('home.saveCta') });
+  const cushion = H.items.find((i) => i.id === 'cushion');
+  const emAmt = emergencyTarget(S, today());
+  if (cushion.ok !== true && !S.goals.some((g) => g.type === 'emergency') && emAmt > 0) steps.push({ text: t('next.cushion', { amt: Math.round(sp.out * 3 / 10000) * 10000 || emAmt }), act: 'goal-emergency', amt: Math.round(sp.out * 3 / 10000) * 10000 || emAmt, cta: t('next.cushionCta') });
+  const oppsAll = opportunities(S, today()).filter((o) => o.kind !== 'idle' && !o.adopted).sort((a, b) => b.annual - a.annual);
+  for (const o of oppsAll.slice(0, 2)) steps.push({ text: t('next.opp', { text: t('opp.' + o.kind, { ...o.p, period: o.p.period ? t('period.' + o.p.period) : '' }).replace(/[:\s]*$/, '').replace(/([^.!?])$/, '$1.'), annual: o.annual }), act: 'tab', tab: 'save', cta: t('home.saveCta') });
+  const urgentN = findings.filter((f) => f.level === 'alert' || f.level === 'warn').length;
+  if (urgentN) steps.push({ text: t('next.checks', { n: urgentN }), act: 'tab', tab: 'checks', cta: t('next.checksCta') });
+  if (!S.goals.length) steps.push({ text: t('next.goal'), act: 'goal-new', cta: t('next.goalCta') });
+  const next = card(esc(t('next.title')), '', steps.length ? `<ol class="steps">${steps.slice(0, 3).map((x, i) => `<li><span class="step-n">${i + 1}</span><p>${esc(x.text)}</p><button class="btn small" data-act="${x.act}"${x.tab ? ` data-tab="${x.tab}"` : ''}${x.amt ? ` data-amt="${x.amt}"` : ''}>${esc(x.cta)} →</button></li>`).join('')}</ol>` : `<p>${esc(t('next.none'))}</p>`, 'next');
+
+  // how the money divides up: essentials, wants and what is put aside, beside the 50/30/20 rule
+  const base = Math.max(sp.inc, sp.out, 1);
+  const seg = (cls, v) => (v > 0 ? `<i class="${cls}" style="width:${(v / base * 100).toFixed(1)}%"></i>` : '');
+  const share = (v) => (sp.inc > 0 ? ' · ' + F.pct(v / sp.inc) : '');
+  const splitCard = sp.months ? card(esc(t('split.title')), esc(t('split.sub')), `<div class="split-bars">
+      <div class="split-row"><span class="split-k">${esc(S.profile.name || t('appName'))}</span><span class="split-bar">${seg('need', sp.need)}${seg('want', sp.want)}${seg('save', sp.save)}</span></div>
+      <div class="split-row guide"><span class="split-k">${esc(t('split.guide'))} 50/30/20</span><span class="split-bar">${seg('need', sp.inc * GUIDE.need)}${seg('want', sp.inc * GUIDE.want)}${seg('save', sp.inc * GUIDE.save)}</span></div></div>
+    <dl class="split-legend"><div><dt><i class="sw need"></i>${esc(t('split.need'))}</dt><dd>${esc(F.eur(sp.need, 0) + share(sp.need))}</dd></div>
+      <div><dt><i class="sw want"></i>${esc(t('split.want'))}</dt><dd>${esc(F.eur(sp.want, 0) + share(sp.want))}</dd></div>
+      <div><dt><i class="sw save"></i>${esc(t(sp.save >= 0 ? 'split.save' : 'split.short'))}</dt><dd>${esc(F.eur(Math.abs(sp.save), 0) + share(Math.abs(sp.save)))}</dd></div></dl>`, 'split-card') : '';
+
   const { avg: cavg } = categoryAverages(S, month, 12);
   const outCats = Object.keys({ ...cur.cats, ...cavg }).filter((c) => catKind(S, c) === 'out' && ((cur.cats[c] || 0) < 0 || (!isNow && (cavg[c] || 0) < -1000)));
   outCats.sort((a, b) => (cur.cats[a] || 0) - (cur.cats[b] || 0) || (cavg[a] || 0) - (cavg[b] || 0));
@@ -139,22 +187,20 @@ function viewHome(findings) {
 
   const plan = planGoals(S, today());
   const goals = plan.rows.slice(0, 4).map((r) => `<button class="mini-goal" data-act="goal-open" data-id="${r.goal.id}">${ring(r.progress, goalColor(r.goal), 52, F.pct(r.progress))}<span><b>${goalIcon(r.goal)} ${esc(r.goal.name)}</b><small>${esc(t('goal.saved', { saved: r.goal.saved, target: r.target }))}</small><em class="pill ${r.status}">${esc(t('status.' + r.status))}</em></span></button>`).join('');
-  const opps = opportunities(S, today());
-  const oppTotal = opps.filter((o) => o.kind !== 'idle').reduce((s, o) => s + o.annual, 0);
   const bals = balances(S);
   const accs = S.accounts.filter((a) => a.id !== CASH_ACC || bals[a.id]).map((a) => {
     const b = bals[a.id];
     return `<div class="acc"><span class="acc-name">${esc(a.name)}</span>${b ? `<b>${esc(F.eur(b.bal, 2))}</b><small>${esc(t('balanceAt', { date: b.date }))}</small>` : `<small>${esc(t('noBalance'))}</small>`}</div>`;
   }).join('');
-  return `${hero}
+  return `${quickNote}${hero}
+  <div class="grid2">${health}${next}</div>
+  ${splitCard}
   <div class="grid2">
     <div>
-      ${urgent.length ? card(esc(t('attention')), '', urgent.map(findingHtml).join('') + `<button class="link" data-act="tab" data-tab="checks">${esc(t('seeAll'))} →</button>`) : ''}
       ${card(esc(t('byCategory')), esc(t('byCategorySub', { month: F.month(month) })), `<div class="cats">${bars}</div>`)}
     </div>
     <div>
       ${card(esc(t('home.goals')), '', goals || `<p class="sub">${esc(t('home.goalsNone'))}</p>`, 'goals-mini') .replace('</section>', `<button class="link" data-act="tab" data-tab="goals">${esc(t('home.goalsCta'))} →</button></section>`)}
-      ${oppTotal > 0 ? `<section class="card promo"><h3>💡 ${esc(t('home.save'))}</h3><p>${esc(t('home.saveSub', { annual: oppTotal }))}</p><button class="btn" data-act="tab" data-tab="save">${esc(t('home.saveCta'))} →</button></section>` : ''}
       ${accs ? card(esc(t('accounts')), '', `<div class="accs">${accs}</div>`) : ''}
     </div>
   </div>
@@ -202,7 +248,7 @@ function viewMoves() {
       <select data-act="f-month" aria-label="${esc(t('moves.all'))}"><option value="">${esc(t('moves.all'))}</option>${months.map((m) => `<option value="${m}" ${UI.f.month === m ? 'selected' : ''}>${esc(F.month(m))}</option>`).join('')}</select>
     </div>
     <div class="moves-head"><div class="chips"><button class="chip ${UI.f.extra ? 'on' : ''}" data-act="f-extra">${esc(t('moves.onlyExtra'))}</button>${UI.f.ids ? `<button class="chip on" data-act="clear-ids">🔎 ${UI.f.ids.size} ✕</button>` : ''}</div>
-      <button class="btn primary" data-act="manual">＋ ${esc(t('moves.add'))}</button></div>
+      <button class="btn primary" data-act="manual">+ ${esc(t('moves.add'))}</button></div>
     <p class="sub">${esc(t('moves.count', { n: list.length, inc, out }))}</p>
     <div class="txs">${rows || `<p class="sub">${esc(t('moves.none'))}</p>`}</div>
     ${list.length > UI.limit ? `<button class="btn wide" data-act="more">${esc(t('moves.more'))}</button>` : ''}`);
@@ -255,7 +301,7 @@ function viewSave() {
   const split = S.cash.split || {};
   const splitCats = ['spesa', 'ristoranti', 'trasporti', 'famiglia', 'svago', 'shopping', 'salute', 'altro'];
   const cashBody = `<div class="table-wrap"><table class="table"><thead><tr><th></th><th class="num">${esc(t('cash.withdrawn'))}</th><th class="num">${esc(t('cash.recorded'))}</th><th class="num">${esc(t('cash.unknown'))}</th></tr></thead><tbody>${cashRows}</tbody></table></div>
-    <button class="btn" data-act="manual" data-cash="1">＋ ${esc(t('cash.add'))}</button>
+    <button class="btn" data-act="manual" data-cash="1">+ ${esc(t('cash.add'))}</button>
     <p class="field-label">${esc(t('cash.split'))}</p><p class="sub">${esc(t('cash.splitHint'))}</p>
     <div class="split">${splitCats.map((c) => `<label>${catIcon(c)} ${esc(F.cat(c))}<span><input type="number" min="0" max="100" step="5" data-act="cash-split" data-cat="${c}" value="${split[c] || ''}" placeholder="0">%</span></label>`).join('')}</div>`;
 
@@ -282,7 +328,7 @@ function viewGoals() {
   const emAmt = emergencyTarget(S, today());
   const emCard = !hasEmergency && emAmt > 0 ? `<div class="finding info"><span class="f-icon">🛟</span><div class="f-body"><p>${esc(t('goals.emergency', { amt: emAmt }))}</p><div class="f-actions"><button class="btn small primary" data-act="goal-emergency" data-amt="${emAmt}">${esc(t('goals.emergencyCta'))}</button></div></div></div>` : '';
   const cards = plan.rows.map((r) => goalCard(r)).join('');
-  return `<section class="card"><div class="head-row"><div><h3>${esc(t('goals.title'))}</h3><p class="sub">${esc(t('goals.sub'))}</p></div><button class="btn primary" data-act="goal-new">＋ ${esc(t('goals.add'))}</button></div>${emCard}</section>
+  return `<section class="card"><div class="head-row"><div><h3>${esc(t('goals.title'))}</h3><p class="sub">${esc(t('goals.sub'))}</p></div><button class="btn primary" data-act="goal-new">+ ${esc(t('goals.add'))}</button></div>${emCard}</section>
     ${capCard}<div class="goals">${cards || card('', '', `<p class="sub">${esc(t('goals.none'))}</p>`)}</div>
     <p class="disclaimer">${esc(t('goals.disclaimer'))}</p>`;
 }
@@ -417,6 +463,8 @@ function runImport() {
   const id = ensureAccount(d.target, d.newName, d.bank);
   if (d.kind === 'table' && d.map) S.mappings[d.map.columns.join('|')] = { ...d.map, acc: id };
   const r = mergeImport(S, id, d.parsed.txns, { file: d.file, kind: d.kind === 'pdf' ? 'pdf' : 'file', checkpoints: d.kind === 'table' ? checkpointsFromFile(d.parsed.txns) : [] });
+  // the first real statement replaces the household's own estimates (quick start)
+  if (S.profile.quick && r && r.added) { S.txns = S.txns.filter((x) => x.src !== 'quick'); S.accounts = S.accounts.filter((a) => a.id !== QUICK_ACC); delete S.profile.quick; }
   UI.draft = null; UI.result = r;
   commit();
 }
@@ -449,7 +497,7 @@ function viewSettings() {
 /* ---------- dialogs ---------- */
 function modal(html) {
   const m = $('#modal');
-  m.innerHTML = `<div class="modal-back" data-act="modal-close"></div><div class="modal card" role="dialog" aria-modal="true">${html}</div>`;
+  m.innerHTML = noPict(`<div class="modal-back" data-act="modal-close"></div><div class="modal card" role="dialog" aria-modal="true">${html}</div>`);
   m.hidden = false;
   const f = m.querySelector('input,select,button');
   if (f) f.focus();
@@ -511,6 +559,26 @@ const ACTIONS = {
     if (S.cash.track && !S.accounts.some((a) => a.id === CASH_ACC)) S.accounts.push({ id: CASH_ACC, name: t('manual.cash'), bank: '', checkpoints: [] });
     S.profile.onboarded = true; UI.tab = 'import';
     commit();
+  },
+  quick: () => { UI.quick = true; render(); window.scrollTo(0, 0); },
+  'quick-cancel': () => { UI.quick = false; render(); },
+  'quick-go': () => {
+    const fig = {};
+    for (const [k] of QUICK.concat([['saved']])) { const v = centsOf('#q-' + k); if (v) fig[k] = Math.abs(v); }
+    if (!fig.inc && !QUICK.some(([k]) => fig[k])) return;
+    if (!S.accounts.some((a) => a.id === QUICK_ACC)) S.accounts.push({ id: QUICK_ACC, name: t('quick.acc'), bank: '', checkpoints: [] });
+    const acc = S.accounts.find((a) => a.id === QUICK_ACC);
+    S.txns = S.txns.filter((x) => x.src !== 'quick');
+    const now = monthOf(today());
+    for (let i = 1; i <= 3; i++) {
+      const m = addMonths(now, -i);
+      for (const [k, cat, sign] of QUICK) if (fig[k]) S.txns.push({ id: `q-${m}-${k}`, acc: QUICK_ACC, date: m + '-15', desc: `${t('quick.desc')} · ${t('quick.' + k)}`, amt: sign * fig[k], cat, catSrc: 'user', src: 'quick' });
+    }
+    acc.checkpoints = fig.saved ? [{ date: today(), bal: fig.saved, src: 'manual' }] : [];
+    S.txns.sort((a, b) => b.date.localeCompare(a.date));
+    S.profile.quick = fig; S.profile.onboarded = true;
+    UI.quick = false; UI.tab = 'home'; UI.month = null;
+    commit(); window.scrollTo(0, 0);
   },
   month: (el) => { UI.month = addMonths(currentMonth(), +el.dataset.d); render(); },
   'filter-cat': (el) => { UI.f = { q: '', acc: '', cat: el.dataset.cat, month: el.dataset.month, ids: null, extra: false }; UI.tab = 'moves'; render(); },
