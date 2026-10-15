@@ -340,19 +340,24 @@ function tableTwin(head, rowsArr) {
 
 /* ---------- fan chart: log-normal range of outcomes ---------- */
 const isoDay = (t) => new Date(t).toISOString().slice(0, 10);
-const Zq = [-3, -2, -1, 0, 1, 2, 3]; // outcome bands at ±1σ, ±2σ and ±3σ around the median
-const ZL = ['−3σ', '−2σ', '−1σ', 'Median', '+1σ', '+2σ', '+3σ'];
+// Outcome bands: the central 66% (17th to 83rd percentile) and 95% (2.5th to 97.5th) of a log-normal outcome
+const Z66 = 0.9542, Z95 = 1.96;
+const Zq = [-Z95, -Z66, 0, Z66, Z95]; // from the outside in: 95% low, 66% low, median, 66% high, 95% high
+const ZL = ['95% low', '66% low', 'Median', '66% high', '95% high'];
+const MEDIAN = 2;
 function fanPoints(V0, mu, sigma, steps, perYear = 12) {
   const m = Math.log(1 + mu) - (sigma * sigma) / 2;
   return Array.from({ length: steps + 1 }, (_, k) => { const t = k / perYear; return Zq.map((z) => V0 * Math.exp(m * t + z * sigma * Math.sqrt(t))); });
 }
+// o.k is the moment shown on load; o.onSelect(k) is called when the viewer moves to another moment (pointer or keys).
+// host.fanSet(k) moves the marker from outside (the slider under the chart).
 function fanChart(host, w, o) {
   const h = o.height || 290, m = { l: 50, r: w < 520 ? 88 : 104, t: 12, b: 26 }, C = o.color || 'var(--accent)', RC = o.ref.color || 'var(--ink3)';
   const iw = w - m.l - m.r, ih = h - m.t - m.b, N = o.months;
-  const F = fanPoints(o.V0, o.mu, o.sigma, N), Rf = fanPoints(o.V0, o.ref.mu, o.ref.sigma, N).map((q) => q[3]);
-  // drawn on a finer grid than the monthly tooltip points, so short horizons curve smoothly
-  const S = 10, FF = fanPoints(o.V0, o.mu, o.sigma, N * S, 12 * S), RF = fanPoints(o.V0, o.ref.mu, o.ref.sigma, N * S, 12 * S).map((q) => q[3]);
-  const lo = Math.min(...F.map((q) => q[0]), ...Rf), hi = Math.max(...F.map((q) => q[6]), ...Rf);
+  const F = fanPoints(o.V0, o.mu, o.sigma, N), Rf = fanPoints(o.V0, o.ref.mu, o.ref.sigma, N).map((q) => q[MEDIAN]);
+  // drawn on a finer grid than the monthly points, so short horizons curve smoothly
+  const S = 10, FF = fanPoints(o.V0, o.mu, o.sigma, N * S, 12 * S), RF = fanPoints(o.V0, o.ref.mu, o.ref.sigma, N * S, 12 * S).map((q) => q[MEDIAN]);
+  const lo = Math.min(...F.map((q) => q[0]), ...Rf), hi = Math.max(...F.map((q) => q[4]), ...Rf);
   const ticks = niceTicks(lo, hi, 5), y0 = ticks[0], y1 = ticks[ticks.length - 1];
   const X = (k) => m.l + (k / N) * iw, Y = (v) => m.t + (1 - (v - y0) / (y1 - y0 || 1)) * ih;
   const XF = (j) => X(j / S);
@@ -365,28 +370,24 @@ function fanChart(host, w, o) {
   for (let k = 0; k <= N; k += step) g += `<text x="${X(k)}" y="${h - 6}" text-anchor="middle">${k === 0 ? 'Today' : esc(mlabel(mt(k)))}</text>`;
   const yb = Math.round(Y(o.V0)) + 0.5;
   g += `<line class="base" x1="${m.l}" x2="${m.l + iw}" y1="${yb}" y2="${yb}" stroke-dasharray="2 3"/>`;
-  g += `<path d="${area(6, 0)}" fill="${C}" opacity="0.07"/><path d="${area(5, 1)}" fill="${C}" opacity="0.1"/><path d="${area(4, 2)}" fill="${C}" opacity="0.16"/>`;
+  g += `<path d="${area(0, 4)}" fill="${C}" opacity="0.07"/><path d="${area(1, 3)}" fill="${C}" opacity="0.16"/>`;
   g += `<path d="${path(RF)}" fill="none" stroke="${RC}" stroke-width="1.75" stroke-dasharray="5 4"/>`;
-  g += `<path d="${path(FF.map((q) => q[3]))}" fill="none" stroke="${C}" stroke-width="2.25"/>`;
-  // end labels in the right margin, top (+3σ) to bottom (−3σ), spaced so they never overlap
+  g += `<path d="${path(FF.map((q) => q[MEDIAN]))}" fill="none" stroke="${C}" stroke-width="2.25"/>`;
+  // end labels in the right margin, top to bottom, spaced so they never overlap
   const ends = Zq.map((_, j) => ({ j, y: Y(F[N][j]) + 4 })).reverse();
   ends.forEach((e, i) => { if (i && e.y - ends[i - 1].y < 13) e.y = ends[i - 1].y + 13; });
-  ends.forEach((e) => { g += `<text x="${X(N) + 6}" y="${e.y.toFixed(1)}" style="fill:${e.j === 3 ? C : 'var(--ink2)'};font-weight:${e.j === 3 ? 700 : 500}">${ZL[e.j] === 'Median' ? '' : ZL[e.j] + ' '}${fmtEUR0(F[N][e.j])}</text>`; });
-  g += `<line class="xh" id="fxh" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" style="display:none"/><rect id="fov" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" tabindex="0" role="img" aria-label="${esc(o.aria)}"/>`;
+  ends.forEach((e) => { const med = e.j === MEDIAN; g += `<text x="${X(N) + 6}" y="${e.y.toFixed(1)}" style="fill:${med ? C : 'var(--ink2)'};font-weight:${med ? 700 : 500}">${med ? '' : ZL[e.j] + ' '}${fmtEUR0(F[N][e.j])}</text>`; });
+  const k0 = Math.max(0, Math.min(N, o.k == null ? N : o.k));
+  g += `<line class="xh" id="fxh" x1="${X(k0)}" x2="${X(k0)}" y1="${m.t}" y2="${m.t + ih}"/><rect id="fov" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" tabindex="0" role="img" aria-label="${esc(o.aria)}"/>`;
   host.innerHTML = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${g}</svg>`;
   const svg = host.firstChild, ov = svg.querySelector('#fov'), xh = svg.querySelector('#fxh');
-  let cur = -1;
-  const show = (k, cx, cy) => {
-    cur = k; const xx = X(k); xh.setAttribute('x1', xx); xh.setAttribute('x2', xx); xh.style.display = '';
-    const q = F[k], r = svg.getBoundingClientRect();
-    showTip(`<div class="th">${k === 0 ? 'Today' : dfmt(isoDay(mt(k))) + ` · ${k} month${k > 1 ? 's' : ''}`}</div>${[6, 5, 4, 3, 2, 1, 0].map((j) => trow(C, ZL[j], fmtEUR0(q[j]), j === 3 ? 1 : 0)).join('')}${trow(RC, o.ref.label + ' median', fmtEUR0(Rf[k]), 1)}`, cx != null ? cx : r.left + xx, cy != null ? cy : r.top + m.t + 20);
-  };
+  let cur = k0;
+  const place = (k) => { cur = k; const xx = X(k); xh.setAttribute('x1', xx); xh.setAttribute('x2', xx); if (o.onSelect) o.onSelect(k); };
   const near = (cx) => { const r = svg.getBoundingClientRect(); return Math.max(0, Math.min(N, Math.round(((cx - r.left - m.l) / iw) * N))); };
-  ov.addEventListener('pointermove', (e) => show(near(e.clientX), e.clientX, e.clientY));
-  ov.addEventListener('pointerdown', (e) => show(near(e.clientX), e.clientX, e.clientY));
-  const leave = () => { xh.style.display = 'none'; hideTip(); };
-  ov.addEventListener('pointerleave', leave); ov.addEventListener('blur', leave);
-  ov.addEventListener('keydown', (e) => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); show(Math.max(0, Math.min(N, (cur < 0 ? N : cur) + (e.key === 'ArrowRight' ? 1 : -1)))); });
+  ov.addEventListener('pointermove', (e) => place(near(e.clientX)));
+  ov.addEventListener('pointerdown', (e) => place(near(e.clientX)));
+  ov.addEventListener('keydown', (e) => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); place(Math.max(0, Math.min(N, cur + (e.key === 'ArrowRight' ? 1 : -1)))); });
+  host.fanSet = place;
   return F;
 }
 

@@ -242,9 +242,9 @@ function selectHolding(isin) {
 // Outlook summary tile: the figure, a one-line verdict, a small visual, then the detail
 const okTile = (k, v, c, verdict, vis, foot) => `<div class="kpi ok"><div class="k">${k}</div><div class="v ${c || ''}">${v}</div><div class="vd">${verdict}</div>${vis}<div class="n">${foot}</div></div>`;
 const duoBars = (rows, f) => { const mx = Math.max(...rows.map((r) => Math.abs(r[1]))) || 1; return `<div class="duo">${rows.map(([l, x, col]) => `<div class="dr"><span class="dl">${esc(l)}</span><span class="dt"><i style="width:${(Math.abs(x) / mx) * 100}%;background:${col}"></i></span><b class="${cls(x)}">${f(x)}</b></div>`).join('')}</div>`; };
-// ±1σ (dark) and ±2σ (light) bands on a strip from −2σ to +2σ, with a tick at zero and a dot at the median
-const rangeStrip = (q) => { const lo = q(-2), hi = q(2), X = (x) => ((x - lo) / (hi - lo)) * 100;
-  return `<span class="strip" role="img" aria-label="±1σ ${fmtSignedPct(q(-1), 0)} to ${fmtSignedPct(q(1), 0)}"><i class="b2"></i><i class="b1" style="left:${X(q(-1))}%;width:${X(q(1)) - X(q(-1))}%"></i>${lo < 0 && hi > 0 ? `<i class="z" style="left:${X(0)}%"></i>` : ''}<i class="md" style="left:${X(q(0))}%"></i></span>`; };
+// the 66% band (dark) and the 95% band (light) on a strip from the 95% low to the 95% high, the median dot marked
+const rangeStrip = (q) => { const lo = q(-Z95), hi = q(Z95), X = (x) => ((x - lo) / (hi - lo)) * 100;
+  return `<span class="strip" role="img" aria-label="66% range ${fmtSignedPct(q(-Z66), 0)} to ${fmtSignedPct(q(Z66), 0)}; 95% range ${fmtSignedPct(q(-Z95), 0)} to ${fmtSignedPct(q(Z95), 0)}"><i class="b2"></i><i class="b1" style="left:${X(q(-Z66))}%;width:${X(q(Z66)) - X(q(-Z66))}%"></i>${lo < 0 && hi > 0 ? `<i class="z" style="left:${X(0)}%"></i>` : ''}<i class="md" style="left:${X(q(0))}%"></i></span>`; };
 const HORIZONS = [[3, '3M', '3 months'], [6, '6M', '6 months'], [12, '1Y', '1 year'], [24, '2Y', '2 years'], [36, '3Y', '3 years']];
 // standard normal distribution function (Abramowitz and Stegun 7.1.26)
 function normCdf(z) {
@@ -270,6 +270,20 @@ function renderRisk() {
   const q = (z) => Math.exp(mP * t + z * sigma * Math.sqrt(t)) - 1;
   const sd = Math.sqrt(Math.max(1e-9, sigma * sigma + bVol * bVol - 2 * rho * sigma * bVol) * t);
   const pBeat = normCdf(((mP - mB) * t) / sd);
+  // the moment shown on the chart: moved with the slider under it, reset when the horizon changes
+  if (state.fkHz !== n) { state.fk = n; state.fkHz = n; }
+  const k0 = Math.max(0, Math.min(n, state.fk == null ? n : state.fk));
+  const FP = fanPoints(V, expAnn, sigma, n), RP = fanPoints(V, bMu, bVol, n);
+  const d0 = new Date(M.asOf);
+  const when = (k) => k === 0 ? 'Today' : new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth() + k, d0.getUTCDate())).toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const readout = (k) => {
+    state.fk = k;
+    const q = FP[k], rm = RP[k][MEDIAN];
+    const r = $('#fan-read'); if (r) r.innerHTML = `<span class="fr-when">${when(k)}${k ? ` · ${k} month${k > 1 ? 's' : ''}` : ''}</span>` +
+      [['95% low', q[0], 'b95'], ['66% low', q[1], 'b66'], ['Median', q[2], 'med'], ['66% high', q[3], 'b66'], ['95% high', q[4], 'b95']].map(([l, x, c]) => `<span class="fr"><i class="fsw ${c}"></i>${l} <b>${fmtEUR0(x)}</b></span>`).join('') +
+      `<span class="fr"><i class="fsw bm"></i>${esc(bName)} median <b>${fmtEUR0(rm)}</b></span>`;
+    const sl = $('#fan-k'); if (sl) sl.value = k;
+  };
   root.innerHTML = `
   <div class="lede"><div><p class="kicker">Outlook</p><h2>Where ${/^My /.test(FUND) ? FUND.toLowerCase() : 'the ' + FUND} could be ${n === 12 ? 'a year' : 'in ' + hzL} from now</h2></div></div>
   <div class="ctrls" style="margin-bottom:12px">
@@ -279,21 +293,25 @@ function renderRisk() {
   <div class="kpis4 ok4">
     ${okTile('Expected return', fmtSignedPct(exp, 0), cls(exp), bExp > 0 && exp > 0 ? `${fmtNum(exp / bExp, 1)}× the ${esc(bName)}` : `${pts(exp - bExp, 0)} vs the ${esc(bName)}`,
       duoBars([[FUND, exp, 'var(--fund)'], [bName, bExp, 'var(--spx)']], (x) => fmtSignedPct(x, 0)), `over ${hzL}; the ${esc(bName)} at historical pace`)}
-    ${okTile('Likely range', `${fmtSignedPct(q(-1), 0)} to ${fmtSignedPct(q(1), 0)}`, '', '2 in 3 outcomes (±1<span class="sg">σ</span>)',
-      rangeStrip(q), `±2<span class="sg">σ</span> ${fmtSignedPct(q(-2), 0)} to ${fmtSignedPct(q(2), 0)}<br>±3<span class="sg">σ</span> ${fmtSignedPct(q(-3), 0)} to ${fmtSignedPct(q(3), 0)}`)}
+    ${okTile('Likely range', `${fmtSignedPct(q(-Z66), 0)} to ${fmtSignedPct(q(Z66), 0)}`, '', '2 in 3 outcomes (66%)',
+      rangeStrip(q), `95%: ${fmtSignedPct(q(-Z95), 0)} to ${fmtSignedPct(q(Z95), 0)}`)}
     ${okTile('Chance of beating the ' + esc(bName), Math.round(pBeat * 100) + '%', pBeat >= 0.5 ? 'pos' : 'neg', `about ${Math.round(pBeat * 10)} in 10`,
       `<span class="meter" role="img" aria-label="${Math.round(pBeat * 100)}%"><i style="width:${(pBeat * 100).toFixed(1)}%"></i><em></em></span>`, `over ${hzL}; correlation ${fmtNum(rho, 2)}`)}
     ${okTile('Risk', (sigma * 100).toFixed(0) + '%', '', `${fmtNum(sigma / bVol, 1)}× as volatile as the ${esc(bName)}`,
       duoBars([[FUND, sigma, 'var(--fund)'], [bName, bVol, 'var(--spx)']], (x) => (x * 100).toFixed(0) + '%'), `annual volatility; beta ${fmtNum(beta, 2)}`)}
   </div>
   <div class="panel" style="margin-top:14px">
-    <h3>Range of outcomes, next ${hzL}</h3><p class="sub">The fund is worth ${fmtEUR0(V)} today. Shaded bands: ±1σ, ±2σ and ±3σ around the median, which hold about 68%, 95% and 99.7% of outcomes, given an expected return of ${fmtSignedPct(expAnn, 0)} a year and volatility (σ) of ${(sigma * 100).toFixed(0)}% a year. Dashed: ${esc(bName)} growing at ${bMuTxt}, with its own volatility. ${noCover ? 'No analyst targets cover these holdings, so the fund is assumed to grow at the S&amp;P 500&#39;s pace.' : `Odds ${pr.map((x) => Math.round(x * 100)).join('/')} (bull/base/bear)${O.cover < 0.995 ? `; analyst targets cover ${Math.round(O.cover * 100)}% of the portfolio (${O.nCov} of ${M.H.length} positions) and the expected return is their average` : ''}`}${n > 12 ? '; beyond 12 months the expected return is assumed to repeat' : ''}.</p>
+    <h3>Range of outcomes, next ${hzL}</h3><p class="sub">The fund is worth ${fmtEUR0(V)} today. Shaded: the central 66% and 95% of outcomes, given an expected return of ${fmtSignedPct(expAnn, 0)} a year and volatility (σ) of ${(sigma * 100).toFixed(0)}% a year. Dashed: ${esc(bName)} growing at ${bMuTxt}, with its own volatility. ${noCover ? 'No analyst targets cover these holdings, so the fund is assumed to grow at the S&amp;P 500&#39;s pace.' : `Odds ${pr.map((x) => Math.round(x * 100)).join('/')} (bull/base/bear)${O.cover < 0.995 ? `; analyst targets cover ${Math.round(O.cover * 100)}% of the portfolio (${O.nCov} of ${M.H.length} positions) and the expected return is their average` : ''}`}${n > 12 ? '; beyond 12 months the expected return is assumed to repeat' : ''}.</p>
+    <div id="fan-read" class="fread"></div>
     <div id="fan" class="chart"></div>
+    <div class="fslide"><input type="range" id="fan-k" min="0" max="${n}" step="1" value="${k0}" aria-label="Moment in time: move through the ${hzL}"><div class="fticks"><span>Today</span><span>${when(n)}</span></div></div>
   </div>`;
   $$('#t-risk [data-pre]').forEach((b) => b.addEventListener('click', () => { state.preset = b.dataset.pre; renderRisk(); }));
   $$('#t-risk [data-hz]').forEach((b) => b.addEventListener('click', () => { state.hz = +b.dataset.hz; renderRisk(); }));
-  const fo = { V0: V, mu: O.exp, sigma, months: n, t0: M.asOf, color: 'var(--fund)', ref: { mu: bMu, sigma: bVol, label: bName, color: IDX_COLOR[bench.id] }, aria: `Range of outcomes over ${hzL}` };
-  mount($('#fan'), (host, w) => fanChart(host, w, Object.assign({ height: w < 520 ? 260 : 340 }, fo)));
+  readout(k0);
+  $('#fan-k').addEventListener('input', (e) => { state.fk = +e.target.value; $('#fan').fanSet(state.fk); });
+  const fo = { V0: V, mu: expAnn, sigma, months: n, t0: M.asOf, color: 'var(--fund)', ref: { mu: bMu, sigma: bVol, label: bName, color: IDX_COLOR[bench.id] }, aria: `Range of outcomes over ${hzL}` };
+  mount($('#fan'), (host, w) => fanChart(host, w, Object.assign({ height: w < 520 ? 260 : 340, k: state.fk, onSelect: readout }, fo)));
 }
 
 /* ---------- notes ---------- */
