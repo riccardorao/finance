@@ -17,7 +17,36 @@ const payloads = {
   get_portfolio_holdings: () => ({ holdings: DATA.holdings.map((h) => ({ isin: h.isin, name: h.name, currentQuote: { midPrice: h.price * (BUMP[h.isin] || 1) }, position: { filled: h.qty } })).concat([{ isin: 'US0000000001', name: 'New Co', currentQuote: { midPrice: 50 }, position: { filled: 10 } }]) }),
   get_portfolio_overview: () => ({ valuation: { total: DATA.total + 700 }, timestamps: { valuationTimestampUtc: '2026-10-02T09:00:00.000Z' }, performance: Object.entries(DATA.pl).map(([k, v]) => ({ timeframe: TFR[k], simpleAbsoluteReturn: v + 10 })) }),
   get_portfolio_cash_breakdown: () => ({ cash: { cashBalance: 12.34 } }),
+  list_portfolio_transactions: () => ({ page: { nextCursor: null }, transactions: ledgerTransactions() }),
+  get_security_chart: (input) => chartPayload(input.isin, input.timeframe),
 };
+// the account's own transactions, in the connector's shape, from tx.csv (a recent sale is left out so the test has a gap to fill)
+function ledgerTransactions() {
+  const names = JSON.parse(fs.readFileSync(path.join(path.resolve(process.argv[3] || path.join(root, 'data', 'private')), 'names.json'), 'utf8'));
+  const lines = fs.readFileSync(path.join(path.resolve(process.argv[3] || path.join(root, 'data', 'private')), 'tx.csv'), 'utf8').trim().split('\n').slice(1);
+  const out = [];
+  lines.forEach((l, n) => {
+    const [date, cust, kind, isin, qty, amt] = l.split(','); const t = date.length === 16 ? date + ':00.000Z' : date + '.000Z';
+    const base = { id: 'T' + n, status: 'SETTLED', currency: 'EUR', isCancellation: false, lastEventAt: t, custodian: cust === 'B' ? 'BAADER' : 'SCALABLE', description: names[isin] || '', nonTradeSecurity: null, eltif: null };
+    if (kind === 'buy' || kind === 'sell') out.push({ ...base, kind: 'security', category: 'SECURITY_TRANSACTION', security: { isin, transactionType: 'SINGLE', quantity: qty, amount: String(kind === 'buy' ? -amt : +amt), side: kind.toUpperCase() }, cash: null });
+    else if (kind === 'div') out.push({ ...base, kind: 'cash', category: 'CASH_TRANSACTION', security: null, cash: { relatedIsin: isin, transactionType: 'DISTRIBUTION', amount: amt } });
+    else if (kind === 'dep' || kind === 'wdr') out.push({ ...base, kind: 'cash', category: 'CASH_TRANSACTION', security: null, cash: { relatedIsin: null, transactionType: kind === 'dep' ? 'DEPOSIT' : 'WITHDRAWAL', amount: String(kind === 'dep' ? amt : -amt) } });
+  });
+  return out.sort((a, b) => (a.lastEventAt < b.lastEventAt ? 1 : -1));
+}
+// price charts in the connector's shape: six months daily, a year every second day, the max as month ends
+function chartPayload(isin, timeframe) {
+  const pd = JSON.parse(fs.readFileSync(path.join(path.resolve(process.argv[3] || path.join(root, 'data', 'private')), 'prices_daily.json'), 'utf8'));
+  const o = pd[isin]; if (!o) return { isin, timeframe, currency: 'EUR', closingReferencePoint: null, dataPoints: [] };
+  const pts = o.d.map((d, i) => ({ d, p: o.p[i] })), last = Date.parse(pts[pts.length - 1].d + 'T20:00:00Z');
+  const mk = (a) => a.map((x) => ({ midPrice: x.p, timestampUtc: x.d + 'T20:59:00.000Z' }));
+  let sel;
+  if (timeframe === 'six_months') sel = pts.filter((x) => Date.parse(x.d) > last - 183 * 864e5);
+  else if (timeframe === 'one_year') sel = pts.filter((x) => Date.parse(x.d) > last - 366 * 864e5).filter((_, i) => i % 2 === 0);
+  else sel = pts.filter((x, i) => i === pts.length - 1 || x.d.slice(0, 7) !== pts[i + 1].d.slice(0, 7));
+  const first = sel.shift();
+  return { isin, timeframe, currency: 'EUR', closingReferencePoint: first ? { midPrice: first.p, timestampUtc: first.d + 'T20:00:00Z' } : null, dataPoints: mk(sel) };
+}
 function quote(isin) {
   const h = DATA.holdings.find((x) => x.isin === isin), b = DATA.benches.find((x) => x.isin === isin);
   if (!h && !b) return { security: { isin, quote: { midPrice: 50, performances: [{ timeframe: 'SINCE_BUY', performance: 0.1, simpleAbsoluteReturn: 50 }] } } };
@@ -59,11 +88,14 @@ function chart(isin) {
     links: [...document.querySelectorAll('#t-book .news a')].map((a) => a.href),
     injected: document.querySelectorAll('#t-book .news script, #t-book .pd-side b b').length,
     status: document.getElementById('status-text').textContent,
+    // the performance history must run to the refresh date, not stop at the last build
+    historyTo: (() => { const p = M.perf.pts; return new Date(p[p.length - 1].t).toISOString().slice(0, 10); })(),
+    historyFrom: (() => { const p = M.perf.pts; return new Date(p[0].t).toISOString().slice(0, 10); })(),
     book: document.getElementById('mh-value').textContent,
     rows: [...document.querySelectorAll('#t-book .pos-row')].map((r) => r.querySelector('.nm b').textContent + ' ' + r.querySelector('.n b').textContent + ' ' + r.querySelector('.cons').textContent.trim()),
   }));
   console.log(scenario, JSON.stringify(out, null, 1), errs.length ? '\nERRORS ' + errs.join('\n') : '\nno errors');
-  const bad = errs.length || out.injected || out.links.some((l) => !l.startsWith('https:'));
+  const bad = errs.length || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && out.historyTo !== '2026-10-02');
   await browser.close();
   process.exit(bad ? 1 : 0);
 })();

@@ -86,6 +86,7 @@ const DATA = {
     divAll: L.income.div.map((x) => [d10(x.date), x.isin, x.amt]),
   },
   profile: { ...PROFILE, positions: undefined },
+  types: TYPES,
 };
 fs.writeFileSync(path.join(dir, 'data.json'), JSON.stringify(DATA));
 console.log('data.json', (fs.statSync(path.join(dir, 'data.json')).size / 1024).toFixed(1) + ' KB,', holdings.length, 'holdings,', realised.length, 'closed instruments');

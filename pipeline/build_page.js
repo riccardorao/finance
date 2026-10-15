@@ -42,5 +42,5 @@ module.exports = { assemble, writePage };
 if (require.main === module) {
   const dataDir = path.resolve(process.argv[2] || path.join(root, 'data', 'private'));
   const out = path.resolve(process.argv[3] || path.join(root, 'dist', 'portfolio.html'));
-  writePage(assemble(fs.readFileSync(path.join(dataDir, 'data.json'), 'utf8'), ['src/core.js', 'src/page/model.js', 'src/page/views.js', 'src/page/live.js']), out);
+  writePage(assemble(fs.readFileSync(path.join(dataDir, 'data.json'), 'utf8'), ['src/core.js', 'src/client/feed.js', 'src/page/model.js', 'src/page/views.js', 'src/page/live.js']), out);
 }

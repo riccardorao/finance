@@ -70,11 +70,56 @@ async function liveRefresh() {
     // benchmarks
     D2.benches.forEach((b) => { const q = quotes[b.isin]; if (q) b.perf = mapPerf(q.performances); });
     DATA_ACTIVE = D2;
+    render();
+    // the stored history stops at the last build: rebuild the days since from this account's own transactions and prices
+    const secs = {}; all.forEach((i, k) => { if (qs[k].status === 'fulfilled' && qs[k].value) secs[i] = qs[k].value; });
+    if (!(await extendHistory({ holdings: h.value, overview: o.status === 'fulfilled' ? o.value : null, cash: c.status === 'fulfilled' ? c.value : null, secs }))) failed++;
     state.mode = 'live'; state.statusMsg = failed ? `${failed} ${failed === 1 ? 'item' : 'items'} kept from the snapshot` : '';
     render();
   } catch (err) {
     state.mode = 'error'; state.statusMsg = explain(err); renderHeader();
   }
+}
+
+/* ---------- history since the last build ----------
+   The stored history ends when the page was built. On every open the days since are rebuilt from the account's own
+   transactions and Scalable's price charts (the viewer edition's method, src/client/feed.js), and the stored daily
+   history is kept up to the build date. Returns false when the connector could not supply them. */
+async function pool(items, n, fn) {
+  const out = new Array(items.length); let i = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; try { out[k] = await fn(items[k]); } catch (e) { out[k] = null; } } }));
+  return out;
+}
+async function extendHistory(raw) {
+  const cut = Date.parse(DATA_SNAP.meta.asOf);
+  try {
+    const tx = []; let cursor = null, pages = 0;
+    do {
+      const r = await callRead('list_portfolio_transactions', Object.assign({ pageSize: 100 }, cursor ? { cursor } : {}));
+      (r && r.transactions || []).forEach((x) => tx.push(x));
+      cursor = r && r.page && r.page.nextCursor; pages++;
+    } while (cursor && pages < 60);
+    const asOf = Date.parse((raw.overview && raw.overview.timestamps && raw.overview.timestamps.valuationTimestampUtc) || new Date().toISOString());
+    const plan = Feed.chartPlan(tx, raw.holdings, null, asOf);
+    const jobs = []; plan.forEach((p) => { jobs.push([p.isin, 'max']); if (p.daily) jobs.push([p.isin, 'one_year']); if (p.recent) jobs.push([p.isin, 'six_months']); });
+    const charts = {};
+    await pool(jobs, 6, async ([isin, tf]) => {
+      const r = await callRead('get_security_chart', { isin, timeframe: tf });
+      let pts = (r && r.dataPoints) || [];
+      if (r && r.closingReferencePoint) pts = [{ midPrice: r.closingReferencePoint.midPrice, timestampUtc: r.closingReferencePoint.timestampUtc }].concat(pts);
+      (charts[isin] = charts[isin] || {})[tf === 'max' ? 'monthly' : tf === 'six_months' ? 'six' : 'one'] = pts;
+    });
+    Object.values(charts).forEach((c) => { c.daily = Feed.mergeDaily(c.one, c.six); });
+    const T = Feed.build({ holdings: raw.holdings, overview: raw.overview, cash: raw.cash, quotes: raw.secs, news: {}, transactions: tx, charts, static: { types: DATA.types || {}, indices: [], research: {}, comments: {}, profile: {} } });
+    if (!T.history) return false;
+    const emb = DATA_ACTIVE.history, tp = T.history.points, te = T.history.external;
+    const lastStored = emb.points.filter((p) => p[0] <= cut).slice(-1)[0], atCut = tp.filter((p) => p[0] <= cut).slice(-1)[0];
+    const off = lastStored && atCut ? lastStored[2] - atCut[2] : 0; // keep the cumulative flows continuous across the join
+    DATA_ACTIVE.history = { ...emb,
+      points: emb.points.filter((p) => p[0] <= cut).concat(tp.filter((p) => p[0] > cut).map((p) => [p[0], p[1], +(p[2] + off).toFixed(2)])),
+      external: emb.external.filter((f) => f[0] <= cut).concat(te.filter((f) => f[0] > cut)) };
+    return true;
+  } catch (e) { return false; }
 }
 
 /* ---------- boot ---------- */

@@ -272,6 +272,8 @@ const Feed = (() => {
     const classes = {};
     rows.forEach((r) => { if (r.isin && !classes[r.isin]) classes[r.isin] = classOf(r.isin, names[r.isin], null); });
     feed.forEach((f) => { const q = raw.quotes && raw.quotes[f.isin] && raw.quotes[f.isin].security; classes[f.isin] = classOf(f.isin, f.name, q && q.securityType); });
+    // overrides from the owner's types.json (GameStop, leveraged products without the DE000BB prefix)
+    Object.entries(S.types || {}).forEach(([isin, t]) => { classes[isin] = t; });
     const bookSet = (isin) => inBook(classes[isin] || 'Shares');
     const price = priceFn(raw.charts, rows);
     const finalQty = {}; feed.forEach((f) => { finalQty[f.isin] = f.position.filled; });
