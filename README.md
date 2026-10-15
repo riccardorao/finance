@@ -12,7 +12,7 @@ answers three questions, one per tab. It always opens on Portfolio:
 |---|---|---|
 | **Portfolio** | What is owned and how is each position doing? | Per position, in this order: the share-price change over a period picked with a toggle (1D, 1W, 1M, 3M, 6M, YTD, 1Y), weight, value in euro, return since bought in euro and in per cent (unrealised), the 12-month target range (bear, weighted outcome, bull) and the consensus rating with the upside to the average target. Each opens to the thesis, the written kill-switch, bull and bear cases, industry and competitors, and the latest news |
 | **Performance** | Have the picks made money, and against which index? | Four headline figures; a daily chart of time-weighted (TWR) or money-weighted (MWR) performance for 1M, 3M, 6M, YTD, 1Y, 2025, 2024 or Max (since inception) against the S&P 500, the only benchmark; *Every period at a glance* compares every period with it |
-| **Outlook** | What could happen next? | A horizon toggle (3M, 6M, 1Y, 2Y, 3Y) and three sets of scenario odds (Consensus, Cautious, Stress) drive the expected return, the range of outcomes (the central 66% and 95%), with a slider to move through the horizon, the chance of beating the S&P 500, volatility and beta, and a range-of-outcomes chart |
+| **Outlook** | What could happen next? | A horizon toggle (3M, 6M, 1Y, 2Y, 3Y) and three sets of scenario odds (Consensus, Cautious, Stress) drive the expected return, the range of outcomes (5% to 95% and 25% to 75%), with a readout that follows the pointer across the chart, the chance of beating the S&P 500, volatility and beta, and a range-of-outcomes chart |
 
 ![Performance tab, built from the synthetic sample](docs/sample-record.png)
 
@@ -222,7 +222,7 @@ average target, 25% bull. The three presets weight bull, base and bear at 25/50/
 (*Cautious*) and 5/35/60 (*Stress*).
 
 **Range of outcomes.** A log-normal model: the median path is `V0 · exp((ln(1+μ) − σ²/2)·t)`, and the bands
-are the central 66% (17th to 83rd percentile) and 95% (2.5th to 97.5th percentile) of outcomes, either side of the median. The readout above the chart gives the values at the chosen moment, and the slider below moves that moment through the horizon. μ is the expected 12-month return under the chosen preset, assumed
+are the 25th to 75th and the 5th to 95th percentiles of outcomes, either side of the median. The readout above the chart gives the values at the moment under the pointer (or the arrow keys); it starts at the end of the horizon. μ is the expected 12-month return under the chosen preset, assumed
 to repeat for horizons beyond a year, and σ the back-cast volatility. The S&P 500 is drawn at its own
 historical annualised growth since January 1989 (from `index_history.json`) with its own volatility. The ETF
 on the page only starts in 2009, so the long run uses the index itself, in US dollars. Like the analyst price targets behind the portfolio's expected return,

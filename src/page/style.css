@@ -567,9 +567,6 @@ ul.rules { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 8px; font-si
 .fread .fr b { color: var(--ink); font-weight: 600; margin-left: 2px; }
 .fsw { display: inline-block; width: 14px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
 .fsw.b95 { background: color-mix(in srgb, var(--fund) 14%, transparent); }
-.fsw.b66 { background: color-mix(in srgb, var(--fund) 34%, transparent); }
+.fsw.b75 { background: color-mix(in srgb, var(--fund) 34%, transparent); }
 .fsw.med { background: var(--fund); height: 3px; }
 .fsw.bm { background: none; height: 0; width: 16px; border-top: 2px dashed var(--spx); }
-.fslide { margin: 6px 6px 0; }
-.fslide input[type="range"] { width: 100%; accent-color: var(--fund); }
-.fticks { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink3); margin-top: 2px; }

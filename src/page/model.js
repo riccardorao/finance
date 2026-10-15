@@ -340,17 +340,16 @@ function tableTwin(head, rowsArr) {
 
 /* ---------- fan chart: log-normal range of outcomes ---------- */
 const isoDay = (t) => new Date(t).toISOString().slice(0, 10);
-// Outcome bands: the central 66% (17th to 83rd percentile) and 95% (2.5th to 97.5th) of a log-normal outcome
-const Z66 = 0.9542, Z95 = 1.96;
-const Zq = [-Z95, -Z66, 0, Z66, Z95]; // from the outside in: 95% low, 66% low, median, 66% high, 95% high
-const ZL = ['95% low', '66% low', 'Median', '66% high', '95% high'];
+// Outcome bands: the 25th to 75th and the 5th to 95th percentile of a log-normal outcome, either side of the median
+const Z75 = 0.6745, Z95 = 1.6449;
+const Zq = [-Z95, -Z75, 0, Z75, Z95]; // from the outside in: 5%, 25%, median, 75%, 95%
+const ZL = ['5%', '25%', 'Median', '75%', '95%'];
 const MEDIAN = 2;
 function fanPoints(V0, mu, sigma, steps, perYear = 12) {
   const m = Math.log(1 + mu) - (sigma * sigma) / 2;
   return Array.from({ length: steps + 1 }, (_, k) => { const t = k / perYear; return Zq.map((z) => V0 * Math.exp(m * t + z * sigma * Math.sqrt(t))); });
 }
-// o.k is the moment shown on load; o.onSelect(k) is called when the viewer moves to another moment (pointer or keys).
-// host.fanSet(k) moves the marker from outside (the slider under the chart).
+// o.k is the moment shown on load; o.onSelect(k) is called as the pointer or the arrow keys move to another moment.
 function fanChart(host, w, o) {
   const h = o.height || 290, m = { l: 50, r: w < 520 ? 88 : 104, t: 12, b: 26 }, C = o.color || 'var(--accent)', RC = o.ref.color || 'var(--ink3)';
   const iw = w - m.l - m.r, ih = h - m.t - m.b, N = o.months;
@@ -387,7 +386,6 @@ function fanChart(host, w, o) {
   ov.addEventListener('pointermove', (e) => place(near(e.clientX)));
   ov.addEventListener('pointerdown', (e) => place(near(e.clientX)));
   ov.addEventListener('keydown', (e) => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); place(Math.max(0, Math.min(N, cur + (e.key === 'ArrowRight' ? 1 : -1)))); });
-  host.fanSet = place;
   return F;
 }
 
