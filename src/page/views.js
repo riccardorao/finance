@@ -100,18 +100,18 @@ function renderRecord() {
     <div class="headline"><span class="big2 ${cls(twr ? st.twr : PUB ? pubMwr(st, st) : st.gain)}">${twr ? fmtSignedPct(st.twr, 1) : PUB ? fmtSignedPct(pubMwr(st, st), 1) : fmtSignedEUR(st.gain)}</span><span class="muted">${twr ? 'time-weighted' : `money-weighted ${st.years > 1.05 ? fmtSignedPct(st.mwr, 1) + ' a year' : fmtSignedPct(st.mwrPeriod, 1)}`} · ${state.tf === 'SI' ? 'Max, since I started' : esc(TFL[state.tf])}</span>
       <span class="idxv"><i class="sw line" style="background:var(--fund)"></i>${FUND}</span>${sel.map((id) => `<span class="idxv"><i class="sw line" style="background:${IDX_COLOR[id]}"></i>${esc(idxName(id))} ${twr ? fmtSignedPct(st.idx[id].twr, 1) : PUB ? fmtSignedPct(pubMwr(st, st.idx[id]), 1) : fmtSignedEUR(st.idx[id].value - st.b.v + st.gain)}</span>`).join('')}</div>
     <div id="perfchart" class="chart"></div>
-    <div class="row-between" style="margin-top:6px"><span class="muted small">${twr ? 'Time-weighted: the return on my picks, however much money was in at the time.' : 'Money-weighted: what my actual money is worth, against putting the same money in each index on the same days.' + (PUB ? ' Scaled so the portfolio today is 100.' : '')}</span><button class="tablink" id="tv-perf">${state.tableView.perf ? 'Show chart' : 'View as table'}</button></div>
+    <div class="row-between" style="margin-top:6px"><span class="muted small">${PUB ? '' : twr ? 'Time-weighted: the return on my picks, however much money was in at the time.' : 'Money-weighted: what my actual money is worth, against putting the same money in each index on the same days.'}</span><button class="tablink" id="tv-perf">${state.tableView.perf ? 'Show chart' : 'View as table'}</button></div>
   </div>
 
   <div class="panel" style="margin-top:14px">
-    <h3>Every period at a glance</h3><p class="sub">Time-weighted return for each period against the S&P 500. Click a row to chart it.</p>
+    <h3>Every period at a glance</h3>${PUB ? '' : '<p class="sub">Time-weighted return for each period against the S&P 500. Click a row to chart it.</p>'}
     <div class="pbars" style="--ni:${gsel.length}">
       <div class="pb pb-h"><span class="pl"></span><span class="pt"></span><span class="pv">${FUND}</span>${gsel.map((id) => `<span class="pi">${esc(BSHORT[id] || idxName(id))}</span>`).join('')}</div>
       ${all.map((s) => { const mx = Math.max(...all.map((q) => Math.max(Math.abs(q.twr), ...gsel.map((id) => Math.abs(q.idx[id].twr))))) || 1; const bar = (x) => { const w = (Math.abs(x) / mx) * 50; return x < 0 ? `right:50%;width:${w}%` : `left:50%;width:${w}%`; };
       return `<button class="pb${s.k === state.tf ? ' on' : ''}" data-tf="${s.k}"><span class="pl">${esc(TFL[s.k])}</span>
         <span class="pt" style="height:${10 + gsel.length * 7}px"><i class="z"></i><i class="b you" style="top:0;${bar(s.twr)}"></i>${gsel.map((id, j) => `<i class="b idx" style="top:${10 + j * 7}px;background:${IDX_COLOR[id]};${bar(s.idx[id].twr)}"></i>`).join('')}</span>
         <span class="pv ${cls(s.twr)}">${fmtSignedPct(s.twr, 1)}</span>${gsel.map((id) => { const e = s.twr - s.idx[id].twr; return `<span class="pi">${fmtSignedPct(s.idx[id].twr, 1)}<small class="${cls(e)}">${e >= 0 ? '+' : '−'}${Math.abs(e * 100).toFixed(1)} pts</small></span>`; }).join('')}</button>`; }).join('')}</div>
-    <div class="legend" style="margin:10px 0 0"><span><i class="sw" style="background:var(--fund)"></i>${FUND}</span>${gsel.map((id) => `<span><i class="sw" style="background:${IDX_COLOR[id]}"></i>${esc(idxName(id))}</span>`).join('')}<span class="muted">Under the S&P 500: points the fund is ahead (+) or behind (−)</span></div>
+    <div class="legend" style="margin:10px 0 0"><span><i class="sw" style="background:var(--fund)"></i>${FUND}</span>${gsel.map((id) => `<span><i class="sw" style="background:${IDX_COLOR[id]}"></i>${esc(idxName(id))}</span>`).join('')}${PUB ? '' : '<span class="muted">Under the S&P 500: points the fund is ahead (+) or behind (−)</span>'}</div>
   </div>`;
 
   $$('#t-record [data-tf]').forEach((b) => b.addEventListener('click', () => { state.tf = b.dataset.tf; renderRecord(); }));
@@ -210,26 +210,26 @@ function renderBook() {
     if (state.open) { const el = $(`#t-book .posn[data-i="${id}"]`); if (el && el.getBoundingClientRect().top < 80) el.scrollIntoView({ block: 'start' }); }
   }));
 }
-/* The public Portfolio tab: the same book without the names. Each pick keeps sector, a broad region,
-   weight, unrealised gain and the 12-month range; who they are, and why, is what a subscription buys. */
+/* The public Portfolio tab: each company with its ticker, sector, a broad region, weight, unrealised gain
+   and the 12-month range; no euro amounts. One call: the weekly update by email. */
 function renderBookPublic() {
   const root = $('#t-book'); unmountWithin(root);
-  const U = M.D.public.unlock || {};
+  const U = M.D.public.subscribe || {};
   const cov = M.H.filter((h) => h.sc);
   const dLo = Math.min(-0.2, ...cov.map((h) => h.sc.bear)), dHi = Math.max(0.2, ...cov.map((h) => h.sc.bull));
   const PX = (v) => 9 + ((v - dLo) / (dHi - dLo)) * 82; // inset so the end balls stay inside the column, as in the private book
   // bear, weighted and bull positions, pushed apart just enough that the three balls never overlap
   const balls = (a, b, c) => { const G = 19, x = [PX(a), PX(b), PX(c)]; x[1] = Math.max(x[1], x[0] + G); x[2] = Math.max(x[2], x[1] + G); const over = x[2] - 91; if (over > 0) { x[2] -= over; x[1] = Math.min(x[1], x[2] - G); x[0] = Math.min(x[0], x[1] - G); } return x; };
   const sectors = {}; M.H.forEach((h) => { sectors[h.sector] = (sectors[h.sector] || 0) + h.weight; });
-  const href = safeUrl(U.href) || (/^mailto:[^\s"'<>]+$/.test(U.href || '') ? U.href : null);
+  const href = safeUrl(U.href);
   root.innerHTML = `
-  <div class="lede"><div><p class="kicker">Portfolio</p><h2>What I own: ${M.H.length} positions. The names are for subscribers.</h2><p>Weights, sectors, gains and the 12-month range are the real ones; which company each pick is, and why I own it, is not on this page.</p></div></div>
+  <div class="lede"><div><p class="kicker">Portfolio</p><h2>What I own: ${M.H.length} positions</h2></div></div>
   <div class="pub-wrap">
   <div class="panel flat">
-    <div class="pub-h"><span>Pick</span><span>Sector</span><span class="c-m">Region</span><span>Weight</span><span>Unrealised</span><span class="c-m c-rng">12-month range</span></div>
+    <div class="pub-h"><span>Company</span><span>Sector</span><span class="c-m">Region</span><span>Weight</span><span>Unrealised</span><span class="c-m c-rng">12-month range</span></div>
     ${M.H.map((h) => { const sc = h.sc, mid = sc ? expOf(sc, PRESETS.analyst.p) : null;
       return `<div class="pub-r">
-        <span class="nm"><b>${esc(h.name)}</b><i class="lock" aria-label="Name for subscribers"></i></span>
+        <span class="nm"><b>${esc(h.name)}</b>${h.ticker ? `<small class="tk">${esc(h.ticker)}</small>` : ''}</span>
         <span>${esc(h.sector)}</span>
         <span class="c-m muted">${esc(h.region)}</span>
         <span class="n"><b>${(h.weight * 100).toFixed(1)}%</b></span>
@@ -237,22 +237,11 @@ function renderBookPublic() {
         <span class="c-m c-rng">${sc ? `<span class="rng" role="img" aria-label="Bear ${fmtSignedPct(sc.bear, 0)}, weighted ${fmtSignedPct(mid, 0)}, bull ${fmtSignedPct(sc.bull, 0)}">${((x) => `<i class="seg" style="left:${x[0]}%;width:${x[2] - x[0]}%"></i><em class="ball bear" style="left:${x[0]}%">${fmtSignedPct(sc.bear, 0)}</em><em class="ball mid" style="left:${x[1]}%">${fmtSignedPct(mid, 0)}</em><em class="ball bull" style="left:${x[2]}%">${fmtSignedPct(sc.bull, 0)}</em>`)(balls(sc.bear, mid, sc.bull))}</span>` : '<small class="muted">no analyst coverage</small>'}</span>
         ${sc ? `<small class="rng-m">12-month range ${fmtSignedPct(sc.bear, 0)} · ${fmtSignedPct(mid, 0)} · ${fmtSignedPct(sc.bull, 0)}</small>` : ''}
       </div>`; }).join('')}
-    <div class="book-f"><span class="foot-n">Weight: share of the stock portfolio today. Unrealised: gain or loss on what I still hold, against what I paid. 12-month range, left to right: the bear case, the weighted outcome (25% bear, 50% average analyst target, 25% bull) and the bull case (the highest analyst target), rounded to a whole per cent. Region is broad on purpose.</span></div>
   </div>
-  <aside class="panel pub-unlock">
-    <p class="kicker">Subscription</p>
-    <h3 class="pub-t">The picks, by name</h3>
-    ${U.price ? `<p class="pub-price">${esc(U.price)}</p>` : ''}
-    <ul class="pub-l">
-      <li>Every position by name, with its weight and entry</li>
-      <li>Why I own it, and the kill-switch that would make me sell</li>
-      <li>Bull and bear case, analyst consensus and targets</li>
-      <li>Buys and sells as I make them</li>
-    </ul>
-    ${href ? `<a class="pub-cta" href="${esc(href)}"${/^https:/.test(href) ? ' target="_blank" rel="noopener"' : ''}>Subscribe</a>` : ''}
-    <p class="foot-n">My own portfolio, shown as it is. Not investment advice and not a recommendation to buy or sell anything.</p>
+  <aside class="panel pub-side">
     <h4 class="pub-s">By sector</h4>
     <div class="pub-sec">${Object.entries(sectors).sort((a, b) => b[1] - a[1]).map(([k, w]) => `<div><span>${esc(k)}</span><i style="width:${(w * 100).toFixed(1)}%"></i><b>${(w * 100).toFixed(0)}%</b></div>`).join('')}</div>
+    ${href ? `<a class="pub-cta" href="${esc(href)}" target="_blank" rel="noopener">Weekly updates</a>` : ''}
   </aside>
   </div>`;
 }
@@ -335,7 +324,7 @@ function renderRisk() {
       duoBars([[FUND, sigma, 'var(--fund)'], [bName, bVol, 'var(--spx)']], (x) => (x * 100).toFixed(0) + '%'), `annual volatility; beta ${fmtNum(beta, 2)}`)}
   </div>
   <div class="panel" style="margin-top:14px">
-    <h3>Range of outcomes, next ${hzL}</h3><p class="sub">${PUB ? 'The portfolio is 100 today.' : `The fund is worth ${fmtEUR0(V)} today.`} Shaded bands: ±1σ, ±2σ and ±3σ around the median, which hold about 68%, 95% and 99.7% of outcomes, given an expected return of ${fmtSignedPct(O.exp, 0)} a year and volatility (σ) of ${(sigma * 100).toFixed(0)}% a year. Dashed: ${esc(bName)} growing at ${bMuTxt}, with its own volatility. Odds ${pr.map((x) => Math.round(x * 100)).join('/')} (bull/base/bear)${n > 12 ? '; beyond 12 months the expected return is assumed to repeat' : ''}.</p>
+    <h3>Range of outcomes, next ${hzL}</h3>${PUB ? '' : `<p class="sub">The fund is worth ${fmtEUR0(V)} today. Shaded bands: ±1σ, ±2σ and ±3σ around the median, which hold about 68%, 95% and 99.7% of outcomes, given an expected return of ${fmtSignedPct(O.exp, 0)} a year and volatility (σ) of ${(sigma * 100).toFixed(0)}% a year. Dashed: ${esc(bName)} growing at ${bMuTxt}, with its own volatility. Odds ${pr.map((x) => Math.round(x * 100)).join('/')} (bull/base/bear)${n > 12 ? '; beyond 12 months the expected return is assumed to repeat' : ''}.</p>`}
     <div id="fan" class="chart"></div>
   </div>`;
   $$('#t-risk [data-pre]').forEach((b) => b.addEventListener('click', () => { state.preset = b.dataset.pre; renderRisk(); }));
@@ -347,6 +336,7 @@ function renderRisk() {
 /* ---------- notes ---------- */
 function renderNotes() {
   const D = M.D;
+  if (PUB) { $('#notes').innerHTML = '<div class="foot"><p>My own portfolio, shown as it is. Not investment advice.</p></div>'; return; }
   $('#notes').innerHTML = `<div class="foot">
     <p><b>How the numbers work.</b> Only stocks and ETFs (including ETCs) count. Crypto and leveraged products I traded are left out: money moving into or out of them is treated as if it left or joined the portfolio, so their gains and losses do not touch these figures. Dividends count as return; platform fees are left out. The daily value of the portfolio is rebuilt from every trade and daily closing prices in euro (Scalable Capital account, valued ${tfmt(D.meta.asOf)}). Time-weighted return measures the picks regardless of how much money was in; money-weighted return measures what the actual money earned. One speculative trade is also left out: it was a one-off, not a pick. The benchmark is the iShares Core S&P 500 ETF in euro. The outlook is a simple model built on analyst targets and past volatility, not a forecast. Not investment advice.</p>${PUB ? `<p><b>What this public version leaves out.</b> No euro amounts: money is rescaled so the stock portfolio is 100 today, which leaves every return, weight and scenario as it is. No names: picks are lettered by weight, regions are broad, and per-stock prices, trades and analyst targets are not in the page at all, so they cannot be read from its source either. Risk figures are computed from the full data and shown for the portfolio as a whole.</p>` : ''}
   </div>`;

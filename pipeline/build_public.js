@@ -1,24 +1,21 @@
-// Builds the public page: the real track record, with no euro amount and no name of a stock in it.
+// Builds the public page: the real track record and what I own, by name, with no euro amount in it.
 //
-// The page is meant to be published openly while the picks themselves are kept for subscribers. Hiding
-// them in the page is not enough: anything in the page's data can be read in its source. So the public
-// data is generated without them, and this script checks its own output before writing it.
+// Hiding something in the page is not enough: anything in the page's data can be read in its source.
+// So the public data is generated without it, and this script checks its own output before writing it.
 //
 //   - Money is rescaled so the stock book is worth 100 today. Every return, weight and scenario is
 //     unchanged by that (they are ratios); every euro amount disappears.
-//   - Holdings become "Pick A", "Pick B"... ordered by weight. What stays per pick: GICS sector, a broad
-//     region, weight, unrealised gain in per cent, and the 12-month bear / average-target / bull outcome,
-//     rounded to a whole per cent. What goes: name, ticker, ISIN, industry and theme, quantities, real
-//     prices and price history, lots and trades, dividends, analyst targets, thesis, kill-switch, news.
-//     The daily price history in particular would let anyone match a pick against the market.
+//   - Holdings keep their name and ticker, ordered by weight, with GICS sector, a broad region, weight,
+//     unrealised gain in per cent, and the 12-month bear / average-target / bull outcome, rounded to a
+//     whole per cent. What goes: ISIN, industry and theme, quantities, real prices and price history,
+//     lots and trades, dividends, analyst targets, thesis, kill-switch, news.
 //   - The risk figures that need per-stock prices (volatility, beta, correlation of the book) are
 //     computed here from the full data and shipped as totals for the whole book.
 //   - Closed positions keep only their category, dates and the sign and size of the result (rescaled).
 //
-// Usage: node pipeline/build_public.js <data.json> <out.html> [--unlock <url>] [--price <text>] [--summary <out.json>]
-//   data.json  the full data object built by build_data.js (data/private/data.json)
-//   --unlock   where "Subscribe" leads: a payment link, or a mailto: until there is one
-//   --price    the price as shown, e.g. "€999 a year"
+// Usage: node pipeline/build_public.js <data.json> <out.html> [--subscribe <url>] [--summary <out.json>]
+//   data.json    the full data object built by build_data.js (data/private/data.json)
+//   --subscribe  where "Weekly updates on my companies" leads (an https:// link, e.g. the newsletter)
 //   --summary  also write the headline figures as JSON (periods against the indices, sectors, risk),
 //              for a website to quote without loading the page; checked like the page
 const fs = require('fs');
@@ -30,9 +27,9 @@ const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
 const pos = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && args[i - 1].startsWith('--')));
 const [inFile, outFile] = pos;
-if (!inFile || !outFile) { console.error('usage: node pipeline/build_public.js <data.json> <out.html> [--unlock <url>] [--price <text>]'); process.exit(1); }
-const unlock = { href: opt('--unlock', ''), price: opt('--price', '') };
-if (unlock.href && !/^(https:\/\/|mailto:)[^\s"'<>]+$/.test(unlock.href)) { console.error('--unlock must be an https:// or mailto: link'); process.exit(1); }
+if (!inFile || !outFile) { console.error('usage: node pipeline/build_public.js <data.json> <out.html> [--subscribe <url>]'); process.exit(1); }
+const subscribe = { href: opt('--subscribe', '') };
+if (subscribe.href && !/^https:\/\/[^\s"'<>]+$/.test(subscribe.href)) { console.error('--subscribe must be an https:// link'); process.exit(1); }
 
 const D = JSON.parse(fs.readFileSync(inFile, 'utf8'));
 if (D.public) { console.error('input is already a public build'); process.exit(1); }
@@ -60,10 +57,8 @@ const r1 = (x) => (x == null ? null : Math.round(x * 100) / 100); // to a whole 
 const REGION = (r) => (/united states|canada|america/i.test(r || '') ? 'North America'
   : /taiwan|korea|japan|china|hong kong|india|singapore|asia/i.test(r || '') ? 'Asia'
   : /./.test(r || '') ? 'Europe' : 'Other');
-const LETTER = (i) => String.fromCharCode(65 + i);
-
 const holdings = M.H.map((h, i) => ({
-  isin: 'P' + (i + 1), name: 'Pick ' + LETTER(i), ticker: '', sector: h.sector || 'Other', industry: '', theme: '',
+  isin: 'P' + (i + 1), name: h.name, ticker: h.ticker || '', sector: h.sector || 'Other', industry: '', theme: '',
   region: REGION(h.region), ccy: '', note: '',
   // a notional unit price of 100, so value = qty * price is the rescaled weight and no real price survives
   qty: +(h.value * k / 100).toFixed(6), price: 100, cost: h.cost != null ? s(h.cost) : null,
@@ -96,20 +91,19 @@ const P = {
     day: day / (M.secValue - day),
     unreal: M.unreal != null ? M.unreal / (M.secValue - M.unreal) : null,
     risk: { vol: R.vol, pBeta: R.pBeta, pCorr: R.pCorr, bVol: R.bVol },
-    unlock,
+    subscribe,
   },
 };
 
-/* ---------- check before writing: nothing that names a stock, no euro ---------- */
+/* ---------- check before writing: no ISIN, no closed position by name, no euro ---------- */
 const json = JSON.stringify(P);
-// the subscription price is the one euro figure meant to be on the page; everything else is checked
-const checked = JSON.stringify({ ...P, public: { ...P.public, unlock: null } });
+const shown = new Set(holdings.flatMap((h) => [h.name, h.ticker]).filter(Boolean));
 const forbidden = new Set();
-D.holdings.forEach((h) => [h.name, h.long, h.ticker, h.isin].forEach((x) => x && forbidden.add(x)));
-D.ledger.realised.forEach((r) => [r.id, r.name].forEach((x) => x && forbidden.add(x)));
+D.holdings.forEach((h) => h.isin && forbidden.add(h.isin));
+D.ledger.realised.forEach((r) => [r.id, r.name].forEach((x) => x && !shown.has(x) && forbidden.add(x)));
 D.ledger.divAll.forEach(([, isin]) => isin && forbidden.add(isin));
 const leaks = [...forbidden].filter((x) => String(x).length >= 3 && json.includes(String(x)));
-if (/€|\bEUR\b/.test(checked)) leaks.push('a euro sign or EUR');
+if (/€|\bEUR\b/.test(json)) leaks.push('a euro sign or EUR');
 if (leaks.length) { console.error('ABORT: the public data still contains:', leaks.join(', ')); process.exit(1); }
 
 /* ---------- page: the same assembly as build_page.js, with the public data ---------- */
@@ -161,12 +155,12 @@ if (sumFile) {
     winningCalls: { won: closed.filter((x) => x.pl > 0).length, of: closed.length },
     sectors: Object.fromEntries(Object.entries(sectors).sort((a, b) => b[1] - a[1]).map(([k, w]) => [k, r4(w)])),
     risk: { vol: r4(R.vol), beta: Object.fromEntries(Object.entries(R.pBeta).map(([k, v]) => [k, r4(v)])) },
-    unlock,
+    subscribe,
   };
   const sj = JSON.stringify(summary, null, 1);
   const sLeaks = [...forbidden].filter((x) => String(x).length >= 3 && sj.includes(String(x)));
-  if (sLeaks.length || /€|\bEUR\b/.test(JSON.stringify({ ...summary, unlock: null }))) { console.error('ABORT: the summary would contain', sLeaks.join(', ') || 'a euro amount'); process.exit(1); }
+  if (sLeaks.length || /€|\bEUR\b/.test(sj)) { console.error('ABORT: the summary would contain', sLeaks.join(', ') || 'a euro amount'); process.exit(1); }
   fs.writeFileSync(sumFile, sj + '\n');
   console.log('wrote', sumFile);
 }
-console.log('wrote', path.relative(process.cwd(), path.resolve(outFile)), (html.length / 1024).toFixed(1) + ' KB,', holdings.length, 'picks,', P.ledger.realised.length, 'closed positions, checked for', forbidden.size, 'names and ids');
+console.log('wrote', path.relative(process.cwd(), path.resolve(outFile)), (html.length / 1024).toFixed(1) + ' KB,', holdings.length, 'positions,', P.ledger.realised.length, 'closed positions, checked for', forbidden.size, 'names and ids');
