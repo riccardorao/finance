@@ -78,8 +78,9 @@ function chart(isin) {
     throw { code: 'bad_request' };
   });
   await page.addInitScript((first) => {
+    const jdocs = [{ id: first, exists: true, data: () => ({ updatedAt: new Date().toISOString(), stance: 'strengthened', thesis: 'JUDGED THESIS', kill: 'JUDGED KILL', assessment: 'Assess <i>x</i>', signals: [{ text: 'Sig one', source: 'Co', url: 'javascript:1' }] }) }];
     const docs = [{ id: first, exists: true, data: () => ({ updatedAt: new Date().toISOString(), headline: 'Test headline <b>x</b>', items: [{ date: '2026-10-01', text: 'Item one <script>', source: 'Src', url: 'https://example.com/a' }, { date: '2026-09-30', text: 'Bad link', source: 'Evil', url: 'javascript:alert(1)' }] }) }];
-    window.claude = { use: async (n) => (n === 'mcp' ? { callTool: (s, t, i) => window.__call(s, t, i) } : n === 'db' ? { doc: () => ({ get: async () => { const d = await window.__dbget(); return { exists: !!d, data: () => d }; }, set: (d) => window.__dbset(d) }), collection: () => ({ onSnapshot: (next) => { setTimeout(() => next({ docs }), 50); return () => {}; } }) } : null) };
+    window.claude = { use: async (n) => (n === 'mcp' ? { callTool: (s, t, i) => window.__call(s, t, i) } : n === 'db' ? { doc: () => ({ get: async () => { const d = await window.__dbget(); return { exists: !!d, data: () => d }; }, set: (d) => window.__dbset(d) }), collection: (c) => ({ onSnapshot: (next) => { setTimeout(() => next({ docs: c === 'judgement' ? jdocs : docs }), 50); return () => {}; } }) } : null) };
   }, FIRST);
   await page.goto('file://' + path.resolve(process.argv[4] || path.join(root, 'test-output', '_wrapped.html')));
   await page.waitForTimeout(1500);
@@ -96,6 +97,8 @@ function chart(isin) {
   const out = await page.evaluate(() => ({
     latest: ((document.querySelector('#t-book .pd-side') || {}).innerText || '').split('\n').filter((l) => /Test headline|Item one|Bad link|LATEST/i.test(l)),
     links: [...document.querySelectorAll('#t-book .news a')].map((a) => a.href),
+    judged: (() => { const t = (document.querySelector('#t-book .pd') || {}).innerText || ''; return /JUDGED THESIS/.test(t) && /JUDGED KILL/.test(t) && /strengthened/i.test(t) && !/draft/i.test(t) && /Assess <i>x<\/i>/.test(t); })(),
+    cols: [...document.querySelectorAll('#t-book .book-h span')].map((e) => e.textContent).join('|'),
     injected: document.querySelectorAll('#t-book .news script, #t-book .pd-side b b').length,
     status: document.getElementById('status-text').textContent,
     // the performance history must run to the refresh date, not stop at the last build
@@ -105,7 +108,7 @@ function chart(isin) {
     rows: [...document.querySelectorAll('#t-book .pos-row')].map((r) => r.querySelector('.nm b').textContent + ' ' + r.querySelector('.n b').textContent + ' ' + r.querySelector('.cons').textContent.trim()),
   }));
   console.log(scenario, 'saved', firstSave, JSON.stringify(reload), JSON.stringify(out, null, 1), errs.length ? '\nERRORS ' + errs.join('\n') : '\nno errors');
-  const bad = errs.length || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && (out.historyTo !== '2026-10-02' || firstSave !== '2026-10-02' || reload.saves < 2 || reload.historyTo !== '2026-10-02')) || (scenario !== 'ok' && saves > 0 && scenario === 'denied');
+  const bad = errs.length || (scenario === 'ok' && (!out.judged || !/Bear\|Base\|Bull/.test(out.cols))) || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && (out.historyTo !== '2026-10-02' || firstSave !== '2026-10-02' || reload.saves < 2 || reload.historyTo !== '2026-10-02')) || (scenario !== 'ok' && saves > 0 && scenario === 'denied');
   await browser.close();
   process.exit(bad ? 1 : 0);
 })();

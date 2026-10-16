@@ -166,6 +166,10 @@ async function watchResearch() {
       const o = {}; snap.docs.forEach((d) => { if (d.exists) o[d.id] = d.data(); });
       state.commentary = o; if (M) renderBook();
     }, () => { state.dbReady = false; if (M) renderBook(); });
+    db.collection('judgement').onSnapshot((snap) => {
+      const o = {}; snap.docs.forEach((d) => { if (d.exists) o[d.id] = d.data(); });
+      state.judgement = o; if (M) renderBook();
+    }, () => { /* the stored thesis stays */ });
     if (M) renderBook();
   } catch (e) { /* research block stays hidden */ }
 }

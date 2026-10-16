@@ -443,9 +443,11 @@ ul.criteria li span, ul.rejected li span { color: var(--ink2); }
 .lesson .k, .kill .k { display: block; font: 500 11px var(--mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--accent); margin-bottom: 2px; }
 
 /* book */
-.book-h, .pos-row { display: grid; grid-template-columns: minmax(130px, 1.2fr) 66px 58px 74px 84px 92px minmax(220px, 1.9fr) 152px 14px; gap: 12px; align-items: center; }
+.book-h, .pos-row { display: grid; grid-template-columns: minmax(130px, 1.2fr) 66px 58px 74px 84px 92px 54px 54px 54px 152px 14px; gap: 12px; align-items: center; }
 .book-h { padding: 12px 18px; border-bottom: 1px solid var(--line2); font: 500 10.5px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink3); align-items: end; }
-.book-h span:nth-child(n+2) { text-align: right; } .book-h span.c-rng { text-align: center; } .book-h span:nth-child(8) { text-align: left; }
+.book-h span:nth-child(n+2) { text-align: right; } .book-h span:nth-child(10) { text-align: left; }
+.pos-row .c-na { grid-column: span 3; text-align: center; }
+.pos-row .n.pos { color: var(--pos); } .pos-row .n.neg { color: var(--neg); }
 .posn { border-bottom: 1px solid var(--line); }
 .pos-row { width: 100%; border: 0; background: none; text-align: left; padding: 12px 18px; }
 .pos-row:hover { background: var(--inset); }
@@ -462,13 +464,9 @@ ul.criteria li span, ul.rejected li span { color: var(--ink2); }
 .cons .rt.neg { color: var(--neg); border-color: color-mix(in srgb, var(--neg-fill) 60%, transparent); }
 .cons small { margin-top: 3px; font-variant-numeric: tabular-nums; }
 .cons small b { font-weight: 600; }
-.rng { position: relative; display: block; height: 22px; }
-.rng .seg { position: absolute; top: 10px; height: 2px; background: var(--line2); border: 0; border-radius: 0; }
-.rng .ball { position: absolute; top: 0; transform: translateX(-50%); min-width: 40px; height: 22px; padding: 0 6px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; font: 600 11px var(--mono); font-style: normal; font-variant-numeric: tabular-nums; white-space: nowrap; background: var(--panel); border: 1.5px solid currentColor; }
-.rng .ball.bear { color: var(--neg); } .rng .ball.bull { color: var(--pos); } .rng .ball.mid { color: var(--ink); }
 .chev { width: 9px; height: 9px; border-right: 1.5px solid var(--ink3); border-bottom: 1.5px solid var(--ink3); transform: rotate(45deg); justify-self: end; margin-top: -4px; transition: transform 0.15s; }
 .posn.open .chev { transform: rotate(-135deg); margin-top: 4px; }
-@media (max-width: 1120px) { .book-h, .pos-row { grid-template-columns: minmax(120px, 1.2fr) 66px 74px 84px 92px minmax(210px, 1.9fr) 150px 14px; } .c-d { display: none; } }
+@media (max-width: 1120px) { .book-h, .pos-row { grid-template-columns: minmax(120px, 1.2fr) 66px 74px 84px 92px 54px 54px 54px 150px 14px; } .c-d { display: none; } }
 @media (max-width: 860px) { .book-h, .pos-row { grid-template-columns: minmax(0, 1.4fr) 62px 68px 68px 14px; gap: 8px; } .c-d, .c-m, .pos-row .nm small { display: none; } .pos-row, .book-h { padding-inline: 14px; } }
 .book-f { padding: 10px 18px 12px; } .book-f .foot-n { margin: 0; }
 .pos-d { padding: 4px 18px 20px; background: var(--accent-soft); }
@@ -479,6 +477,12 @@ ul.criteria li span, ul.rejected li span { color: var(--ink2); }
 .pd-thesis { font-size: 16px; font-weight: 500; line-height: 1.45; margin-top: 8px !important; }
 .kill { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 4px; padding: 9px 12px; margin: 10px 0; }
 .kill p { margin: 0; }
+.judge { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; }
+.judge .jh { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+.judge .k { font: 500 11px var(--mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--accent); }
+.judge .rt { font: 500 10.5px var(--mono); text-transform: uppercase; border: 1px solid var(--line2); border-radius: 3px; padding: 1px 6px; color: var(--ink2); }
+.judge .rt.pos { color: var(--pos); } .judge .rt.neg { color: var(--neg); }
+.judge p { margin: 4px 0; }
 .kill em { font-style: normal; color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 50%, transparent); border-radius: 3px; padding: 0 5px; margin-left: 6px; }
 .flag { color: var(--warn); font-size: 13px; }
 .cases { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); margin: 12px 0 8px; }

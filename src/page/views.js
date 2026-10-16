@@ -163,11 +163,6 @@ const ratingCls = (r) => (/sell|under/i.test(r) ? 'neg' : /buy|outperform|overwe
 function renderBook() {
   const root = $('#t-book'); unmountWithin(root);
   const V = M.secValue;
-  const cov = M.H.filter((h) => h.sc);
-  const dLo = Math.min(-0.2, ...cov.map((h) => h.sc.bear)), dHi = Math.max(0.2, ...cov.map((h) => h.sc.bull));
-  const PX = (v) => 9 + ((v - dLo) / (dHi - dLo)) * 82; // inset so the end balls stay inside the column
-  // bear, weighted and bull positions, pushed apart just enough that the three balls never overlap
-  const balls = (a, b, c) => { const G = 19, x = [PX(a), PX(b), PX(c)]; x[1] = Math.max(x[1], x[0] + G); x[2] = Math.max(x[2], x[1] + G); const over = x[2] - 91; if (over > 0) { x[2] -= over; x[1] = Math.min(x[1], x[2] - G); x[0] = Math.min(x[0], x[1] - G); } return x; };
   const pc = (h, k) => { const r = perfOf(h, k); return r == null ? '<span class="muted">–</span>' : pctSpan(r, 1); };
   const bp = BOOK_PERIODS.some((p) => p[0] === state.bp) ? state.bp : '1D';
   const ytd = C_sum(M.H.map((h) => { const r = perfOf(h, 'YTD'); return r == null ? 0 : h.value - h.value / (1 + r); }));
@@ -177,7 +172,7 @@ function renderBook() {
   <div class="lede"><div><p class="kicker">Portfolio</p><h2>What I own: ${M.H.length} positions worth ${fmtEUR0(V)}, ${ytd >= 0 ? 'up' : 'down'} ${fmtEUR0(Math.abs(ytd))} this year</h2><p>Tap a stock to see why I own it, what would make me sell, and the bull and bear case.</p></div>
     <div class="seg" role="group" aria-label="Share-price period">${BOOK_PERIODS.map(([k, l]) => `<button data-bp="${k}" aria-pressed="${k === bp}">${k}</button>`).join('')}</div></div>
   <div class="panel flat">
-    <div class="book-h"><span>Position</span><span>${bp}</span><span class="c-d">Weight</span><span>Value</span><span class="c-m">Return €</span><span>Return %</span><span class="c-m c-rng">12-month target range</span><span class="c-m">Analysts</span><span></span></div>
+    <div class="book-h"><span>Position</span><span>${bp}</span><span class="c-d">Weight</span><span>Value</span><span class="c-m">Return €</span><span>Return %</span><span class="c-m">Bear</span><span class="c-m">Base</span><span class="c-m">Bull</span><span class="c-m">Analysts</span><span></span></div>
     ${M.H.map((h) => {
       const sc = h.sc, cons = h.research && h.research.cons, open = state.open === h.isin;
       const mid = sc ? expOf(sc, PRESETS.analyst.p) : null; // 25% bear, 50% average target, 25% bull
@@ -189,14 +184,14 @@ function renderBook() {
           <span class="n"><b>${fmtEUR0(h.value)}</b></span>
           <span class="n c-m"><b>${h.pnl != null ? eur0Span(h.pnl) : '–'}</b></span>
           <span class="n"><b>${h.pnl != null ? pctSpan(h.pnlPct, 1) : '–'}</b></span>
-          <span class="c-m c-rng">${sc ? `<span class="rng" role="img" aria-label="Bear ${fmtSignedPct(sc.bear, 0)}, weighted ${fmtSignedPct(mid, 0)}, bull ${fmtSignedPct(sc.bull, 0)}">${((x) => `<i class="seg" style="left:${x[0]}%;width:${x[2] - x[0]}%"></i><em class="ball bear" style="left:${x[0]}%">${fmtSignedPct(sc.bear, 0)}</em><em class="ball mid" style="left:${x[1]}%">${fmtSignedPct(mid, 0)}</em><em class="ball bull" style="left:${x[2]}%">${fmtSignedPct(sc.bull, 0)}</em>`)(balls(sc.bear, mid, sc.bull))}</span>` : '<small class="muted">no analyst coverage</small>'}</span>
+          ${sc ? `<span class="n c-m neg">${fmtSignedPct(sc.bear, 0)}</span><span class="n c-m ${mid >= 0 ? 'pos' : 'neg'}">${fmtSignedPct(mid, 0)}</span><span class="n c-m pos">${fmtSignedPct(sc.bull, 0)}</span>` : '<span class="c-m c-na"><small class="muted">no analyst coverage</small></span>'}
           <span class="c-m cons">${cons && sc ? `<span class="rt ${ratingCls(cons.rating)}">${esc(cons.rating)}</span><small>target <b class="${cls(sc.base)}">${fmtSignedPct(sc.base, 0)}</b></small>` : '<small class="muted">–</small>'}</span>
           <span class="chev" aria-hidden="true"></span>
         </button>
         <div class="pos-d" id="pd-${h.isin}" ${open ? '' : 'hidden'}>${open ? positionDetail(h) : ''}</div>
       </div>`;
     }).join('')}
-    <div class="book-f"><span class="foot-n">Value: what the position is worth today. Weight: its share of the portfolio. The first number column shows the change in the share price in euro over the period picked above. Return € and %: gain or loss on what I still hold, against what I paid. 12-month target range: red ball the bear case, green ball the bull case (the highest analyst target), black ball the weighted outcome (25% bear, 50% average analyst target, 25% bull), all against today's price. Analysts: consensus rating, then the upside to the average 12-month target.${M.D.excluded && M.D.excluded.n ? ` ${M.D.excluded.n} leveraged or crypto position${M.D.excluded.n > 1 ? 's' : ''} (${fmtEUR0(M.D.excluded.value)}) ${M.D.excluded.n > 1 ? 'are' : 'is'} not shown.` : ''}</span></div>
+    <div class="book-f"><span class="foot-n">Value: what the position is worth today. Weight: its share of the portfolio. The first number column shows the change in the share price in euro over the period picked above. Return € and %: gain or loss on what I still hold, against what I paid. Bear, Base and Bull: the 12-month outcome against today's price. Bear is the downside case, Bull the highest analyst target, and Base the weighted outcome (25% bear, 50% average analyst target, 25% bull). Analysts: consensus rating, then the upside to the average 12-month target.${M.D.excluded && M.D.excluded.n ? ` ${M.D.excluded.n} leveraged or crypto position${M.D.excluded.n > 1 ? 's' : ''} (${fmtEUR0(M.D.excluded.value)}) ${M.D.excluded.n > 1 ? 'are' : 'is'} not shown.` : ''}</span></div>
   </div>`;
 
   $$('#t-book [data-bp]').forEach((b) => b.addEventListener('click', () => { state.bp = b.dataset.bp; renderBook(); }));
@@ -206,15 +201,33 @@ function renderBook() {
     if (state.open) { const el = $(`#t-book .posn[data-i="${id}"]`); if (el && el.getBoundingClientRect().top < 80) el.scrollIntoView({ block: 'start' }); }
   }));
 }
+// the judgement the research routine rewrites from news, releases, filings and statements; it overrides the stored thesis
+function judgementOf(h) {
+  const j = state.dbReady ? state.judgement[h.isin] : null;
+  if (!j || (!j.thesis && !j.kill && !j.assessment)) return null;
+  return j;
+}
+const STANCE = { intact: ['Intact', 'hold'], strengthened: ['Strengthened', 'pos'], weakened: ['Weakened', 'neg'], review: ['Under review', 'neg'] };
+function judgementBlock(j) {
+  if (!j) return '';
+  const st = STANCE[String(j.stance || '').toLowerCase()], age = (Date.now() - Date.parse(j.updatedAt)) / 864e5;
+  const sig = (Array.isArray(j.signals) ? j.signals : []).slice(0, 5).map((x) => { const u = safeUrl(x.url); return `<li>${esc(x.text)}${x.source ? ` <span class="muted">(${u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(x.source)}</a>` : esc(x.source)})</span>` : ''}</li>`; }).join('');
+  return `<div class="judge"><div class="jh"><span class="k">Current judgement</span>${st ? `<span class="rt ${st[1]}">${st[0]}</span>` : ''}</div>
+    ${j.assessment ? `<p>${esc(j.assessment)}</p>` : ''}${sig ? `<ul class="watch">${sig}</ul>` : ''}
+    <p class="foot-n">Reassessed ${esc(tfmt(j.updatedAt))} from news, company releases, filings and financial statements${age > 2 ? `, ${Math.floor(age)} days old` : ''}.</p></div>`;
+}
 function positionDetail(h) {
-  const cv = h.conviction || {}, rs = h.research, sc = h.sc, c = h.comment, cons = rs && rs.cons;
+  const cv = { ...(h.conviction || {}) }, jd = judgementOf(h);
+  if (jd) { if (jd.thesis) cv.thesis = jd.thesis; if (jd.kill) cv.kill = jd.kill; }
+  const rs = h.research, sc = h.sc, c = h.comment, cons = rs && rs.cons;
   const web = liveResearch(h);
   const news = web != null ? web : c ? `<ul class="news">${c.news.slice(0, 3).map((n) => `<li><time>${esc(newsDate(n[0]))}</time><span>${esc(n[1])}</span></li>`).join('')}</ul>` : '';
   const srcs = (c ? c.sources : []).concat(cons ? [cons.src] : []).map((x) => { const u = safeUrl(x.u); return u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>` : ''; }).join('');
   return `<div class="pd">
     <div class="pd-main">
       ${cv.thesis ? `<p class="pd-thesis">${esc(cv.thesis)}</p>` : c ? `<p class="pd-thesis">${esc(c.tagline)}</p>` : ''}
-      ${cv.kill ? `<div class="kill"><span class="k">Kill-switch${cv.killDraft ? ' <em>draft</em>' : ''}</span><p>${esc(cv.kill)}</p></div>` : ''}
+      ${cv.kill ? `<div class="kill"><span class="k">Kill-switch</span><p>${esc(cv.kill)}</p></div>` : ''}
+      ${judgementBlock(jd)}
       ${sc ? `<div class="cases">
         <div class="case bull"><div class="ch"><span>Bull</span><b class="pos">${fmtSignedPct(sc.bull, 0)} · €${px(sc.tBull)}</b></div><p>${rs ? esc(rs.bull) : ''}</p></div>
         <div class="case bear"><div class="ch"><span>Bear</span><b class="neg">${fmtSignedPct(sc.bear, 0)} · €${px(sc.tBear)}</b></div><p>${rs ? esc(rs.bear) : ''}${sc.bearFromDD ? ' <span class="muted">(Bear price is a repeat of the worst fall of the past year, which is lower than any analyst target.)</span>' : ''}</p></div>

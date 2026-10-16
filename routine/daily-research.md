@@ -7,7 +7,7 @@ The page subscribes to that collection and re-renders when a document changes.
 - **Schedule:** every morning before the European open.
 - **Runs as:** a fresh Claude Code session with web search, the `ArtifactData` tool and, optionally, the
   Scalable Capital connector (used only to discover positions added since the list below was written).
-- **Writes:** collection `commentary`, one document per holding (document id = ISIN), plus `meta/refresh`.
+- **Writes:** collection `commentary` and collection `judgement`, one document per holding each (document id = ISIN), plus `meta/refresh`.
 
 ## Document schema
 
@@ -23,6 +23,27 @@ The page subscribes to that collection and re-renders when a document changes.
   "watch": ["Upcoming catalyst or risk, at most 100 characters"]
 }
 ```
+
+### `judgement/<ISIN>`
+
+The internal judgement on each stock, rewritten from news, company releases, filings and financial statements.
+Where a document exists the page shows its `thesis` and `kill` in place of the ones stored in the profile, and
+the rest as a "Current judgement" block. There is no draft flag: each kill-switch is a measurable condition,
+checked against the latest reported figures.
+
+```json
+{
+  "isin": "US67066G1040",
+  "updatedAt": "2026-10-16T05:49:12Z",
+  "stance": "intact",
+  "thesis": "One or two sentences, at most 220 characters: why the position is owned, updated for what has changed",
+  "kill": "At most 200 characters: the measurable conditions that would end the thesis, with the latest reading",
+  "assessment": "At most 450 characters: what changed since the last read, what the latest results and filings say, how close the kill-switch is",
+  "signals": [ { "text": "At most 200 characters, a dated fact with its figure", "source": "Company 10-Q", "url": "https://…" } ]
+}
+```
+
+`stance` is one of `strengthened`, `intact`, `weakened`, `review`.
 
 The page treats every field as untrusted text: it escapes all of it and renders a link only when the URL
 starts with `https://`. `tests/live.js` checks this with hostile input.
@@ -59,7 +80,11 @@ Steps:
    CNBC, Financial Times, WSJ and similar. Aim for 3 to 6 genuinely informative items per holding.
 3. Write `commentary/<ISIN>` with ArtifactData action "set" (pass if_version for existing documents), using
    exactly the schema above. Items newest first, at most 8. Carry over earlier items only if still material.
-4. Finally set `meta/refresh` to {"updatedAt": "<time from step 0>", "by": "daily routine", "note": "<which holdings>"}.
+4. Reassess every holding and write `judgement/<ISIN>` (schema above) with ArtifactData action "set". Read the
+   latest quarterly or annual results, the filing (10-Q, 10-K, 8-K, 6-K or the company's release) and the
+   financial statements, then test the existing kill-switch against the latest reported figures. Rewrite `thesis`
+   and `kill` only when the evidence calls for it; keep each kill-switch measurable. Set `stance` honestly.
+5. Finally set `meta/refresh` to {"updatedAt": "<time from step 0>", "by": "daily routine", "note": "<which holdings>"}.
 
 Rules:
 - Only state facts that appear in sources retrieved in this run. Never invent a URL or a figure.
