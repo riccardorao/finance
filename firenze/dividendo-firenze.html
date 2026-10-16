@@ -1,0 +1,844 @@
+<title>Il Dividendo di Firenze</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: a policy console. Levers in a sticky left rail, results read top to bottom from headline to sources. */
+:root{
+  --bg:#eef0ec;          /* pietra serena, washed */
+  --surface:#fafbf8;
+  --sunk:#e4e8e3;
+  --ink:#172024;
+  --ink2:#4c5856;
+  --ink3:#76817e;
+  --line:#cfd5cf;
+  --accent:#9e1f2a;      /* giglio red */
+  --accent-soft:#f3dfe0;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+  --gain:#2a78d6; --loss:#eb6834; --total:#33433f;
+  --good:#1d7a45; --warn:#a86a00; --bad:#b3261e;
+  --f-display:"Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#121718; --surface:#1a2022; --sunk:#232b2d; --ink:#e8ece8; --ink2:#b3bdb9; --ink3:#86918d; --line:#323c3d;
+  --accent:#e1666f; --accent-soft:#3a2326;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+  --gain:#3987e5; --loss:#d95926; --total:#a8b8b2;
+  --good:#5cc489; --warn:#e0a63a; --bad:#f07a70; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#121718; --surface:#1a2022; --sunk:#232b2d; --ink:#e8ece8; --ink2:#b3bdb9; --ink3:#86918d; --line:#323c3d;
+  --accent:#e1666f; --accent-soft:#3a2326;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+  --gain:#3987e5; --loss:#d95926; --total:#a8b8b2;
+  --good:#5cc489; --warn:#e0a63a; --bad:#f07a70; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:20px 48px}
+.wrap{max-width:1320px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);font-weight:500;text-wrap:balance;margin:0;letter-spacing:.005em}
+h1{font-size:clamp(2rem,4.2vw,3.1rem);line-height:1.05}
+h2{font-size:1.5rem;line-height:1.15}
+h3{font-family:var(--f-body);font-weight:700;font-size:.95rem}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink3);font-weight:600}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+header.top{display:grid;gap:14px;padding-block:8px 22px;border-bottom:1px solid var(--line);margin-bottom:22px}
+header.top .lede{max-width:72ch;color:var(--ink2);font-size:1.02rem}
+.formula{font-family:var(--f-mono);font-size:.95rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px 12px;display:inline-block;color:var(--ink)}
+.formula b{color:var(--accent);font-weight:500}
+.scen{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,.btn{font:inherit;font-size:.88rem;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer}
+button:hover{border-color:var(--ink3)}
+button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.layout{display:grid;gap:24px;grid-template-columns:1fr}
+@media (min-width:1040px){.layout{grid-template-columns:330px minmax(0,1fr)}}
+aside.rail{align-self:start;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+@media (min-width:1040px){aside.rail{position:sticky;top:max(12px, env(safe-area-inset-top, 0px));max-height:calc(100vh - 24px);overflow:auto}}
+.rail h2{font-size:1.2rem;margin-bottom:4px}
+.rail .grp{border-top:1px solid var(--line);padding-top:12px;margin-top:12px;display:grid;gap:12px}
+.rail .grp>.eyebrow{margin-bottom:-4px}
+.ctl{display:grid;gap:4px}
+.ctl .row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.ctl label{font-weight:600;font-size:.9rem}
+.ctl .val{font-family:var(--f-mono);font-size:.88rem;color:var(--accent);white-space:nowrap}
+.ctl .hint{font-size:.78rem;color:var(--ink3);line-height:1.35}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.sw{display:flex;gap:10px;align-items:flex-start}
+.sw input{margin-top:4px;accent-color:var(--accent);width:16px;height:16px}
+select{font:inherit;font-size:.88rem;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);padding:5px 8px;width:100%}
+main{display:grid;gap:26px;min-width:0}
+section.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:14px;min-width:0}
+section.card>*,details,#assump-groups{min-width:0}
+section.card>header{display:grid;gap:6px}
+section.card>header p{color:var(--ink2);max-width:80ch}
+.kpis{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:700px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.kpi{background:var(--surface);padding:14px 16px;display:grid;gap:4px;align-content:start}
+.kpi .lab{font-size:.8rem;color:var(--ink2);font-weight:600}
+.kpi .big{font-family:var(--f-display);font-size:2rem;line-height:1.05;font-variant-numeric:lining-nums tabular-nums}
+.kpi .sub{font-size:.8rem;color:var(--ink3);font-family:var(--f-mono)}
+.kpi.lead .big{color:var(--accent)}
+.chart{width:100%;min-width:0}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--f-body);fill:var(--ink2);font-size:12px}
+.chart .axis{stroke:var(--line);stroke-width:1}
+.chart .grid{stroke:var(--line);stroke-width:1;stroke-dasharray:2 3;opacity:.8}
+.chart .lbl{fill:var(--ink);font-weight:600}
+.chart .val{font-family:var(--f-mono);fill:var(--ink2);font-size:11.5px}
+.two{display:grid;gap:18px;grid-template-columns:1fr}
+@media (min-width:860px){.two{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);font-weight:600;background:var(--sunk)}
+td.num,td .num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:0}
+tfoot td{font-weight:700;border-top:1px solid var(--ink3);border-bottom:0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:-1px}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.notes{font-size:.84rem;color:var(--ink2);display:grid;gap:6px;max-width:85ch}
+.cascade{display:grid;gap:14px;grid-template-columns:1fr}
+@media (min-width:860px){.cascade{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.order{border-top:3px solid var(--ink);padding-top:10px;display:grid;gap:10px;align-content:start}
+.order:nth-child(2){border-top-color:var(--ink2)} .order:nth-child(3){border-top-color:var(--ink3)}
+.order h3 small{display:block;font-weight:400;color:var(--ink3);font-size:.8rem}
+.order ul{margin:0;padding-left:18px;display:grid;gap:8px;font-size:.9rem}
+.order li b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+.checks{display:grid;gap:8px}
+.check{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;font-size:.9rem}
+.chip{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.chip.ok{color:var(--good)} .chip.warn{color:var(--warn)} .chip.bad{color:var(--bad)}
+.alloc{display:grid;gap:12px}
+.alloc .item{display:grid;gap:4px}
+.alloc .row{display:flex;justify-content:space-between;gap:10px;font-size:.9rem;flex-wrap:wrap}
+.bar{height:12px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.hh{background:var(--sunk);border-radius:var(--r);padding:14px;display:grid;gap:8px;font-size:.9rem}
+.hh dl{display:grid;grid-template-columns:1fr auto;gap:4px 12px;margin:0}
+.hh dt{color:var(--ink2)} .hh dd{margin:0;font-family:var(--f-mono);text-align:right}
+.hh dd.t{font-weight:700;color:var(--accent);border-top:1px solid var(--line);padding-top:4px}
+.hh dt.t{font-weight:700;color:var(--ink);border-top:1px solid var(--line);padding-top:4px}
+.tag{font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:3px;white-space:nowrap}
+.tag.data{background:var(--s1);color:#fff}
+.tag.estimate{background:var(--ink2);color:var(--surface)}
+.tag.assumption{background:var(--sunk);color:var(--ink2);border:1px solid var(--line)}
+.assump input[type=number]{font-family:var(--f-mono);font-size:.85rem;width:96px;text-align:right;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:3px 6px}
+.assump td{vertical-align:top}
+.assump td.desc{white-space:normal;min-width:220px;max-width:380px}
+.assump td.desc small{display:block;color:var(--ink3);font-size:.78rem;line-height:1.35}
+.assump td.src{white-space:normal;min-width:140px;font-size:.8rem;text-align:left}
+details>summary{cursor:pointer;font-weight:700;font-size:.95rem;padding:6px 0}
+details[open]>summary{margin-bottom:8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.82rem;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px}
+#tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--bg);font-size:.8rem;line-height:1.35;padding:6px 9px;border-radius:5px;max-width:280px;opacity:0;transition:opacity .08s}
+#tip.on{opacity:1}
+[data-tip]{cursor:default}
+.srcs{display:grid;gap:4px;font-size:.84rem;padding-left:18px;margin:0}
+.callout{border-left:3px solid var(--accent);padding:4px 0 4px 12px;color:var(--ink2);font-size:.92rem;max-width:85ch}
+.callout b{color:var(--ink)}
+footer{color:var(--ink3);font-size:.8rem;margin-top:28px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Comune di Firenze · policy simulator · steady-state, € per year</span>
+    <h1>Il Dividendo di Firenze</h1>
+    <p class="lede">A working model of the proposal: a progressive tourist tax that falls hardest on mass-market and luxury stays, frees under-30 EU visitors, nudges short lets back to residents, and returns the surplus to the people who live here. Move the levers on the left; every figure on the page recalculates.</p>
+    <div class="formula" aria-label="Tax function">t(p) = max( <b>T<sub>min</sub></b>, <b>α</b> · p<sub>night</sub> )&nbsp;&nbsp;·&nbsp;&nbsp;t = 0 for EU citizens under 30</div>
+    <div class="scen" role="group" aria-label="Scenarios">
+      <span class="eyebrow">Scenario</span>
+      <button type="button" id="sc-cautious" data-scen="cautious">Cautious</button>
+      <button type="button" id="sc-central" data-scen="central">Central</button>
+      <button type="button" id="sc-bold" data-scen="bold">Bold</button>
+      <button type="button" id="sc-reset">Reset all assumptions</button>
+      <button type="button" id="sc-copy">Copy scenario as JSON</button>
+      <span id="copymsg" class="eyebrow" aria-live="polite"></span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="rail" aria-label="Policy levers">
+      <h2>Policy levers</h2>
+      <p class="ctl hint">The tax design, how the market reacts, and how the surplus is spent. Detailed assumptions sit at the bottom of the page.</p>
+      <div id="rail"></div>
+    </aside>
+
+    <main>
+      <div class="kpis" id="kpis"></div>
+
+      <section class="card" id="sec-tax">
+        <header>
+          <span class="eyebrow">1 · The tax function</span>
+          <h2>Who pays what per night</h2>
+          <p id="tax-intro"></p>
+        </header>
+        <div>
+          <div class="chart" id="ch-tax"></div>
+          <div class="legend" id="lg-tax"></div>
+        </div>
+        <div class="tablewrap"><table id="tb-tax"></table></div>
+      </section>
+
+      <section class="card" id="sec-demand">
+        <header>
+          <span class="eyebrow">2 · Behavioural response</span>
+          <h2>Overnight stays by visitor type</h2>
+          <p>Each persona's nightly price follows a log-normal spread around its median. Demand reacts to the all-in nightly cost with a constant elasticity; hosts absorb part of any increase. Part of the lost stays moves to the rail- and tram-linked metropolitan belt and comes back by day.</p>
+        </header>
+        <div class="chart" id="ch-demand"></div>
+        <div class="tablewrap"><table id="tb-demand"></table></div>
+        <p class="callout" id="crowd-note"></p>
+      </section>
+
+      <section class="card" id="sec-budget">
+        <header>
+          <span class="eyebrow">3 · Integrated municipal account</span>
+          <h2>From tax take to structural balance</h2>
+          <p>Today's €82m already pays for existing services, so the dividend can only come from the increase. Balance = (net extra tourist tax − collateral losses + operating savings) − Fondo Armonizzatore.</p>
+        </header>
+        <div class="chart" id="ch-wf"></div>
+        <div class="legend"><span><i style="background:var(--gain)"></i>Adds to the balance</span><span><i style="background:var(--loss)"></i>Reduces it</span><span><i style="background:var(--total)"></i>Subtotal</span></div>
+      </section>
+
+      <section class="card" id="sec-housing">
+        <header>
+          <span class="eyebrow">4 · Housing market</span>
+          <h2>Short lets back to residents</h2>
+          <p>Each short-let flat earns some multiple <i>R</i> of what it would earn on a long let. Owners switch when the reform cuts their short-let income below what a long let pays after a risk discount. The rent guarantee fund shrinks that discount and so moves the switch point.</p>
+        </header>
+        <div class="two">
+          <div>
+            <div class="chart" id="ch-prem"></div>
+            <div class="legend"><span><i style="background:var(--accent)"></i>Flats that switch to long lets</span><span><i style="background:var(--ink3)"></i>Short-let stock today</span></div>
+          </div>
+          <div class="tablewrap"><table id="tb-house"></table></div>
+        </div>
+      </section>
+
+      <section class="card" id="sec-fund">
+        <header>
+          <span class="eyebrow">5 · Fondo Armonizzatore and civic dividend</span>
+          <h2>Where the surplus goes</h2>
+          <p id="div-intro"></p>
+        </header>
+        <div class="two">
+          <div class="tablewrap"><table id="tb-fund"></table></div>
+          <div class="alloc" id="alloc"></div>
+        </div>
+        <div class="hh" id="hh"></div>
+      </section>
+
+      <section class="card" id="sec-path">
+        <header>
+          <span class="eyebrow">6 · Transition</span>
+          <h2>Five-year path of the structural balance</h2>
+          <p>Demand adjusts within about a year; short-let conversions take three to four years; worker-transition spending tapers as people are re-employed.</p>
+        </header>
+        <div class="chart" id="ch-path"></div>
+      </section>
+
+      <section class="card" id="sec-cascade">
+        <header>
+          <span class="eyebrow">7 · Chain of effects</span>
+          <h2>First, second and third-order effects</h2>
+        </header>
+        <div class="cascade" id="cascade"></div>
+      </section>
+
+      <section class="card" id="sec-sens">
+        <header>
+          <span class="eyebrow">8 · Sensitivity</span>
+          <h2>What moves the balance most</h2>
+          <p>Each bar re-runs the model with one assumption at a low and a high value, all else as set. Longer bars are the numbers worth researching first.</p>
+        </header>
+        <div class="chart" id="ch-tornado"></div>
+      </section>
+
+      <section class="card" id="sec-checks">
+        <header>
+          <span class="eyebrow">9 · Feasibility</span>
+          <h2>Legal and model checks</h2>
+        </header>
+        <div class="checks" id="checks"></div>
+      </section>
+
+      <section class="card assump" id="sec-assump">
+        <header>
+          <span class="eyebrow">10 · Assumptions</span>
+          <h2>Every input, with its source</h2>
+          <p><span class="tag data">Data</span> published figure · <span class="tag estimate">Estimate</span> third-party or derived estimate · <span class="tag assumption">Assumption</span> model choice, change freely. Edits are kept in this browser.</p>
+        </header>
+        <details open><summary>Visitor personas</summary>
+          <div class="tablewrap"><table id="tb-seg"></table></div>
+          <p class="notes" style="margin-top:8px">Shares are of all overnight stays and are rescaled to 100%. Prices are per person per night, before tax. Elasticity applies to the all-in nightly cost. Belt shift is the share of lost stays that relocate to the metropolitan belt.</p>
+        </details>
+        <div id="assump-groups"></div>
+      </section>
+
+      <section class="card" id="sec-sources">
+        <header>
+          <span class="eyebrow">Sources and method</span>
+          <h2>Where the numbers come from</h2>
+        </header>
+        <ol class="srcs" id="srcs"></ol>
+        <div class="notes">
+          <p><b>Calibration.</b> The model rescales current tariffs × stays × taxable share so that the baseline reproduces the 2025 revenue estimate. The same coefficient (it absorbs the 7-night cap, other exemptions and compliance) is applied to the new tariffs.</p>
+          <p><b>Recorded vs actual stays.</b> Official statistics count about 9.2m nights but undercount short lets; revenue of €77–82m at €3.50–8 a night implies roughly 13–14m taxed nights. The default of 14m includes unrecorded short lets.</p>
+          <p><b>Limits.</b> Partial-equilibrium, one city, annual steady state. It does not model hotel supply responses, competition with other Italian art cities, exchange rates, or the general-equilibrium effect of the dividend on local spending.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+  <footer>Model built for discussion. Figures are estimates under the stated assumptions, not forecasts by the Comune di Firenze.</footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- sources ---------- */
+const SRC = {
+  irpet:{t:"IRPET, Federalismo in Toscana 4/2025: tourist-tax revenue by city (Florence 2024 €76.9m; 2023 ≈ €72m on 9.2m presences)",u:"https://www.irpet.it/wp-content/uploads/2025/12/Art.-1-Federalismo-in-Toscana-4_2025.pdf"},
+  jfc:{t:"JFC observatory via Chekin: Florence 2025 revenue ≈ €82m; tariffs under Delibera DG/2024/00535 (from 1 Feb 2025)",u:"https://chekin.com/it/blog/tassa-di-soggiorno-a-firenze/"},
+  iommi:{t:"IRPET (S. Iommi), Città e turismo, May 2025: Florence presences underestimated for lack of Airbnb data",u:"https://www.irpet.it/wp-content/uploads/2025/05/Iommi_Evento-ALI-citta-e-turismo.pdf"},
+  airbnb:{t:"L'Indipendente, 27 May 2026: 12,211 Airbnb listings in Florence, 85% in the centre",u:"https://www.lindipendente.online/2026/05/27/firenze-e-la-prima-citta-a-limitare-gli-affitti-turistici-anche-fuori-dal-centro-storico/"},
+  bdi:{t:"Banca d'Italia–IRPET workshop, Mar 2026: >60% of listings held by hosts with 4+ units; about half of homes not occupied by residents are on Airbnb",u:"https://www.irpet.it/wp-content/uploads/2026/02/Turismo-e-mercato-immobiliare.pdf"},
+  rent:{t:"La Nazione, 11 Sep 2026 (Idealista): asking rent €21.7/m² city, €24.6/m² centre, August 2026",u:"https://www.lanazione.it/economia/case-affitto-firenze-prezzi-d8moonhp"},
+  price:{t:"La Nazione, 27 Dec 2024 (Immobiliare.it Insights): average purchase price above €4,500/m² in 2025",u:"https://www.lanazione.it/economia/mercato-immobiliare-2025-b6ymxkmn"},
+  tari:{t:"La Nazione: TARI cost plan €129.6m (2025) → €135.8m (2026)",u:"https://www.lanazione.it/firenze/economia/tari-firenze-yfjovybv"},
+  irpef:{t:"CISL, Jul 2025: Florence municipal IRPEF surcharge 0.2%, exempt up to €25,000",u:"https://www.cisl.it/wp-content/uploads/2025/07/ALL-Nota-addizionale-comunale.pdf"},
+  pop:{t:"Comune di Firenze, statistical bulletin Dec 2025: 363,737 residents at 30 Nov 2025",u:"https://www.comune.firenze.it/istruzione/system/files/attachments/bollettino_dicembre2025.pdf"},
+  day:{t:"La Nazione, 22 Jul 2026: Federalberghi cites 5.6m day-trippers a year",u:"https://www.lanazione.it/firenze/cronaca/estate-gli-affari-tengono-moderata-e6c4fc70"},
+  levy:{t:"Avvenire, Oct 2025: 2026 extension of the +€2 increase, 30% of extra revenue to the State",u:"https://www.avvenire.it/attualita/cambia-tra-le-proteste-la-tassa-di-soggiorno-cosa-finanziera_98465"},
+  cap:{t:"Sky TG24, Dec 2022: cap of €10/night for capoluoghi with presences > 20× residents",u:"https://tg24.sky.it/economia/2022/12/23/tassa-di-soggiorno-comuni"},
+  elast:{t:"Banca d'Italia, QEF 482 (2019): foreign tourism price elasticities −0.5 to −0.7, mostly via arrivals",u:"https://www.bancaditalia.it/pubblicazioni/qef/2019-0482/index.html"},
+  budget:{t:"La Nazione: 2025 budget, €861m current spending",u:"https://www.lanazione.it/firenze/cronaca/firenze-futuro-prossima-bilancio-2025-tra-68ee9aa1"},
+  imu:{t:"Law 208/2015, art. 1(53): IMU cut by 25% on homes let at canone concordato",u:"https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2015-12-28;208"}
+};
+const SRC_ORDER = Object.keys(SRC);
+
+/* ---------- personas ---------- */
+const SEG0 = [
+  {id:"young", name:"Under-30 EU youth, students, researchers", short:"Youth U30 EU", share:.12, price:45, sigma:.35, eps:-1.2, tOld:5.0, belt:.10, apt:.40, spend:55, exempt:true},
+  {id:"budget",name:"Backpackers and non-EU budget",           short:"Budget",       share:.08, price:38, sigma:.35, eps:-1.5, tOld:4.0, belt:.50, apt:.20, spend:50},
+  {id:"mass",  name:"Mass-market flats and mid-range hotels",  short:"Mass-market",  share:.46, price:70, sigma:.35, eps:-1.3, tOld:6.0, belt:.30, apt:.60, spend:95},
+  {id:"upper", name:"Upper-mid cultural (4★, boutique B&B)",   short:"Upper-mid",    share:.27, price:150,sigma:.30, eps:-0.7, tOld:7.0, belt:.15, apt:.25, spend:160},
+  {id:"lux",   name:"Luxury and UHNWI (5★, suites, villas)",   short:"Luxury",       share:.07, price:520,sigma:.45, eps:-0.25,tOld:8.0, belt:0,   apt:.10, spend:480}
+];
+const SEGCOL = ["var(--s1)","var(--s2)","var(--s3)","var(--s4)","var(--s5)"];
+
+/* ---------- parameters ---------- */
+// kind: data | estimate | assumption ; pct: shown ×100
+const PARAMS = [
+  // policy levers (rail)
+  {id:"tmin",g:"policy",sub:"Tax design",label:"Floor T_min",v:12,min:3,max:30,step:.5,unit:"€/night",hint:"Paid by every taxable guest whose room is cheap. €12 is today's €10 ceiling plus the €2 extension."},
+  {id:"alpha",g:"policy",sub:"Tax design",label:"Luxury rate α",v:.08,min:0,max:.2,step:.005,pct:1,unit:"% of price",hint:"Applies once α × price exceeds the floor."},
+  {id:"youthExempt",g:"policy",sub:"Tax design",label:"Exempt EU citizens under 30",v:true,bool:1},
+  {id:"passThrough",g:"policy",sub:"Market response",label:"Pass-through to guests",v:.85,min:.4,max:1,step:.05,pct:1,unit:"",hint:"Share of a tax change that reaches the guest's bill; hosts absorb the rest."},
+  {id:"epsMult",g:"policy",sub:"Market response",label:"Elasticity multiplier",v:1,min:.5,max:1.6,step:.05,unit:"×",hint:"Scales every persona's price elasticity together."},
+  {id:"evasion",g:"policy",sub:"Market response",label:"Extra evasion",v:.10,min:0,max:.4,step:.01,pct:1,unit:"of the increase",hint:"Share of the extra revenue lost to under-declaration and illegal lets."},
+  {id:"stateLevy",g:"policy",sub:"Market response",label:"State levy on extra revenue",v:.30,min:0,max:.5,step:.05,pct:1,unit:"",hint:"Budget law 2026: 30% of the extra revenue goes to the State."},
+  {id:"guaranteeOn",g:"policy",sub:"Fondo Armonizzatore",label:"Rent guarantee fund for owners",v:true,bool:1},
+  {id:"fundCommercial",g:"policy",sub:"Fondo Armonizzatore",label:"Commercial conversion",v:6,min:0,max:25,step:.5,unit:"€m/yr",hint:"Neighbourhood shops, crafts, bookshops replacing tourist-only retail."},
+  {id:"fundTalent",g:"policy",sub:"Fondo Armonizzatore",label:"Firms and talent",v:8,min:0,max:25,step:.5,unit:"€m/yr",hint:"Incentives for research, tech and advanced manufacturing."},
+  {id:"reserve",g:"policy",sub:"Civic dividend",label:"Prudential reserve",v:.15,min:0,max:.5,step:.05,pct:1,unit:"of balance",hint:"Held back against a bad tourism year."},
+  {id:"order",g:"policy",sub:"Civic dividend",label:"Dividend priority",v:"irpef,tari,tpl",select:[["irpef,tari,tpl","IRPEF surcharge → TARI → transit"],["tari,irpef,tpl","TARI → IRPEF surcharge → transit"],["tpl,tari,irpef","Transit → TARI → IRPEF surcharge"],["tari,tpl,irpef","TARI → transit → IRPEF surcharge"]]},
+
+  // tourism baseline
+  {id:"baseRevenue",g:"Tourism baseline",label:"Tourist-tax revenue today",v:82,step:.5,unit:"€m",kind:"estimate",src:"jfc",note:"2025 estimate. 2024 outturn €76.9m (IRPET)."},
+  {id:"totalNights",g:"Tourism baseline",label:"Overnight stays per year",v:14,step:.1,unit:"m",kind:"estimate",src:"iommi",note:"9.2m recorded plus short lets missing from official counts; consistent with revenue ÷ average tariff."},
+  {id:"minorShare",g:"Tourism baseline",label:"Stays by exempt minors",v:.08,step:.01,pct:1,unit:"%",kind:"assumption"},
+  {id:"dayVisitors",g:"Tourism baseline",label:"Day-trippers per year",v:5.6,step:.1,unit:"m",kind:"estimate",src:"day",note:"Phone-cell studies have put it near 8m; untouched by an overnight tax."},
+  {id:"beltReturn",g:"Tourism baseline",label:"Displaced stays that return by day",v:.85,step:.05,pct:1,unit:"%",kind:"assumption",note:"Guests sleeping in Sesto, Scandicci or Prato still visit the centre."},
+  {id:"jobsPerM",g:"Tourism baseline",label:"Jobs per €1m of tourist spending",v:12,step:1,unit:"jobs",kind:"assumption",note:"Accommodation and food service are labour-intensive."},
+  {id:"vaRatio",g:"Tourism baseline",label:"Value added / tourist spending",v:.45,step:.05,pct:1,unit:"%",kind:"assumption"},
+
+  // housing
+  {id:"strUnits",g:"Housing",label:"Whole-flat short lets",v:9800,step:100,unit:"units",kind:"estimate",src:"airbnb",note:"12,211 Airbnb listings × about 80% whole homes."},
+  {id:"strPremium",g:"Housing",label:"Median short-let premium R",v:1.5,step:.05,unit:"×",kind:"assumption",note:"Short-let net income ÷ long-let net income for the same flat."},
+  {id:"premSigma",g:"Housing",label:"Spread of R across flats",v:.35,step:.05,unit:"σ",kind:"assumption"},
+  {id:"riskDiscount",g:"Housing",label:"Risk discount on long lets",v:.15,step:.01,pct:1,unit:"%",kind:"assumption",note:"Arrears, eviction delays, loss of flexibility."},
+  {id:"guaranteeCut",g:"Housing",label:"Discount removed by the guarantee",v:.5,step:.05,pct:1,unit:"%",kind:"assumption"},
+  {id:"noiMargin",g:"Housing",label:"Short-let operating margin",v:.5,step:.05,pct:1,unit:"%",kind:"assumption",note:"Net income ÷ gross after platform, cleaning, management."},
+  {id:"toResidential",g:"Housing",label:"Converted flats reaching residents",v:.85,step:.05,pct:1,unit:"%",kind:"assumption",note:"The rest are sold as second homes or left empty."},
+  {id:"rentalStock",g:"Housing",label:"Long-let rental stock",v:56000,step:1000,unit:"units",kind:"assumption",note:"About 30% of 186,000 households rent."},
+  {id:"elD",g:"Housing",label:"Rental demand elasticity",v:.6,step:.05,unit:"",kind:"assumption"},
+  {id:"elS",g:"Housing",label:"Other rental supply elasticity",v:.3,step:.05,unit:"",kind:"assumption"},
+  {id:"strCapShare",g:"Housing",label:"Price share capitalising short-let income",v:.12,step:.01,pct:1,unit:"%",kind:"assumption",note:"City-wide; much higher in the UNESCO core."},
+  {id:"rent",g:"Housing",label:"Asking rent",v:21.7,step:.1,unit:"€/m²/month",kind:"data",src:"rent"},
+  {id:"price",g:"Housing",label:"Purchase price",v:4500,step:50,unit:"€/m²",kind:"estimate",src:"price"},
+  {id:"unitSize",g:"Housing",label:"Typical flat",v:70,step:5,unit:"m²",kind:"assumption"},
+  {id:"hhSize",g:"Housing",label:"People per converted flat",v:2,step:.1,unit:"people",kind:"assumption"},
+  {id:"netNewShare",g:"Housing",label:"Occupants new to the city",v:.6,step:.05,pct:1,unit:"%",kind:"assumption",note:"The rest are residents moving within Florence."},
+  {id:"defaultRate",g:"Housing",label:"Expected arrears on guaranteed lets",v:.04,step:.005,pct:1,unit:"% of rent",kind:"assumption"},
+
+  // municipal finances
+  {id:"residents",g:"Municipal finances",label:"Residents",v:363737,step:100,unit:"people",kind:"data",src:"pop"},
+  {id:"households",g:"Municipal finances",label:"Households",v:186000,step:1000,unit:"",kind:"assumption"},
+  {id:"tariCost",g:"Municipal finances",label:"TARI waste-service cost",v:135.8,step:.1,unit:"€m",kind:"data",src:"tari"},
+  {id:"tariTouristShare",g:"Municipal finances",label:"Waste attributable to visitors",v:.18,step:.01,pct:1,unit:"%",kind:"assumption"},
+  {id:"tariVariable",g:"Municipal finances",label:"Variable share of waste cost",v:.6,step:.05,pct:1,unit:"%",kind:"assumption"},
+  {id:"tariGap",g:"Municipal finances",label:"TARI gap, non-domestic vs domestic",v:450,step:10,unit:"€/unit",kind:"assumption"},
+  {id:"tariNonDomShare",g:"Municipal finances",label:"Short lets on non-domestic TARI",v:.5,step:.05,pct:1,unit:"%",kind:"assumption",note:"Professional operators; private hosts already pay domestic."},
+  {id:"imuPerUnit",g:"Municipal finances",label:"IMU on a let flat",v:1500,step:50,unit:"€/yr",kind:"assumption"},
+  {id:"concordatoShare",g:"Municipal finances",label:"Conversions at canone concordato",v:.6,step:.05,pct:1,unit:"%",kind:"assumption"},
+  {id:"concordatoCut",g:"Municipal finances",label:"IMU cut for canone concordato",v:.25,step:.05,pct:1,unit:"%",kind:"data",src:"imu"},
+  {id:"irpefRate",g:"Municipal finances",label:"IRPEF surcharge rate",v:.002,step:.0005,pct:1,unit:"%",kind:"data",src:"irpef",note:"Incomes up to €25,000 exempt."},
+  {id:"irpefBase",g:"Municipal finances",label:"IRPEF surcharge revenue",v:12,step:.5,unit:"€m",kind:"assumption",note:"≈ 120,000 taxpayers above €25k × €48k × 0.2%."},
+  {id:"tariDomBase",g:"Municipal finances",label:"TARI paid by households",v:70,step:1,unit:"€m",kind:"assumption",note:"≈ 52% of the TARI cost plan."},
+  {id:"tplBase",g:"Municipal finances",label:"Cost of free transit for residents",v:30,step:1,unit:"€m",kind:"assumption",note:"≈ 95,000 pass-holders × €310, fares the Comune would refund to the operator."},
+  {id:"passPrice",g:"Municipal finances",label:"Annual transit pass",v:310,step:10,unit:"€",kind:"assumption"},
+  {id:"incomeNew",g:"Municipal finances",label:"Income of new residents",v:40000,step:1000,unit:"€",kind:"assumption"},
+  {id:"adultTaxpayerShare",g:"Municipal finances",label:"New residents who file IRPEF",v:.6,step:.05,pct:1,unit:"%",kind:"assumption"},
+  {id:"above25Share",g:"Municipal finances",label:"…of whom above €25k",v:.55,step:.05,pct:1,unit:"%",kind:"assumption"},
+  {id:"workerResShare",g:"Municipal finances",label:"Lost tourism jobs held by residents",v:.4,step:.05,pct:1,unit:"%",kind:"assumption"},
+  {id:"above25Tourism",g:"Municipal finances",label:"…of whom above €25k",v:.15,step:.05,pct:1,unit:"%",kind:"assumption"},
+  {id:"wageTourism",g:"Municipal finances",label:"Wage of those workers",v:27000,step:500,unit:"€",kind:"assumption"},
+  {id:"feesBase",g:"Municipal finances",label:"Fees tied to visitor flows",v:28,step:1,unit:"€m",kind:"assumption",note:"Café-terrace permits, coach ZTL, paid parking."},
+  {id:"feesElast",g:"Municipal finances",label:"Fee sensitivity to visitor-days",v:.7,step:.05,unit:"",kind:"assumption"},
+  {id:"touristCost",g:"Municipal finances",label:"Spending driven by visitor load",v:55,step:1,unit:"€m",kind:"assumption",src:"budget",note:"Extra street cleaning, maintenance, policing: ≈ 6% of €861m."},
+  {id:"costVariable",g:"Municipal finances",label:"…share that scales with visitors",v:.5,step:.05,pct:1,unit:"%",kind:"assumption"},
+  {id:"marginalCost",g:"Municipal finances",label:"Marginal service cost per new resident",v:350,step:25,unit:"€/yr",kind:"assumption"},
+
+  // fund
+  {id:"trainCost",g:"Fondo Armonizzatore",label:"Retraining per displaced worker",v:4000,step:250,unit:"€",kind:"assumption"},
+  {id:"trainCoverage",g:"Fondo Armonizzatore",label:"Displaced workers enrolled",v:.6,step:.05,pct:1,unit:"%",kind:"assumption"}
+];
+const PMAP = Object.fromEntries(PARAMS.map(p=>[p.id,p]));
+
+const SCEN = {
+  cautious:{tmin:9, alpha:.05, passThrough:.9, epsMult:1.25, evasion:.15, fundCommercial:6, fundTalent:6, reserve:.2},
+  central: {tmin:12,alpha:.08, passThrough:.85,epsMult:1,    evasion:.10, fundCommercial:6, fundTalent:8, reserve:.15},
+  bold:    {tmin:18,alpha:.12, passThrough:.85,epsMult:1,    evasion:.12, fundCommercial:10,fundTalent:12,reserve:.15}
+};
+
+/* ---------- state ---------- */
+const KEY = "dividendo-firenze-v1";
+function defaults(){ const P={}; PARAMS.forEach(p=>P[p.id]=p.v); P.segs=SEG0.map(s=>({...s})); return P; }
+let P = defaults();
+try{ const saved = JSON.parse(localStorage.getItem(KEY)||"null");
+  if(saved){ PARAMS.forEach(p=>{ if(saved[p.id]!==undefined && typeof saved[p.id]===typeof p.v) P[p.id]=saved[p.id]; });
+    if(Array.isArray(saved.segs)&&saved.segs.length===SEG0.length) P.segs=SEG0.map((s,i)=>({...s,...pickNums(saved.segs[i])})); } }catch(e){}
+function pickNums(o){ const r={}; ["share","price","sigma","eps","tOld","belt","apt","spend"].forEach(k=>{ if(o&&typeof o[k]==="number"&&isFinite(o[k])) r[k]=o[k]; }); return r; }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(P)); }catch(e){} }
+
+/* ---------- maths ---------- */
+function invNorm(p){const a=[-39.69683028665376,220.9460984245205,-275.9285104469687,138.357751867269,-30.66479806614716,2.506628277459239],b=[-54.47609879822406,161.5858368580409,-155.6989798598866,66.80131188771972,-13.28068155288572],c=[-.007784894002430293,-.3223964580411365,-2.400758277161838,-2.549732539343734,4.374664141464968,2.938163982698783],d=[.007784695709041462,.3224671290700398,2.445134137142996,3.754408661907416],pl=.02425;let q,r;
+  if(p<pl){q=Math.sqrt(-2*Math.log(p));return(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+  if(p>1-pl){q=Math.sqrt(-2*Math.log(1-p));return-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+  q=p-.5;r=q*q;return(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);}
+function normCdf(x){const z=Math.abs(x)/Math.SQRT2,t=1/(1+.3275911*z);const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-z*z);return x>=0?(1+y)/2:(1-y)/2;}
+const NQ=41, Z=Array.from({length:NQ},(_,i)=>invNorm((i+.5)/NQ));
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+
+/* ---------- the model ---------- */
+function run(P, ph){
+  ph = ph || {demand:1, conv:1, train:1};
+  const segs=P.segs, tot=segs.reduce((a,s)=>a+s.share,0)||1;
+  const NB=P.totalNights*1e6, minor=P.minorShare, base=P.baseRevenue*1e6;
+  let theo=0; segs.forEach(s=>theo+=NB*s.share/tot*(1-minor)*s.tOld);
+  const k=theo>0?base/theo:1;
+  const R={k, segs:[]};
+  let G=0,nNew=0,accO=0,accN=0,aptO=0,aptN=0,othO=0,othN=0,belt=0,beltSpend=0;
+  segs.forEach((s,i)=>{
+    const nB=NB*s.share/tot, ex=P.youthExempt&&s.exempt;
+    let n=0,rev=0,tN_w=0,aO=0,aN=0,maxT=0;
+    for(const z of Z){
+      const p=s.price*Math.exp(s.sigma*z);
+      const tN=ex?0:Math.max(P.tmin,P.alpha*p);
+      const dT=tN-s.tOld;
+      const pNet=Math.max(p*.5,p-(1-P.passThrough)*dT);
+      const gO=p+s.tOld, gN=pNet+tN;
+      let d=Math.pow(gN/gO, s.eps*P.epsMult); d=1+(d-1)*ph.demand;
+      const w=nB/NQ, ni=w*d;
+      n+=ni; rev+=ni*(1-minor)*tN*k; tN_w+=tN*ni; aO+=w*p; aN+=ni*pNet; if(tN>maxT) maxT=tN;
+    }
+    const lost=Math.max(0,nB-n), bl=lost*s.belt;
+    const revOld=nB*(1-minor)*s.tOld*k;
+    R.segs.push({...s, i, nB, nN:n, chg:n/nB-1, tAvg:n>0?tN_w/n:0, tMed:ex?0:Math.max(P.tmin,P.alpha*s.price), tP90:ex?0:Math.max(P.tmin,P.alpha*s.price*Math.exp(s.sigma*1.2816)), maxT, rev, revOld, lost, belt:bl, exempt:ex});
+    G+=rev; nNew+=n; accO+=aO; accN+=aN; aptO+=aO*s.apt; aptN+=aN*s.apt; othO+=nB*s.spend; othN+=n*s.spend; belt+=bl; beltSpend+=bl*P.beltReturn*s.spend*.6;
+  });
+  // tax account
+  const incr=G-base, evasionLoss=P.evasion*Math.max(0,incr), Gn=G-evasionLoss;
+  const levy=P.stateLevy*Math.max(0,Gn-base), net=Gn-levy, dTax=net-base;
+  // visitors
+  const vdB=NB+P.dayVisitors*1e6, vdN=nNew+P.dayVisitors*1e6+belt*P.beltReturn, vdChg=vdB>0?vdN/vdB-1:0;
+  // tourist economy
+  const spendO=accO+othO, spendN=accN+othN+beltSpend, dSpend=spendN-spendO;
+  const jobsLost=Math.max(0,-dSpend/1e6*P.jobsPerM), vaChg=dSpend*P.vaRatio;
+  // housing
+  const aptDrop=aptO>0?1-aptN/aptO:0;
+  const noiDrop=clamp(aptDrop/P.noiMargin,-.5,.95);
+  const lnM=Math.log(P.strPremium), F=x=>x<=0?0:normCdf((Math.log(x)-lnM)/P.premSigma);
+  const c0=1-P.riskDiscount, c1=1-P.riskDiscount*(1-(P.guaranteeOn?P.guaranteeCut:0));
+  const thr=c1/(1-noiDrop);
+  const share=Math.max(0,(F(thr)-F(c0))/(1-F(c0)));
+  const units=P.strUnits*share*ph.conv, toRes=units*P.toResidential;
+  const newResGross=toRes*.95*P.hhSize, newRes=newResGross*P.netNewShare;
+  const rentChg=-(toRes/P.rentalStock)/(P.elD+P.elS);
+  const priceChg=rentChg-P.strCapShare*Math.max(0,noiDrop)*ph.conv;
+  const annualRent=P.rent*P.unitSize*12;
+  // collateral
+  const tariLoss=units*P.tariNonDomShare*P.tariGap;
+  const tariSaving=P.tariCost*1e6*P.tariTouristShare*P.tariVariable*(-vdChg);
+  const imuLoss=toRes*P.imuPerUnit*P.concordatoShare*P.concordatoCut;
+  const irpefJobs=jobsLost*P.workerResShare*P.above25Tourism*P.wageTourism*P.irpefRate;
+  const irpefNew=newRes*P.adultTaxpayerShare*P.above25Share*P.incomeNew*P.irpefRate;
+  const feesLoss=P.feesBase*1e6*P.feesElast*(-vdChg);
+  const opSaving=P.touristCost*1e6*P.costVariable*(-vdChg);
+  const newResCost=newRes*P.marginalCost;
+  // fund
+  const fComm=P.fundCommercial*1e6, fTalent=P.fundTalent*1e6;
+  const fTrain=jobsLost*P.trainCost*P.trainCoverage*ph.train;
+  const fGuar=P.guaranteeOn?toRes*annualRent*P.defaultRate:0;
+  const fund=fComm+fTalent+fTrain+fGuar;
+  const collateral=tariLoss+imuLoss+irpefJobs+feesLoss;
+  const savings=opSaving+tariSaving+irpefNew-newResCost;
+  const saldo=dTax-collateral+savings-fund;
+  // dividend
+  const reserve=Math.max(0,saldo)*P.reserve, pool=Math.max(0,saldo-reserve);
+  const costs={irpef:P.irpefBase*1e6, tari:P.tariDomBase*1e6, tpl:P.tplBase*1e6};
+  let left=pool; const alloc={};
+  String(P.order).split(",").forEach(key=>{ const a=Math.min(left,costs[key]); alloc[key]={cost:costs[key],paid:a,cov:costs[key]>0?a/costs[key]:0}; left-=a; });
+  Object.assign(R,{G,base,incr,evasionLoss,Gn,levy,net,dTax,nB:NB,nNew,nChg:nNew/NB-1,belt,vdB,vdN,vdChg,spendO,spendN,dSpend,jobsLost,vaChg,
+    aptDrop,noiDrop,c0,c1,thr,share,units,toRes,newResGross,newRes,rentChg,priceChg,annualRent,
+    tariLoss,tariSaving,imuLoss,irpefJobs,irpefNew,feesLoss,opSaving,newResCost,fComm,fTalent,fTrain,fGuar,fund,collateral,savings,saldo,reserve,pool,alloc,surplus:left,
+    perHH:pool/P.households});
+  return R;
+}
+const PHASES=[{demand:.7,conv:.3,train:1},{demand:1,conv:.6,train:1},{demand:1,conv:.85,train:.6},{demand:1,conv:1,train:.3},{demand:1,conv:1,train:.1}];
+
+/* ---------- formatting ---------- */
+const M=x=>{const a=Math.abs(x);return (x<-5e2?"−":"")+"€"+(a<95e3&&a>0?Math.round(a/1e3)+"k":(a>=1e8?(a/1e6).toFixed(0):(a/1e6).toFixed(1))+"m");};
+const MS=x=>{const a=Math.abs(x);return (x>=0?"+":"−")+"€"+(a<95e3?Math.round(a/1e3)+"k":(a/1e6).toFixed(1)+"m");};
+const PS=(x,d=1)=>(x>=0?"+":"−")+Math.abs(x*100).toFixed(d)+"%";
+const N0=x=>Math.round(x).toLocaleString("en-GB");
+const E0=x=>"€"+Math.round(x).toLocaleString("en-GB");
+const E1=x=>"€"+(Math.round(x*10)/10).toFixed(x<100?(Number.isInteger(Math.round(x*10)/10)?0:1):0);
+const Mn=x=>(x/1e6).toFixed(2)+"m";
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cls=x=>x>=0?"pos":"neg";
+function fmtParam(p,v){ if(p.bool) return v?"On":"Off"; if(p.select) return ""; if(p.pct) return (v*100).toFixed(p.step<.01?1:(p.step<.05?1:0)).replace(/\.0$/,"")+"%"; if(p.unit==="€/night") return "€"+v.toFixed(v%1?1:0); if(p.unit==="€m/yr") return "€"+v.toFixed(v%1?1:0)+"m"; if(p.unit==="×") return v.toFixed(2)+"×"; return v; }
+
+/* ---------- rail ---------- */
+function buildRail(){
+  const el=document.getElementById("rail"); let html="", cur="";
+  PARAMS.filter(p=>p.g==="policy").forEach(p=>{
+    if(p.sub!==cur){ if(cur) html+="</div>"; cur=p.sub; html+=`<div class="grp"><span class="eyebrow">${esc(cur)}</span>`; }
+    if(p.bool){ html+=`<label class="sw" for="in-${p.id}"><input type="checkbox" id="in-${p.id}" data-p="${p.id}"><span><b>${esc(p.label)}</b></span></label>`; }
+    else if(p.select){ html+=`<div class="ctl"><label for="in-${p.id}">${esc(p.label)}</label><select id="in-${p.id}" data-p="${p.id}">${p.select.map(o=>`<option value="${o[0]}">${esc(o[1])}</option>`).join("")}</select></div>`; }
+    else { html+=`<div class="ctl"><div class="row"><label for="in-${p.id}">${esc(p.label)}</label><span class="val" id="v-${p.id}"></span></div><input type="range" id="in-${p.id}" data-p="${p.id}" min="${p.min}" max="${p.max}" step="${p.step}">${p.hint?`<span class="hint">${esc(p.hint)}</span>`:""}</div>`; }
+  });
+  html+="</div>"; el.innerHTML=html;
+  el.addEventListener("input",e=>{ const id=e.target.dataset.p; if(!id) return; const p=PMAP[id];
+    P[id]=p.bool?e.target.checked:(p.select?e.target.value:parseFloat(e.target.value)); markScen(); update(); });
+}
+function syncRail(){
+  PARAMS.filter(p=>p.g==="policy").forEach(p=>{ const i=document.getElementById("in-"+p.id); if(!i) return;
+    if(p.bool) i.checked=!!P[p.id]; else i.value=P[p.id];
+    const v=document.getElementById("v-"+p.id); if(v) v.textContent=fmtParam(p,P[p.id]); });
+}
+function markScen(){
+  Object.keys(SCEN).forEach(k=>{ const s=SCEN[k]; const on=Object.keys(s).every(id=>Math.abs(P[id]-s[id])<1e-9); document.getElementById("sc-"+k).setAttribute("aria-pressed",on?"true":"false"); });
+}
+
+/* ---------- assumptions editor ---------- */
+function buildAssump(){
+  const groups=[...new Set(PARAMS.filter(p=>p.g!=="policy").map(p=>p.g))];
+  document.getElementById("assump-groups").innerHTML=groups.map(g=>`<details><summary>${esc(g)}</summary><div class="tablewrap"><table><thead><tr><th>Input</th><th>Value</th><th>Unit</th><th>Type</th><th style="text-align:left">Source</th></tr></thead><tbody>${
+    PARAMS.filter(p=>p.g===g).map(p=>{ const shown=p.pct?+(P[p.id]*100).toFixed(3):P[p.id]; const st=p.pct?p.step*100:p.step;
+      return `<tr><td class="desc"><label for="as-${p.id}">${esc(p.label)}</label>${p.note?`<small>${esc(p.note)}</small>`:""}</td><td><input type="number" id="as-${p.id}" data-a="${p.id}" value="${shown}" step="${+st.toFixed(4)}"></td><td style="text-align:left">${esc(p.unit||"")}</td><td><span class="tag ${p.kind}">${p.kind}</span></td><td class="src">${p.src?`<a href="${SRC[p.src].u}" target="_blank" rel="noopener">[${SRC_ORDER.indexOf(p.src)+1}]</a>`:"—"}</td></tr>`; }).join("")}</tbody></table></div></details>`).join("");
+  document.getElementById("assump-groups").addEventListener("change",e=>{ const id=e.target.dataset.a; if(!id) return; const p=PMAP[id]; let v=parseFloat(e.target.value); if(!isFinite(v)) return; if(p.pct) v/=100; P[id]=v; update(); });
+  buildSegTable();
+}
+const SEGCOLS=[["share","Share of stays",1,1],["price","Median price €",0,5],["sigma","Spread σ",0,.05],["eps","Elasticity",0,.05],["tOld","Tax today €",0,.5],["belt","Belt shift",1,5],["apt","In short-let flats",1,5],["spend","Other spend €/night",0,5]];
+function buildSegTable(){
+  const t=document.getElementById("tb-seg");
+  t.innerHTML=`<thead><tr><th>Persona</th>${SEGCOLS.map(c=>`<th>${c[1]}${c[2]?" %":""}</th>`).join("")}</tr></thead><tbody>${P.segs.map((s,i)=>`<tr><td><span class="dot" style="background:${SEGCOL[i]}"></span>${esc(s.name)}</td>${SEGCOLS.map(c=>`<td><input type="number" aria-label="${esc(s.short)} ${c[1]}" id="sg-${i}-${c[0]}" data-s="${i}" data-k="${c[0]}" step="${c[3]}" value="${c[2]?+(s[c[0]]*100).toFixed(2):s[c[0]]}"></td>`).join("")}</tr>`).join("")}</tbody>`;
+  t.onchange=e=>{ const i=e.target.dataset.s, k=e.target.dataset.k; if(i===undefined) return; let v=parseFloat(e.target.value); if(!isFinite(v)) return; const col=SEGCOLS.find(c=>c[0]===k); if(col[2]) v/=100; P.segs[i][k]=v; update(); };
+}
+function refreshAssumpInputs(){
+  PARAMS.filter(p=>p.g!=="policy").forEach(p=>{ const i=document.getElementById("as-"+p.id); if(i) i.value=p.pct?+(P[p.id]*100).toFixed(3):P[p.id]; });
+  buildSegTable();
+}
+
+/* ---------- svg helpers ---------- */
+const W=el=>Math.max(300,Math.min(1000,el.clientWidth||640));
+function svg(w,h,body,label){ return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}">${body}</svg>`; }
+function tw(s,size){ return String(s).length*size*.55; }
+
+/* 1. tax function, log–log */
+function drawTax(R){
+  const el=document.getElementById("ch-tax"), w=W(el), h=Math.round(Math.min(380,Math.max(280,w*.5)));
+  const m={l:46,r:16,t:16,b:42}, x0=Math.log(20), x1=Math.log(1500), y0=Math.log(2), yMaxV=Math.max(60,P.alpha*1500*1.1,P.tmin*1.6), y1=Math.log(yMaxV);
+  const X=v=>m.l+(Math.log(v)-x0)/(x1-x0)*(w-m.l-m.r), Y=v=>h-m.b-(Math.log(Math.max(2,v))-y0)/(y1-y0)*(h-m.t-m.b);
+  let b="";
+  [20,50,100,200,500,1000].forEach(t=>{ b+=`<line class="grid" x1="${X(t)}" x2="${X(t)}" y1="${m.t}" y2="${h-m.b}"/><text x="${X(t)}" y="${h-m.b+16}" text-anchor="middle">€${t}</text>`; });
+  [2,5,10,20,50,100].filter(t=>t<=yMaxV).forEach(t=>{ b+=`<line class="grid" x1="${m.l}" x2="${w-m.r}" y1="${Y(t)}" y2="${Y(t)}"/><text x="${m.l-6}" y="${Y(t)+4}" text-anchor="end">€${t}</text>`; });
+  b+=`<text x="${(m.l+w-m.r)/2}" y="${h-6}" text-anchor="middle">Room price per person per night (log scale)</text>`;
+  b+=`<text x="12" y="${(m.t+h-m.b)/2}" text-anchor="middle" transform="rotate(-90 12 ${(m.t+h-m.b)/2})">Tax per night (log)</text>`;
+  // new function
+  const pstar=P.alpha>0?P.tmin/P.alpha:Infinity;
+  let path=""; for(let i=0;i<=120;i++){ const p=Math.exp(x0+(x1-x0)*i/120), t=Math.max(P.tmin,P.alpha*p); path+=(i?"L":"M")+X(p).toFixed(1)+","+Y(t).toFixed(1); }
+  b+=`<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`;
+  if(pstar>20&&pstar<1500){ b+=`<line x1="${X(pstar)}" x2="${X(pstar)}" y1="${Y(P.tmin)}" y2="${h-m.b}" stroke="var(--accent)" stroke-dasharray="3 3"/><text x="${X(pstar)+5}" y="${Y(P.tmin)+16}" style="fill:var(--accent);font-weight:600">p* = €${Math.round(pstar)}</text>`; }
+  // personas: arrow from today's tax to new median tax
+  R.segs.forEach((s,i)=>{ const cx=X(s.price), yo=Y(s.tOld), yn=s.exempt?Y(2):Y(s.tMed);
+    b+=`<line x1="${cx}" x2="${cx}" y1="${yo}" y2="${yn}" stroke="${SEGCOL[i]}" stroke-width="2" stroke-dasharray="${s.exempt?"3 3":""}"/>`;
+    b+=`<circle cx="${cx}" cy="${yo}" r="5" fill="var(--surface)" stroke="${SEGCOL[i]}" stroke-width="2" data-tip="${esc(s.short)} today: €${s.tOld.toFixed(2)} at a €${s.price} room"/>`;
+    b+=`<circle cx="${cx}" cy="${yn}" r="6" fill="${SEGCOL[i]}" stroke="var(--surface)" stroke-width="2" data-tip="${esc(s.short)} after reform: ${s.exempt?"exempt":"€"+s.tMed.toFixed(2)+" at the median room; average paid €"+s.tAvg.toFixed(2)}"/>`;
+    if(w>=620){ const lx=Math.min(cx+9,w-m.r-tw(s.short,12)); b+=`<text class="lbl" x="${lx}" y="${yn-10}">${esc(s.short)}${s.exempt?" · exempt":""}</text>`; }
+  });
+  el.innerHTML=svg(w,h,b,"Tax per night against room price, today and after the reform");
+  document.getElementById("lg-tax").innerHTML=`<span><i style="background:var(--accent)"></i>New tax t(p)</span><span>○ today at the persona's median price</span><span>● after reform</span>`+(w<620?R.segs.map((s,i)=>`<span><i style="background:${SEGCOL[i]};border-radius:50%"></i>${esc(s.short)}</span>`).join(""):"");
+}
+
+/* 2. demand bars */
+function drawDemand(R){
+  const el=document.getElementById("ch-demand"), w=W(el), rowH=46, m={l:Math.min(150,w*.3),r:118,t:6,b:24}, h=m.t+m.b+rowH*R.segs.length;
+  const max=Math.max(...R.segs.map(s=>Math.max(s.nB,s.nN)))*1.02, X=v=>m.l+v/max*(w-m.l-m.r);
+  let b="";
+  [0,.25,.5,.75,1].forEach(f=>{ const v=max*f; b+=`<line class="grid" x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${h-m.b}"/><text x="${X(v)}" y="${h-6}" text-anchor="middle">${(v/1e6).toFixed(1)}m</text>`; });
+  R.segs.forEach((s,i)=>{ const y=m.t+i*rowH;
+    b+=`<text class="lbl" x="${m.l-8}" y="${y+20}" text-anchor="end">${esc(s.short)}</text>`;
+    b+=`<rect x="${m.l}" y="${y+6}" width="${Math.max(1,X(s.nB)-m.l)}" height="12" rx="3" fill="var(--sunk)" stroke="var(--line)" data-tip="${esc(s.short)} today: ${Mn(s.nB)} nights"/>`;
+    b+=`<rect x="${m.l}" y="${y+21}" width="${Math.max(1,X(s.nN)-m.l)}" height="14" rx="3" fill="${SEGCOL[i]}" data-tip="${esc(s.short)} after reform: ${Mn(s.nN)} nights (${PS(s.chg)})"/>`;
+    b+=`<text class="val" x="${X(Math.max(s.nB,s.nN))+6}" y="${y+32}">${Mn(s.nN)} · <tspan style="fill:${s.chg>=0?"var(--good)":"var(--bad)"}">${PS(s.chg)}</tspan></text>`;
+  });
+  el.innerHTML=svg(w,h,b,"Overnight stays by persona, today and after the reform");
+}
+
+/* 3. waterfall */
+function drawWaterfall(R){
+  const rows=[
+    ["Extra gross tourist tax",R.G-R.base],["Extra evasion and avoidance",-R.evasionLoss],["State levy on extra revenue",-R.levy],
+    ["Net extra tourist tax",null,"sub"],
+    ["TARI: flats leave non-domestic tariff",-R.tariLoss],["IMU: long lets at canone concordato",-R.imuLoss],["IRPEF surcharge: tourism jobs lost",-R.irpefJobs],["Terrace, coach ZTL and parking fees",-R.feesLoss],
+    ["Operating savings in the centre",R.opSaving],["Waste-service cost saving",R.tariSaving],["New residents: IRPEF surcharge",R.irpefNew],["New residents: service cost",-R.newResCost],
+    ["Before the Fondo",null,"sub"],
+    ["Fondo: commercial conversion",-R.fComm],["Fondo: worker transition",-R.fTrain],["Fondo: rent guarantee",-R.fGuar],["Fondo: firms and talent",-R.fTalent],
+    ["Structural balance",null,"total"]
+  ];
+  let cum=0; const pts=rows.map(r=>{ if(r[1]===null) return {label:r[0],type:r[2],a:0,b:cum,v:cum}; const a=cum; cum+=r[1]; return {label:r[0],a,b:cum,v:r[1]}; });
+  const el=document.getElementById("ch-wf"), w=W(el), rowH=26, lw=Math.min(250,w*.46), m={l:lw,r:70,t:4,b:22}, h=m.t+m.b+rowH*pts.length;
+  const lo=Math.min(0,...pts.map(p=>Math.min(p.a,p.b))), hi=Math.max(0,...pts.map(p=>Math.max(p.a,p.b)));
+  const X=v=>m.l+(v-lo)/((hi-lo)||1)*(w-m.l-m.r);
+  let b="";
+  const step=niceStep((hi-lo)/4);
+  for(let v=Math.ceil(lo/step)*step; v<=hi+1; v+=step){ b+=`<line class="grid" x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${h-m.b}"/><text x="${X(v)}" y="${h-6}" text-anchor="middle">${M(v)}</text>`; }
+  b+=`<line class="axis" x1="${X(0)}" x2="${X(0)}" y1="${m.t}" y2="${h-m.b}" style="stroke:var(--ink3)"/>`;
+  pts.forEach((p,i)=>{ const y=m.t+i*rowH, isSum=!!p.type;
+    const x1=X(Math.min(p.a,p.b)), x2=X(Math.max(p.a,p.b)), col=isSum?"var(--total)":(p.v>=0?"var(--gain)":"var(--loss)");
+    const label=lw<200&&p.label.length>30?p.label.slice(0,28)+"…":p.label;
+    b+=`<text x="${m.l-8}" y="${y+17}" text-anchor="end" class="${isSum?"lbl":""}">${esc(label)}</text>`;
+    b+=`<rect x="${x1}" y="${y+5}" width="${Math.max(1.5,x2-x1)}" height="16" rx="2" fill="${col}" data-tip="${esc(p.label)}: ${isSum?M(p.v):MS(p.v)}"/>`;
+    if(i<pts.length-1){ b+=`<line x1="${X(p.b)}" x2="${X(p.b)}" y1="${y+21}" y2="${y+rowH+5}" stroke="var(--ink3)" stroke-width="1" opacity=".5"/>`; }
+    b+=`<text class="val" x="${x2+5}" y="${y+17}" ${isSum?'style="font-weight:600;fill:var(--ink)"':""}>${isSum?M(p.v):MS(p.v)}</text>`;
+  });
+  el.innerHTML=svg(w,h,b,"Waterfall from extra tourist tax to structural balance");
+}
+function niceStep(x){ const e=Math.pow(10,Math.floor(Math.log10(Math.max(x,1)))), f=x/e; return (f<1.5?1:f<3?2:f<7?5:10)*e; }
+
+/* 4. premium distribution */
+function drawPrem(R){
+  const el=document.getElementById("ch-prem"), w=W(el), h=Math.round(Math.min(280,Math.max(220,w*.5))), m={l:12,r:12,t:40,b:40};
+  const lo=.4, hi=3.6, X=v=>m.l+(v-lo)/(hi-lo)*(w-m.l-m.r);
+  const pdf=x=>{const z=(Math.log(x)-Math.log(P.strPremium))/P.premSigma; return Math.exp(-z*z/2)/(x*P.premSigma*Math.sqrt(2*Math.PI));};
+  let ymax=0; for(let i=0;i<=200;i++){ ymax=Math.max(ymax,pdf(lo+(hi-lo)*i/200)); }
+  const Y=v=>h-m.b-v/ymax*(h-m.t-m.b);
+  const area=(a,bb,n=80)=>{ a=Math.max(lo,a); bb=Math.min(hi,bb); if(bb<=a) return ""; let d=`M${X(a)},${Y(0)}`; for(let i=0;i<=n;i++){ const x=a+(bb-a)*i/n; d+=`L${X(x).toFixed(1)},${Y(pdf(x)).toFixed(1)}`; } return d+`L${X(bb)},${Y(0)}Z`; };
+  let b="";
+  [.5,1,1.5,2,2.5,3,3.5].forEach(t=>{ b+=`<text x="${X(t)}" y="${h-m.b+16}" text-anchor="middle">${t}×</text>`; });
+  b+=`<text x="${(m.l+w-m.r)/2}" y="${h-6}" text-anchor="middle">R = short-let ÷ long-let net income</text>`;
+  b+=`<path d="${area(R.c0,hi)}" fill="var(--ink3)" opacity=".28"/>`;
+  b+=`<path d="${area(R.c0,Math.min(hi,R.thr))}" fill="var(--accent)" opacity=".85" data-tip="${N0(R.units)} flats switch (${(R.share*100).toFixed(1)}% of short lets)"/>`;
+  let line=""; for(let i=0;i<=160;i++){ const x=lo+(hi-lo)*i/160; line+=(i?"L":"M")+X(x).toFixed(1)+","+Y(pdf(x)).toFixed(1); }
+  b+=`<path d="${line}" fill="none" stroke="var(--ink2)" stroke-width="1.5"/>`;
+  b+=`<line class="axis" x1="${m.l}" x2="${w-m.r}" y1="${Y(0)}" y2="${Y(0)}"/>`;
+  b+=`<line x1="${X(R.c0)}" x2="${X(R.c0)}" y1="8" y2="${Y(0)}" stroke="var(--ink)" stroke-dasharray="3 3"/><text x="${X(R.c0)+4}" y="14">today's switch point ${R.c0.toFixed(2)}×</text>`;
+  if(R.thr>R.c0+.005){ const xt=X(Math.min(hi,R.thr)); b+=`<line x1="${xt}" x2="${xt}" y1="22" y2="${Y(0)}" stroke="var(--accent)" stroke-width="1.5"/><text x="${xt+4}" y="32" style="fill:var(--accent);font-weight:600">after reform ${R.thr.toFixed(2)}×</text>`; }
+  el.innerHTML=svg(w,h,b,"Distribution of short-let premium and the share that switches to long lets");
+}
+
+/* 6. five-year path */
+function drawPath(){
+  const vals=PHASES.map(ph=>run(P,ph).saldo); const el=document.getElementById("ch-path"), w=W(el), h=220, m={l:56,r:12,t:22,b:30};
+  const lo=Math.min(0,...vals), hi=Math.max(0,...vals)*1.12||1, Y=v=>m.t+(hi-v)/((hi-lo)||1)*(h-m.t-m.b);
+  const bw=(w-m.l-m.r)/vals.length; let b="";
+  const step=niceStep((hi-lo)/4);
+  for(let v=Math.ceil(lo/step)*step; v<=hi; v+=step){ b+=`<line class="grid" x1="${m.l}" x2="${w-m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${m.l-6}" y="${Y(v)+4}" text-anchor="end">${M(v)}</text>`; }
+  b+=`<line class="axis" x1="${m.l}" x2="${w-m.r}" y1="${Y(0)}" y2="${Y(0)}" style="stroke:var(--ink3)"/>`;
+  vals.forEach((v,i)=>{ const x=m.l+i*bw+bw*.22, bwid=bw*.56, y=Math.min(Y(v),Y(0)), hh=Math.abs(Y(v)-Y(0));
+    b+=`<rect x="${x}" y="${y}" width="${bwid}" height="${Math.max(1,hh)}" rx="3" fill="${v>=0?"var(--gain)":"var(--loss)"}" data-tip="Year ${i+1}: ${M(v)}"/>`;
+    b+=`<text class="val" x="${x+bwid/2}" y="${v>=0?y-6:y+hh+14}" text-anchor="middle" style="fill:var(--ink)">${M(v)}</text>`;
+    b+=`<text x="${x+bwid/2}" y="${h-8}" text-anchor="middle">Year ${i+1}</text>`; });
+  el.innerHTML=svg(w,h,b,"Structural balance over the first five years");
+}
+
+/* 8. tornado */
+function drawTornado(R){
+  const base=R.saldo;
+  const drivers=[
+    ["Elasticity multiplier","epsMult",.7,1.3,v=>v.toFixed(2)+"×"],
+    ["Pass-through to guests","passThrough",.6,1,v=>Math.round(v*100)+"%"],
+    ["Floor T_min","tmin",P.tmin*.8,P.tmin*1.2,v=>"€"+v.toFixed(1)],
+    ["Luxury rate α","alpha",P.alpha*.75,P.alpha*1.25,v=>(v*100).toFixed(1)+"%"],
+    ["Luxury median price","lux.price",P.segs[4].price*.75,P.segs[4].price*1.25,v=>"€"+Math.round(v)],
+    ["Overnight stays","totalNights",P.totalNights*.85,P.totalNights*1.15,v=>v.toFixed(1)+"m"],
+    ["Extra evasion","evasion",0,.25,v=>Math.round(v*100)+"%"],
+    ["State levy","stateLevy",0,.5,v=>Math.round(v*100)+"%"],
+    ["Visitor-driven spending","touristCost",P.touristCost*.6,P.touristCost*1.4,v=>"€"+Math.round(v)+"m"],
+    ["Median short-let premium","strPremium",1.25,1.8,v=>v.toFixed(2)+"×"]
+  ].map(d=>{ const at=v=>{ const Q={...P,segs:P.segs.map(s=>({...s}))}; if(d[1]==="lux.price") Q.segs[4].price=v; else Q[d[1]]=v; return run(Q).saldo; };
+    const a=at(d[2]), c=at(d[3]); return {label:d[0],lo:a,hi:c,loL:d[4](d[2]),hiL:d[4](d[3]),range:Math.abs(c-a)}; }).sort((x,y)=>y.range-x.range);
+  const el=document.getElementById("ch-tornado"), w=W(el), rowH=30, lw=Math.min(190,w*.38), m={l:lw,r:16,t:22,b:24}, h=m.t+m.b+rowH*drivers.length;
+  const lo=Math.min(base,...drivers.map(d=>Math.min(d.lo,d.hi))), hi=Math.max(base,...drivers.map(d=>Math.max(d.lo,d.hi)));
+  const pad=(hi-lo)*.18||1e6, X=v=>m.l+(v-lo+pad)/((hi-lo)+2*pad)*(w-m.l-m.r);
+  let b=`<line x1="${X(base)}" x2="${X(base)}" y1="${m.t-8}" y2="${h-m.b}" stroke="var(--ink)" stroke-width="1.5"/><text x="${X(base)}" y="${m.t-10}" text-anchor="middle" class="lbl">As set: ${M(base)}</text>`;
+  const step=niceStep(((hi-lo)+2*pad)/4);
+  for(let v=Math.ceil((lo-pad)/step)*step; v<=hi+pad; v+=step){ b+=`<text x="${X(v)}" y="${h-6}" text-anchor="middle">${M(v)}</text>`; }
+  drivers.forEach((d,i)=>{ const y=m.t+i*rowH;
+    b+=`<text x="${m.l-8}" y="${y+18}" text-anchor="end" class="lbl">${esc(d.label)}</text>`;
+    [[d.lo,d.loL],[d.hi,d.hiL]].forEach(([v,l],j)=>{ const x1=X(Math.min(v,base)), x2=X(Math.max(v,base));
+      b+=`<rect x="${x1}" y="${y+6}" width="${Math.max(1,x2-x1)}" height="16" rx="2" fill="${v>=base?"var(--gain)":"var(--loss)"}" data-tip="${esc(d.label)} at ${l}: balance ${M(v)}"/>`;
+      const tx=v>=base?x2+4:x1-4; b+=`<text class="val" x="${tx}" y="${y+18}" text-anchor="${v>=base?"start":"end"}">${l}</text>`; });
+  });
+  el.innerHTML=svg(w,h,b,"Sensitivity of the structural balance to key assumptions");
+}
+
+/* ---------- tables and text ---------- */
+function renderKpis(R){
+  const k=[
+    ["Net tourist tax to the Comune",M(R.net),`${MS(R.dTax)} on today's ${M(R.base)}`,1],
+    ["Structural balance",M(R.saldo),"per year, steady state",1],
+    ["Civic dividend per household",E0(R.perHH),`after a ${Math.round(P.reserve*100)}% reserve`],
+    ["Overnight stays",PS(R.nChg),`${(R.nNew/1e6).toFixed(1)}m nights a year`],
+    ["Homes back to residents",N0(R.toRes),`${N0(R.newRes)} new residents`],
+    ["Long-let rents",PS(R.rentChg),`€${(P.rent*(1+R.rentChg)).toFixed(1)}/m² a month`]
+  ];
+  document.getElementById("kpis").innerHTML=k.map(x=>`<div class="kpi${x[3]?" lead":""}"><span class="lab">${x[0]}</span><span class="big">${x[1]}</span><span class="sub">${x[2]}</span></div>`).join("");
+}
+function renderTax(R){
+  const pstar=P.alpha>0?P.tmin/P.alpha:Infinity;
+  document.getElementById("tax-intro").innerHTML=`Below <b>€${isFinite(pstar)?Math.round(pstar):"∞"}</b> per person per night every taxable guest pays the €${P.tmin.toFixed(P.tmin%1?1:0)} floor; above it the tax is ${(P.alpha*100).toFixed(1)}% of the room price. Today's flat tariffs run from €3.50 to €8.`;
+  document.getElementById("tb-tax").innerHTML=`<thead><tr><th>Persona</th><th>Today</th><th>Median after</th><th>1 in 10 pay ≥</th><th>Revenue today</th><th>Revenue after</th></tr></thead><tbody>${R.segs.map((s,i)=>`<tr><td><span class="dot" style="background:${SEGCOL[i]}"></span>${esc(s.short)}</td><td class="num">€${s.tOld.toFixed(2)}</td><td class="num">${s.exempt?"exempt":"€"+s.tMed.toFixed(2)}</td><td class="num">${s.exempt?"—":"€"+s.tP90.toFixed(2)}</td><td class="num">${M(s.revOld)}</td><td class="num">${M(s.rev)}</td></tr>`).join("")}</tbody><tfoot><tr><td>Total gross</td><td></td><td></td><td></td><td class="num">${M(R.base)}</td><td class="num">${M(R.G)}</td></tr></tfoot>`;
+}
+function renderDemandTable(R){
+  document.getElementById("tb-demand").innerHTML=`<thead><tr><th>Persona</th><th>Nights today</th><th>After</th><th>Change</th><th>Avg tax paid</th><th>Moved to the belt</th></tr></thead><tbody>${R.segs.map((s,i)=>`<tr><td><span class="dot" style="background:${SEGCOL[i]}"></span>${esc(s.name)}</td><td class="num">${Mn(s.nB)}</td><td class="num">${Mn(s.nN)}</td><td class="num ${cls(s.chg)}">${PS(s.chg)}</td><td class="num">€${s.tAvg.toFixed(2)}</td><td class="num">${Mn(s.belt)}</td></tr>`).join("")}</tbody><tfoot><tr><td>All overnight stays</td><td class="num">${Mn(R.nB)}</td><td class="num">${Mn(R.nNew)}</td><td class="num ${cls(R.nChg)}">${PS(R.nChg)}</td><td></td><td class="num">${Mn(R.belt)}</td></tr></tfoot>`;
+  const dB=R.vdB/365, dN=R.vdN/365;
+  document.getElementById("crowd-note").innerHTML=`<b>Visitor load.</b> Counting day-trippers and belt guests who come in by day, the city goes from about <b>${N0(dB)}</b> to <b>${N0(dN)}</b> visitors on an average day (${PS(R.vdChg)}), or ${(dB/P.residents*100).toFixed(1)} → ${(dN/P.residents*100).toFixed(1)} per 100 residents. ${Math.abs(R.vdChg)<.08?"An overnight tax alone barely touches day-trippers, who are untaxed; a sharper cut in crowding would need an access contribution or limits on coach arrivals.":"The cut is concentrated in the low-spend segments."}`;
+}
+function renderHousing(R){
+  const rows=[
+    ["Short-let net income change",PS(-R.noiDrop),`gross ${PS(-R.aptDrop)}, magnified by a ${Math.round(P.noiMargin*100)}% margin`],
+    ["Flats that switch",N0(R.units),`${(R.share*100).toFixed(1)}% of ${N0(P.strUnits)}`],
+    ["…reaching residents",N0(R.toRes),""],
+    ["New residents (net)",N0(R.newRes),`${N0(R.newResGross)} occupants in all`],
+    ["Long-let rent",`€${(P.rent*(1+R.rentChg)).toFixed(2)}/m²`,`${PS(R.rentChg)} from €${P.rent.toFixed(2)}`],
+    ["Rent saved, 70 m² flat",E0(-R.rentChg*R.annualRent)+"/yr",""],
+    ["Purchase price",`€${N0(P.price*(1+R.priceChg))}/m²`,`${PS(R.priceChg)} from €${N0(P.price)}`]
+  ];
+  document.getElementById("tb-house").innerHTML=`<thead><tr><th>Housing</th><th>Value</th><th style="text-align:left">Note</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td style="text-align:left;color:var(--ink3);white-space:normal">${r[2]}</td></tr>`).join("")}</tbody>`;
+}
+function renderFund(R){
+  const f=[["Commercial conversion","Set by lever",R.fComm],["Worker transition",`${N0(R.jobsLost)} jobs × €${N0(P.trainCost)} × ${Math.round(P.trainCoverage*100)}%`,R.fTrain],["Rent guarantee",P.guaranteeOn?`${N0(R.toRes)} lets × ${E0(R.annualRent)} × ${(P.defaultRate*100).toFixed(1)}%`:"Off",R.fGuar],["Firms and talent","Set by lever",R.fTalent]];
+  document.getElementById("tb-fund").innerHTML=`<thead><tr><th>Fondo Armonizzatore</th><th style="text-align:left">Sizing</th><th>€ per year</th></tr></thead><tbody>${f.map(r=>`<tr><td>${r[0]}</td><td style="text-align:left;color:var(--ink3);white-space:normal">${r[1]}</td><td class="num">${M(r[2])}</td></tr>`).join("")}</tbody><tfoot><tr><td>Total</td><td></td><td class="num">${M(R.fund)}</td></tr><tr><td>Structural balance</td><td></td><td class="num">${M(R.saldo)}</td></tr><tr><td>Prudential reserve</td><td></td><td class="num">${M(R.reserve)}</td></tr><tr><td>Available for the dividend</td><td></td><td class="num" style="color:var(--accent)">${M(R.pool)}</td></tr></tfoot>`;
+  const names={irpef:"Abolish the IRPEF surcharge",tari:"Cut household TARI",tpl:"Free transit for residents"};
+  document.getElementById("alloc").innerHTML=`<h3>Civic dividend, in priority order</h3>`+String(P.order).split(",").map(k=>{ const a=R.alloc[k]; return `<div class="item"><div class="row"><span>${names[k]}</span><span class="num">${M(a.paid)} of ${M(a.cost)} · ${Math.round(a.cov*100)}%</span></div><div class="bar" data-tip="${names[k]}: ${Math.round(a.cov*100)}% funded"><i style="width:${(a.cov*100).toFixed(1)}%"></i></div></div>`; }).join("")+(R.surplus>1e5?`<p class="notes">Unallocated after all three: ${M(R.surplus)}.</p>`:"");
+  document.getElementById("div-intro").textContent=R.saldo>0?`A ${M(R.saldo)} balance, less the reserve, leaves ${M(R.pool)} a year: ${E0(R.perHH)} per household, or ${E0(R.pool/P.residents)} per resident.`:`With these settings the reform does not pay for the Fondo, so there is no dividend. Raise the floor or α, or trim the Fondo.`;
+  // illustrative household
+  const tariHH=P.tariDomBase*1e6/P.households, irpefHH=P.incomeNew*P.irpefRate;
+  const tari=tariHH*R.alloc.tari.cov, irpef=irpefHH*R.alloc.irpef.cov, tpl=2*P.passPrice*R.alloc.tpl.cov, rent=-R.rentChg*R.annualRent;
+  document.getElementById("hh").innerHTML=`<h3>Illustrative household: two adults renting 70 m², one earner on €40,000</h3><dl>
+    <dt>IRPEF surcharge saved</dt><dd>${E0(irpef)}</dd><dt>TARI saved (average household bill ${E0(tariHH)})</dt><dd>${E0(tari)}</dd>
+    <dt>Two transit passes</dt><dd>${E0(tpl)}</dd><dt>Lower rent</dt><dd>${E0(rent)}</dd>
+    <dt class="t">Total per year</dt><dd class="t">${E0(irpef+tari+tpl+rent)}</dd></dl>`;
+}
+function renderCascade(R){
+  const lux=R.segs[4], mass=R.segs[2], young=R.segs[0], budget=R.segs[1];
+  const pstar=P.alpha>0?Math.round(P.tmin/P.alpha):"∞";
+  const first=[
+    `Luxury guests pay <b>€${lux.tAvg.toFixed(0)}</b> a night on average instead of €${lux.tOld.toFixed(0)}; their stays move only <b>${PS(lux.chg)}</b>, yet they bring in <b>${M(lux.rev)}</b>, ${Math.round(lux.rev/Math.max(1,R.G)*100)}% of the total.`,
+    `Mass-market stays fall <b>${PS(mass.chg)}</b> and budget stays <b>${PS(budget.chg)}</b>; ${young.exempt?`exempt under-30 EU stays rise <b>${PS(young.chg)}</b>`:`under-30 EU stays change <b>${PS(young.chg)}</b>`}.`,
+    `Gross tourist tax rises to <b>${M(R.G)}</b>. After extra evasion (${M(R.evasionLoss)}) and the State levy (${M(R.levy)}), the Comune keeps <b>${M(R.net)}</b>.`,
+    `Rooms priced above <b>€${pstar}</b> per person cross from the floor to the proportional rate.`
+  ];
+  const second=[
+    `Short-let gross takings fall <b>${PS(-R.aptDrop)}</b>, net income <b>${PS(-R.noiDrop)}</b>; <b>${N0(R.units)}</b> flats switch to long lets${P.guaranteeOn?", helped by the rent guarantee":""}.`,
+    `Long-let rents move <b>${PS(R.rentChg)}</b> and purchase prices <b>${PS(R.priceChg)}</b> as the short-let premium leaves valuations.`,
+    `Tourist spending changes by <b>${MS(R.dSpend)}</b> (value added ${MS(R.vaChg)}), putting about <b>${N0(R.jobsLost)}</b> mostly low-wage jobs at risk. With incomes under €25,000 exempt, the IRPEF surcharge loses only ${M(R.irpefJobs)}.`,
+    `<b>${Mn(R.belt)}</b> nights move to the metropolitan belt; ${Math.round(P.beltReturn*100)}% of those guests still come into the centre by day.`,
+    `Visitor-days fall <b>${PS(R.vdChg)}</b>, saving ${M(R.opSaving)} on cleaning and policing and ${M(R.tariSaving)} on waste.`
+  ];
+  const third=[
+    `About <b>${N0(R.newRes)}</b> people settle in the city, a first reversal of the 2024–25 population decline (≈ −2,000 a year).`,
+    `Belt municipalities (Sesto, Scandicci, Bagno a Ripoli, Prato) absorb displaced guests and may see their own rents rise: a case for a metropolitan-wide tariff.`,
+    `A high luxury rate makes palazzo-to-hotel conversions less lucrative, but the floor makes small short lets relatively worse, so expect consolidation into professional hotels.`,
+    `The commercial fund (${M(R.fComm)}) and talent fund (${M(R.fTalent)}) only pay off if new residents and firms create demand for neighbourhood shops; this is the slowest and least certain link.`,
+    `A visible dividend of ${E0(R.perHH)} per household builds a constituency for the reform; tying services to tourist revenue also ties them to tourism shocks, hence the ${Math.round(P.reserve*100)}% reserve.`
+  ];
+  const col=(t,s,items)=>`<div class="order"><h3>${t}<small>${s}</small></h3><ul>${items.map(i=>`<li>${i}</li>`).join("")}</ul></div>`;
+  document.getElementById("cascade").innerHTML=col("First order","Prices and revenue, within months",first)+col("Second order","Markets adjust, one to three years",second)+col("Third order","City structure, three to ten years",third);
+}
+function renderChecks(R){
+  const maxT=Math.max(...R.segs.map(s=>s.tP90));
+  const ratio=R.nB/P.residents;
+  const c=[];
+  c.push(P.tmin<=10?["ok","Floor within the €10 ceiling",`€${P.tmin} is allowed for capoluoghi with presences above 20× residents (Florence: ${ratio.toFixed(0)}×).`]
+    :P.tmin<=12?["warn","Floor uses the +€2 extension",`€${P.tmin} relies on the temporary +€2 for 2026; it lapses without renewal, and 30% of the extra goes to the State.`]
+    :["bad","Floor above the legal ceiling",`€${P.tmin} exceeds €10 (+€2). It needs a national law, as Venice's access fee did.`]);
+  c.push(maxT<=12?["ok","Proportional rate within the ceiling","Law already allows tariffs graduated by price, up to the per-night cap."]
+    :["bad","Proportional rate breaks the per-night cap",`One luxury guest in ten would pay at least €${maxT.toFixed(0)} a night. Article 4 of Legislative Decree 23/2011 caps the tax per night; a percentage rate without a cap needs national legislation.`]);
+  if(P.youthExempt) c.push(["warn","EU-citizen exemption needs legal review","Age exemptions are common. Tying one to EU citizenship is untested in Italian law and may be challenged on equal-treatment grounds; an age-only or student-card exemption is safer."]);
+  c.push(R.saldo>0?["ok","Balance positive",`${M(R.saldo)} a year covers the Fondo and funds a dividend.`]:["bad","Balance negative","The reform does not fund the Fondo with these settings."]);
+  c.push(P.stateLevy>0?["warn","State takes part of the increase",`${Math.round(P.stateLevy*100)}% of extra revenue (${M(R.levy)}) leaves the city. Whether it applies to a whole new tariff structure, not just the +€2, is a legal question.`]:["ok","No State levy assumed",""]);
+  if(Math.abs(R.rentChg)>.2||R.share>.5) c.push(["warn","Housing response outside the calibrated range","The rent model is a linear approximation; treat large changes as indicative."]);
+  if(R.noiDrop>.6) c.push(["warn","Hosts take a large hit","Short-let net income falls by more than 60%; expect legal challenges and a rise in undeclared lets."]);
+  if(Math.abs(R.vdChg)<.08) c.push(["warn","Crowding target only partly met",`Visitor-days fall just ${PS(R.vdChg)}; day-trippers are untouched.`]);
+  const lab={ok:"OK",warn:"Check",bad:"Blocker"};
+  document.getElementById("checks").innerHTML=c.map(x=>`<div class="check"><span class="chip ${x[0]}">${lab[x[0]]}</span><div><b>${x[1]}.</b> ${x[2]}</div></div>`).join("");
+}
+function renderSources(){
+  document.getElementById("srcs").innerHTML=SRC_ORDER.map(k=>`<li><a href="${SRC[k].u}" target="_blank" rel="noopener">${esc(SRC[k].t)}</a></li>`).join("");
+}
+
+/* ---------- update loop ---------- */
+let R=null;
+function update(){
+  syncRail(); save();
+  R=run(P);
+  renderKpis(R); renderTax(R); drawTax(R); drawDemand(R); renderDemandTable(R); drawWaterfall(R);
+  drawPrem(R); renderHousing(R); renderFund(R); drawPath(); renderCascade(R); drawTornado(R); renderChecks(R);
+}
+function redrawCharts(){ if(!R) return; drawTax(R); drawDemand(R); drawWaterfall(R); drawPrem(R); drawPath(); drawTornado(R); }
+
+/* ---------- events ---------- */
+document.querySelectorAll("[data-scen]").forEach(b=>b.addEventListener("click",()=>{ Object.assign(P,SCEN[b.dataset.scen]); markScen(); update(); }));
+document.getElementById("sc-reset").addEventListener("click",()=>{ P=defaults(); refreshAssumpInputs(); markScen(); update(); });
+document.getElementById("sc-copy").addEventListener("click",()=>{ const txt=JSON.stringify(P,null,1); const msg=document.getElementById("copymsg");
+  const done=t=>{ msg.textContent=t; setTimeout(()=>msg.textContent="",2500); };
+  try{ navigator.clipboard.writeText(txt).then(()=>done("Copied"),()=>done("Copy blocked by the browser")); }catch(e){ done("Copy blocked by the browser"); } });
+const tip=document.getElementById("tip");
+document.addEventListener("pointermove",e=>{ const t=e.target.closest&&e.target.closest("[data-tip]"); if(!t){ tip.classList.remove("on"); return; }
+  tip.textContent=t.getAttribute("data-tip"); tip.classList.add("on");
+  const x=Math.min(e.clientX+14, window.innerWidth-tip.offsetWidth-8), y=e.clientY+16+tip.offsetHeight>window.innerHeight?e.clientY-tip.offsetHeight-10:e.clientY+16; tip.style.left=x+"px"; tip.style.top=y+"px"; });
+let rt=null; const ro=new ResizeObserver(()=>{ clearTimeout(rt); rt=setTimeout(redrawCharts,80); });
+["ch-tax","ch-demand","ch-wf","ch-prem","ch-path","ch-tornado"].forEach(id=>ro.observe(document.getElementById(id)));
+
+buildRail(); buildAssump(); renderSources(); markScen(); update();
+window.__model={run,get P(){return P;}};
+})();
+</script>
