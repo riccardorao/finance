@@ -183,8 +183,52 @@ function opportunities(state, today) {
   return out.filter((o) => o.base >= 1000).sort((a, b) => b.base - a.base);
 }
 
+/* ---------- the household's money in plain terms ---------- */
+// Needs are what a family pays whatever happens (home and bills, food, transport, health, insurance, taxes,
+// phone, bank); wants are everything else it spends; savings are what is left. The guide most people know
+// is 50/30/20: needs at most half of income, wants about a third, at least a fifth put aside.
+const NEEDS = new Set(['casa', 'spesa', 'telefono', 'trasporti', 'salute', 'assicurazioni', 'tasse', 'banca']);
+const GUIDE = { need: 0.5, want: 0.3, save: 0.2 };
+// Monthly averages over the 12 full months before today (or this month alone when that is all there is).
+function moneySplit(state, today) {
+  const m = monthly(state);
+  const cur = monthOf(today);
+  let months = monthsRange(addMonths(cur, -12), addMonths(cur, -1)).filter((k) => m[k]);
+  if (!months.length && m[cur]) months = [cur];
+  const n = months.length || 1;
+  let inc = 0, out = 0, need = 0;
+  for (const k of months) {
+    const r = m[k];
+    inc += r.inc; out += r.out;
+    for (const [c, v] of Object.entries(r.cats)) if (NEEDS.has(c) && catKind(state, c) === 'out') need -= v;
+  }
+  need = Math.max(0, Math.min(need, out));
+  return { months: months.length, inc: inc / n, out: out / n, need: need / n, want: (out - need) / n, save: (inc - out) / n };
+}
+// Four habits of a household whose money is in good shape, each answered yes or no (or null when unknown):
+// spending less than comes in, putting at least a tenth aside, three months of spending set by for the
+// unexpected, and needs no more than half of income.
+function moneyHealth(state, today) {
+  const s = moneySplit(state, today);
+  const bals = balances(state);
+  const known = Object.keys(bals).length > 0;
+  const saved = Object.values(bals).reduce((x, b) => x + b.bal, 0);
+  const rate = s.inc > 0 ? s.save / s.inc : 0;
+  const cover = s.out > 0 ? saved / s.out : 0;
+  const needShare = s.inc > 0 ? s.need / s.inc : 0;
+  return {
+    split: s,
+    items: [
+      { id: 'surplus', ok: s.months ? s.save >= 0 : null, p: { amt: Math.abs(s.save) } },
+      { id: 'rate', ok: s.months && s.inc > 0 ? rate >= 0.1 : null, p: { rate: Math.max(0, rate), gap: Math.max(0, s.inc * 0.1 - s.save) } },
+      { id: 'cushion', ok: known && s.out > 0 ? cover >= 3 : null, p: { months: Math.max(0, cover), target: s.out * 3, missing: Math.max(0, s.out * 3 - saved) } },
+      { id: 'needs', ok: s.months && s.inc > 0 ? needShare <= GUIDE.need : null, p: { share: needShare } },
+    ],
+  };
+}
+
 if (typeof module !== 'undefined') {
   const core = require('./core.js');
   Object.assign(globalThis, core);
-  module.exports = { PROFILES, GOAL_TYPES, profileById, monthsUntil, profileForMonths, futureValue, requiredMonthly, monthsToTarget, normCdf, impliedRate, chanceOfReaching, projection, capacity, planGoals, emergencyTarget, opportunities };
+  module.exports = { PROFILES, GOAL_TYPES, profileById, monthsUntil, profileForMonths, futureValue, requiredMonthly, monthsToTarget, normCdf, impliedRate, chanceOfReaching, projection, capacity, planGoals, emergencyTarget, opportunities, NEEDS, GUIDE, moneySplit, moneyHealth };
 }

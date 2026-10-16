@@ -558,7 +558,7 @@ const NOT_RECURRING = new Set(['spesa', 'ristoranti', 'contanti', 'shopping', 's
 function findRecurring(state) {
   const groups = {};
   for (const t of state.txns) {
-    if (t.excl || NOT_RECURRING.has(t.cat) || (t.cat === 'trasporti' && !/TELEPASS|ASSIC|BOLLO/.test(normDesc(t.desc)))) continue;
+    if (t.excl || t.src === 'quick' || NOT_RECURRING.has(t.cat) || (t.cat === 'trasporti' && !/TELEPASS|ASSIC|BOLLO/.test(normDesc(t.desc)))) continue;
     const key = t.acc + '|' + merchantKey(t.desc) + '|' + (t.amt < 0 ? '-' : '+');
     (groups[key] = groups[key] || []).push(t);
   }

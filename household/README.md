@@ -16,14 +16,21 @@ default, English one click away.
 
 | Section | What is on it |
 |---|---|
-| **Riepilogo** (Overview) | What is left this month, with income, spending (one-offs shown apart) and the share of income set aside; things worth a look; spending by category against the monthly average; progress on goals; savings found; balances; 12 months of income vs spending (with a table view) |
-| **Movimenti** (Transactions) | Search and filters; one-click category changes that turn into rules; notes; mark as **one-off**; leave out of totals; add income or spending by hand, from an account or **cash** |
-| **Budget** | A monthly limit per category, suggested from the last 6 months; one-offs do not count |
-| **Risparmi** (Savings) | **Savings opportunities** found in the data, each with its yearly amount, an adjustable percentage and an "I'll do it" switch; **one-off expenses** over 12 months; **cash**: withdrawn vs noted, and how un-noted cash is usually split |
+| **Oggi** (Today) | What is left (or missing) this month, money in against money out; **how your money is doing**: four plain habits (spending less than comes in, putting aside 10% or more, three months of spending set by, essentials at half of income or less); **what to do next**: at most three steps, each with its button; **how your money divides up**: essentials, wants and money put aside against the 50/30/20 rule; spending by category against the monthly average; goals; balances; 12 months of income vs spending (with a table view) |
+| **Entrate e uscite** (Money in and out) | Search and filters; one-click category changes that turn into rules; notes; mark as **one-off**; leave out of totals; add income or spending by hand, from an account or **cash** |
+| **Tetti di spesa** (Spending limits) | A monthly limit per category, suggested from the last 6 months; one-offs do not count |
+| **Risparmiare** (Save money) | **Savings opportunities** found in the data, each with its yearly amount, an adjustable percentage and an "I'll do it" switch; **one-off expenses** over 12 months; **cash**: withdrawn vs noted, and how un-noted cash is usually split |
 | **Obiettivi** (Goals) | How much can be set aside each month, goals funded by priority, where to keep the money for each horizon, the chance of getting there, how it could grow, and what to change if it is not enough |
-| **Controlli** (Checks) | Checks on past data, suggestions, regular payments found automatically, import history with undo |
-| **Importa** (Import) | Drop in the bank's file: a preview, column mapping where needed, duplicates skipped, export tips for the banks chosen at setup |
+| **Da controllare** (To check) | Checks on past data, suggestions, regular payments found automatically, import history with undo |
+| **Carica estratto** (Add a statement) | Drop in the bank's file: a preview, column mapping where needed, duplicates skipped, export tips for the banks chosen at setup |
 | **Impostazioni** (Settings) | Household name, accounts and real balances, the assumptions behind goals, rules, categories, backup and restore, language |
+
+### No money knowledge needed
+
+Every word is plain (no "budget", "cash flow" or "asset allocation"), and every screen says what to do next. A
+household without a bank file can **start from its own figures**: pay in, rent, bills, groceries, transport,
+phone, health, going out, other, and what is put by today. These become an estimate for the last three months, so
+every section works at once; the first real statement replaces them.
 
 ### Setting up for any household
 
