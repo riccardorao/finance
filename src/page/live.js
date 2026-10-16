@@ -90,17 +90,22 @@ async function pool(items, n, fn) {
   await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; try { out[k] = await fn(items[k]); } catch (e) { out[k] = null; } } }));
   return out;
 }
-const HIST_DOC = 'history/stocks', HIST_MARGIN = 14 * 864e5; // rebuild a fortnight back, to catch late-booked transactions
+const HIST_DOC = 'history/stocks', HIST_MARGIN = 2 * 864e5, HIST_LS = 'pm-history-stocks'; // rebuild from the last saved point, less a day or two for late bookings
+function validHist(h) { return h && Array.isArray(h.points) && h.points.length > 1 && Array.isArray(h.external) ? h : null; }
 async function loadStoredHistory() {
+  let a = null, b = null;
+  try { b = validHist(JSON.parse(localStorage.getItem(HIST_LS))); } catch (e) { /* browser storage is optional */ }
   try {
     const db = window.claude && window.claude.use ? await window.claude.use('db') : null;
-    if (!db) return null;
-    DB = db;
-    const snap = await db.doc(HIST_DOC).get();
-    const d = snap && snap.exists ? snap.data() : null;
-    const h = d && d.json ? JSON.parse(d.json) : null;
-    return h && Array.isArray(h.points) && h.points.length > 1 && Array.isArray(h.external) ? h : null;
-  } catch (e) { return null; }
+    if (db) {
+      DB = db;
+      const snap = await db.doc(HIST_DOC).get();
+      const d = snap && snap.exists ? snap.data() : null;
+      a = validHist(d && d.json ? JSON.parse(d.json) : null);
+    }
+  } catch (e) { /* fall back to this browser's copy */ }
+  const t = (h) => (h ? h.points[h.points.length - 1][0] : -1);
+  return t(a) >= t(b) ? a : b; // whichever copy runs later
 }
 async function extendHistory(raw) {
   // base: the history saved by the last refresh when it runs later than the page's own, so the join moves forward each time
@@ -142,13 +147,13 @@ function keepBase(base, asOf) { // a saved history must never run past the live 
   DATA_ACTIVE.history = { ...base, points: base.points.filter((p) => p[0] <= asOf), external: base.external.filter((f) => f[0] <= asOf) };
   return false;
 }
-async function saveHistory(h) { // owner-only write; viewers without the right simply skip it
+async function saveHistory(h) { // saved to the artifact's database and to this browser, so one failing does not lose the progress
+  const json = JSON.stringify(h);
+  try { localStorage.setItem(HIST_LS, json); } catch (e) { /* too large or blocked */ }
   try {
-    if (!DB) return;
-    const json = JSON.stringify(h);
-    if (json.length > 800000) return;
+    if (!DB || json.length > 800000) return;
     await DB.doc(HIST_DOC).set({ json, lastT: h.points[h.points.length - 1][0], updatedAt: new Date().toISOString() });
-  } catch (e) { /* the page still works from what it just built */ }
+  } catch (e) { /* the browser copy still carries it */ }
 }
 
 /* ---------- boot ---------- */
