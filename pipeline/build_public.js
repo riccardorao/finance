@@ -14,7 +14,13 @@
 //   - Closed positions keep only their category, dates and the sign and size of the result (rescaled).
 //
 // Usage: node pipeline/build_public.js <data.json> <out.html> [--subscribe <url>] [--summary <out.json>]
-//   data.json    the full data object built by build_data.js (data/private/data.json)
+//                                         [--data-out <public.json>] [--without NDX,…]
+//   data.json    the full data object built by build_data.js (data/private/data.json), OR a public build's data
+//                (public-data/portfolio.json, written by --data-out): then only the page is made from it, which is
+//                what a website does at deploy time without ever holding the full data
+//   --data-out   also write the public data itself (checked like the page): the file to commit and publish
+//   --without    benchmark ids left out of the public build (default NDX: the page compares against the S&P 500 and
+//                MSCI World only)
 //   --subscribe  where "Weekly updates on my companies" leads (an https:// link, e.g. the newsletter)
 //   --summary  also write the headline figures as JSON (periods against the indices, sectors, risk),
 //              for a website to quote without loading the page; checked like the page
@@ -32,10 +38,46 @@ const subscribe = { href: opt('--subscribe', '') };
 if (subscribe.href && !/^https:\/\/[^\s"'<>]+$/.test(subscribe.href)) { console.error('--subscribe must be an https:// link'); process.exit(1); }
 
 const D = JSON.parse(fs.readFileSync(inFile, 'utf8'));
-if (D.public) { console.error('input is already a public build'); process.exit(1); }
+const rd = (f) => fs.readFileSync(path.join(root, f), 'utf8');
+
+/* ---------- page: the same assembly as build_page.js, with the public data ---------- */
+function pageHtml(json) {
+  const scripts = ['src/core.js', 'src/page/model.js', 'src/page/views.js', 'src/page/live.js'].map(rd).join('\n');
+  const body = `
+<div class="app">
+  <header class="top">
+    <div class="brand"><h1 id="mh-name">Equity Portfolio Dashboard</h1><p id="mh-strategy"></p><div class="aum" id="mh-value"></div><p class="aum-sub" id="mh-sub"></p></div>
+    <div class="status" id="status" data-mode="snapshot" role="status"><span class="dot"></span><span id="status-text"></span><button class="btn" id="btn-refresh" hidden>Refresh</button></div>
+  </header>
+  <div class="bar"><nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav></div>
+  <section class="tabpage" id="t-record" role="tabpanel" aria-labelledby="tab-record"></section>
+  <section class="tabpage" id="t-book" role="tabpanel" aria-labelledby="tab-book" hidden></section>
+  <section class="tabpage" id="t-risk" role="tabpanel" aria-labelledby="tab-risk" hidden></section>
+  <div id="notes"></div>
+</div>
+<div id="tip" role="tooltip"></div>`;
+  const safe = json.replace(/<\//g, '<\\/').replace(/<!--/g, '<\\!--');
+  return `<title>Equity Portfolio Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+${rd('src/page/style.css')}
+</style>
+${body}
+<script>
+const DATA = ${safe};
+${scripts}
+</script>
+`;
+}
+const writeOut = (html) => { fs.mkdirSync(path.dirname(path.resolve(outFile)), { recursive: true }); fs.writeFileSync(outFile, html); };
+
+if (D.public) {   // already public: nothing to rescale or check again (it was, when it was made)
+  writeOut(pageHtml(JSON.stringify(D)));
+  console.log('wrote', path.relative(process.cwd(), path.resolve(outFile)), 'from public data,', D.holdings.length, 'positions');
+  process.exit(0);
+}
 
 /* ---------- the page's own model, run here on the full data ---------- */
-const rd = (f) => fs.readFileSync(path.join(root, f), 'utf8');
 const ctx = vm.createContext({
   DATA: null, console,
   ResizeObserver: class { observe() {} unobserve() {} },
@@ -95,6 +137,16 @@ const P = {
   },
 };
 
+// benchmarks left out of the public build (the page compares against the S&P 500 and MSCI World only)
+const WITHOUT = new Set(opt('--without', 'NDX').split(',').filter(Boolean));
+if (WITHOUT.size) {
+  const gone = new Set(P.benches.filter((b) => WITHOUT.has(b.id)).map((b) => b.isin));
+  P.benches = P.benches.filter((b) => !WITHOUT.has(b.id));
+  P.indices = P.indices.filter((x) => !WITHOUT.has(x.id));
+  gone.forEach((isin) => { delete P.series.p[isin]; if (P.benchMonthly) delete P.benchMonthly[isin]; if (P.indexDaily) delete P.indexDaily[isin]; });
+  ['bVol', 'pBeta', 'pCorr'].forEach((key) => WITHOUT.forEach((id) => { if (P.public.risk[key]) delete P.public.risk[key][id]; }));
+}
+
 /* ---------- check before writing: no ISIN, no closed position by name, no euro ---------- */
 const json = JSON.stringify(P);
 const shown = new Set(holdings.flatMap((h) => [h.name, h.ticker]).filter(Boolean));
@@ -106,35 +158,10 @@ const leaks = [...forbidden].filter((x) => String(x).length >= 3 && json.include
 if (/€|\bEUR\b/.test(json)) leaks.push('a euro sign or EUR');
 if (leaks.length) { console.error('ABORT: the public data still contains:', leaks.join(', ')); process.exit(1); }
 
-/* ---------- page: the same assembly as build_page.js, with the public data ---------- */
-const scripts = ['src/core.js', 'src/page/model.js', 'src/page/views.js', 'src/page/live.js'].map(rd).join('\n');
-const body = `
-<div class="app">
-  <header class="top">
-    <div class="brand"><h1 id="mh-name">Equity Portfolio Dashboard</h1><p id="mh-strategy"></p><div class="aum" id="mh-value"></div><p class="aum-sub" id="mh-sub"></p></div>
-    <div class="status" id="status" data-mode="snapshot" role="status"><span class="dot"></span><span id="status-text"></span><button class="btn" id="btn-refresh" hidden>Refresh</button></div>
-  </header>
-  <div class="bar"><nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav></div>
-  <section class="tabpage" id="t-record" role="tabpanel" aria-labelledby="tab-record"></section>
-  <section class="tabpage" id="t-book" role="tabpanel" aria-labelledby="tab-book" hidden></section>
-  <section class="tabpage" id="t-risk" role="tabpanel" aria-labelledby="tab-risk" hidden></section>
-  <div id="notes"></div>
-</div>
-<div id="tip" role="tooltip"></div>`;
-const safe = json.replace(/<\//g, '<\\/').replace(/<!--/g, '<\\!--');
-const html = `<title>Equity Portfolio Dashboard</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<style>
-${rd('src/page/style.css')}
-</style>
-${body}
-<script>
-const DATA = ${safe};
-${scripts}
-</script>
-`;
-fs.mkdirSync(path.dirname(path.resolve(outFile)), { recursive: true });
-fs.writeFileSync(outFile, html);
+const dataOut = opt('--data-out', '');
+if (dataOut) { fs.mkdirSync(path.dirname(path.resolve(dataOut)), { recursive: true }); fs.writeFileSync(dataOut, json); console.log('wrote', dataOut, '(the public data: publish this, nothing else)'); }
+const html = pageHtml(json);
+writeOut(html);
 
 /* ---------- optional summary: the same figures the page shows, as data ---------- */
 const sumFile = opt('--summary', '');

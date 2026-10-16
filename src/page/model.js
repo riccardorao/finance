@@ -25,6 +25,8 @@ let DATA_ACTIVE = null; // snapshot or live-merged
 /* The public build (pipeline/build_public.js): money rescaled so the stock book is 100 today, picks
    anonymised, per-stock risk shipped as book totals. PUB switches the few places that show money. */
 const PUB = typeof DATA !== 'undefined' && !!(DATA && DATA.public);
+// what I own, priced on every visit: the host page sets this to its endpoint (riccardorao.com: /api/portfolio); null keeps the snapshot
+const BOOK_SOURCE = null;
 const money0 = (v) => (PUB ? fmtNum(v, 1) : fmtEUR0(v));
 let M = null; // derived model
 
@@ -146,6 +148,7 @@ function indexPriceFn(D, isin) {
   let pts = [];
   if (m) { const [y, mo] = m.start.split('-').map(Number); pts = m.p.map((p, k) => [Date.UTC(y, mo - 1 + k + 1, 0, 21), p]).filter((x) => x[0] < first); }
   pts = pts.concat(daily);
+  if (D.live && D.live.p[isin] != null) pts.push([D.live.t, D.live.p[isin]]);   // today's price, when the page carries its figure forward
   // last close on or before t (binary search)
   return (t) => {
     if (t <= pts[0][0]) return pts[0][1];

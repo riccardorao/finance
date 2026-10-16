@@ -6,7 +6,8 @@ const pctSpan = (x, d = 1) => `<span class="${cls(x)} num">${fmtSignedPct(x, d)}
 const eur0Span = (x) => `<span class="${cls(x)} num">${x > 0 ? '+' : ''}${fmtEUR0(x)}</span>`;
 const BSHORT = { SPX: 'S&P 500' };
 const prOf = () => PRESETS[state.preset].p;
-const pts = (x, d = 1) => (x == null ? '–' : `${x >= 0 ? '+' : '−'}${Math.abs(x * 100).toFixed(d)} pts`);
+const gapPts = (x, d = 1) => { const r = Math.abs(x * 100).toFixed(d); return `${+r === 0 ? '' : x >= 0 ? '+' : '−'}${r} pts`; };   // a gap that rounds to nothing is "0.0 pts", never "−0.0 pts"
+const pts = (x, d = 1) => (x == null ? '–' : gapPts(x, d));
 
 function portOutlook(pr) {
   const rows = M.H.map((h) => ({ h, w: h.value / M.secValue, sc: h.sc, e: expOf(h.sc, pr) }));
@@ -32,14 +33,14 @@ function renderHeader() {
   $('#btn-refresh').hidden = !state.canLive;
 }
 function renderHeaderPublic() {
-  const D = M.D, y1 = M.perf.stats('1Y'), d = D.public.day, u = D.public.unreal;
+  const D = M.D, y1 = M.perf.stats('1Y'), B = state.book, d = B ? B.day : D.public.day, u = B ? B.gain : D.public.unreal;
   $('#mh-name').textContent = 'Equity Portfolio Dashboard';
   $('#mh-strategy').textContent = D.profile.manager;
-  $('#mh-value').innerHTML = `<span class="${cls(y1.twr)}">${fmtSignedPct(y1.twr, 1)}</span><small class="aum-k">12 months</small>`;
+  $('#mh-value').innerHTML = `<span class="${cls(y1.twr)}">${fmtSignedPct(y1.twr, 1)}</span><small class="aum-k">12 months${B && !state.live ? ` · to ${dfmt(D.meta.asOf.slice(0, 10), { year: undefined })}` : ''}</small>`;
   const sp = y1.idx.SPX; // the headline number always travels with what the market did over the same 12 months
-  $('#mh-sub').innerHTML = `${sp ? `vs ${vsIdx(y1.twr, sp.twr, idxName('SPX'))} · ` : ''}${D.public.n} positions · today <span class="${cls(d)}">${fmtSignedPct(d, 1)}</span>${u != null ? ` · unrealised <span class="${cls(u)}">${fmtSignedPct(u, 1)}</span>` : ''}`;
+  $('#mh-sub').innerHTML = `${sp ? `vs ${vsIdx(y1.twr, sp.twr, idxName('SPX'))} · ` : ''}${B ? B.holdings.length : D.public.n} positions · today <span class="${cls(d)}">${fmtSignedPct(d, 1)}</span>${u != null ? ` · unrealised <span class="${cls(u)}">${fmtSignedPct(u, 1)}</span>` : ''}`;
   $('#status').dataset.mode = 'snapshot';
-  $('#status-text').textContent = `As of ${tfmt(D.meta.asOf)}`;
+  $('#status-text').textContent = B ? `Prices ${tfmt(B.updated)}` : `As of ${tfmt(D.meta.asOf)}`;
   $('#btn-refresh').hidden = true;
 }
 function renderTabs() {
@@ -69,7 +70,7 @@ const idxName = (id) => (M.D.indices.find((x) => x.id === id) || { name: id }).n
 const kpi = (k, v, c, n) => `<div class="kpi"><div class="k">${k}</div><div class="v ${c || ''}">${v}</div><div class="n">${n || ''}</div></div>`;
 // money-weighted return over a window: a yearly rate beyond a year, the period's own rate within one
 const pubMwr = (st, x) => (st.years > 1.05 ? x.mwr : periodFromAnnual(x.mwr, st.a.t, st.b.t));
-const vsIdx = (you, idx, name) => { const e = you - idx; return `${esc(name)} ${fmtSignedPct(idx, 1)} · <b class="${cls(e)}">${e >= 0 ? '+' : '−'}${Math.abs(e * 100).toFixed(1)} pts</b>`; };
+const vsIdx = (you, idx, name) => { const e = you - idx; return `${esc(name)} ${fmtSignedPct(idx, 1)} · <b class="${cls(e)}">${gapPts(e)}</b>`; };
 
 function renderRecord() {
   const root = $('#t-record'); unmountWithin(root);
@@ -110,7 +111,7 @@ function renderRecord() {
       ${all.map((s) => { const mx = Math.max(...all.map((q) => Math.max(Math.abs(q.twr), ...gsel.map((id) => Math.abs(q.idx[id].twr))))) || 1; const bar = (x) => { const w = (Math.abs(x) / mx) * 50; return x < 0 ? `right:50%;width:${w}%` : `left:50%;width:${w}%`; };
       return `<button class="pb${s.k === state.tf ? ' on' : ''}" data-tf="${s.k}"><span class="pl">${esc(TFL[s.k])}</span>
         <span class="pt" style="height:${10 + gsel.length * 7}px"><i class="z"></i><i class="b you" style="top:0;${bar(s.twr)}"></i>${gsel.map((id, j) => `<i class="b idx" style="top:${10 + j * 7}px;background:${IDX_COLOR[id]};${bar(s.idx[id].twr)}"></i>`).join('')}</span>
-        <span class="pv ${cls(s.twr)}">${fmtSignedPct(s.twr, 1)}</span>${gsel.map((id) => { const e = s.twr - s.idx[id].twr; return `<span class="pi">${fmtSignedPct(s.idx[id].twr, 1)}<small class="${cls(e)}">${e >= 0 ? '+' : '−'}${Math.abs(e * 100).toFixed(1)} pts</small></span>`; }).join('')}</button>`; }).join('')}</div>
+        <span class="pv ${cls(s.twr)}">${fmtSignedPct(s.twr, 1)}</span>${gsel.map((id) => { const e = s.twr - s.idx[id].twr; return `<span class="pi">${fmtSignedPct(s.idx[id].twr, 1)}<small class="${cls(e)}">${gapPts(e)}</small></span>`; }).join('')}</button>`; }).join('')}</div>
     <div class="legend" style="margin:10px 0 0"><span><i class="sw" style="background:var(--fund)"></i>${FUND}</span>${gsel.map((id) => `<span><i class="sw" style="background:${IDX_COLOR[id]}"></i>${esc(idxName(id))}</span>`).join('')}${PUB ? '' : '<span class="muted">Under the S&P 500: points the fund is ahead (+) or behind (−)</span>'}</div>
   </div>`;
 
@@ -210,33 +211,29 @@ function renderBook() {
     if (state.open) { const el = $(`#t-book .posn[data-i="${id}"]`); if (el && el.getBoundingClientRect().top < 80) el.scrollIntoView({ block: 'start' }); }
   }));
 }
-/* The public Portfolio tab: each company with its ticker, sector, a broad region, weight, unrealised gain
+/* The public Portfolio tab: each position with its sector, a broad region, weight, unrealised gain
    and the 12-month range; no euro amounts. One call: the weekly update by email. */
 function renderBookPublic() {
   const root = $('#t-book'); unmountWithin(root);
-  const U = M.D.public.subscribe || {};
-  const cov = M.H.filter((h) => h.sc);
-  const dLo = Math.min(-0.2, ...cov.map((h) => h.sc.bear)), dHi = Math.max(0.2, ...cov.map((h) => h.sc.bull));
-  const PX = (v) => 9 + ((v - dLo) / (dHi - dLo)) * 82; // inset so the end balls stay inside the column, as in the private book
-  // bear, weighted and bull positions, pushed apart just enough that the three balls never overlap
-  const balls = (a, b, c) => { const G = 19, x = [PX(a), PX(b), PX(c)]; x[1] = Math.max(x[1], x[0] + G); x[2] = Math.max(x[2], x[1] + G); const over = x[2] - 91; if (over > 0) { x[2] -= over; x[1] = Math.min(x[1], x[2] - G); x[0] = Math.min(x[0], x[1] - G); } return x; };
-  const sectors = {}; M.H.forEach((h) => { sectors[h.sector] = (sectors[h.sector] || 0) + h.weight; });
+  const U = M.D.public.subscribe || {}, B = state.book;
+  // live: the list priced now; otherwise the snapshot in the page
+  const rows = B ? B.holdings : M.H.map((h) => ({ name: h.name, ticker: h.ticker, sector: h.sector, region: h.region, weight: h.weight, day: null, gain: h.pnl != null ? h.pnlPct : null }));
+  const sectors = {}; rows.forEach((h) => { sectors[h.sector] = (sectors[h.sector] || 0) + h.weight; });
   const href = safeUrl(U.href);
+  const pc = (x) => (x == null ? '–' : pctSpan(x, 1));
   root.innerHTML = `
-  <div class="lede"><div><p class="kicker">Portfolio</p><h2>What I own: ${M.H.length} positions</h2></div></div>
+  <div class="lede"><div><p class="kicker">Portfolio</p><h2>What I own: ${rows.length} positions</h2></div></div>
   <div class="pub-wrap">
   <div class="panel flat">
-    <div class="pub-h"><span>Company</span><span>Sector</span><span class="c-m">Region</span><span>Weight</span><span>Unrealised</span><span class="c-m c-rng">12-month range</span></div>
-    ${M.H.map((h) => { const sc = h.sc, mid = sc ? expOf(sc, PRESETS.analyst.p) : null;
-      return `<div class="pub-r">
+    <div class="pub-h"><span>Company</span><span class="c-m">Sector</span><span class="c-m">Region</span><span>Weight</span><span>Today</span><span>Gain</span></div>
+    ${rows.map((h) => `<div class="pub-r">
         <span class="nm"><b>${esc(h.name)}</b>${h.ticker ? `<small class="tk">${esc(h.ticker)}</small>` : ''}</span>
-        <span>${esc(h.sector)}</span>
+        <span class="c-m">${esc(h.sector)}</span>
         <span class="c-m muted">${esc(h.region)}</span>
         <span class="n"><b>${(h.weight * 100).toFixed(1)}%</b></span>
-        <span class="n">${h.pnl != null ? pctSpan(h.pnlPct, 1) : '–'}</span>
-        <span class="c-m c-rng">${sc ? `<span class="rng" role="img" aria-label="Bear ${fmtSignedPct(sc.bear, 0)}, weighted ${fmtSignedPct(mid, 0)}, bull ${fmtSignedPct(sc.bull, 0)}">${((x) => `<i class="seg" style="left:${x[0]}%;width:${x[2] - x[0]}%"></i><em class="ball bear" style="left:${x[0]}%">${fmtSignedPct(sc.bear, 0)}</em><em class="ball mid" style="left:${x[1]}%">${fmtSignedPct(mid, 0)}</em><em class="ball bull" style="left:${x[2]}%">${fmtSignedPct(sc.bull, 0)}</em>`)(balls(sc.bear, mid, sc.bull))}</span>` : '<small class="muted">no analyst coverage</small>'}</span>
-        ${sc ? `<small class="rng-m">12-month range ${fmtSignedPct(sc.bear, 0)} · ${fmtSignedPct(mid, 0)} · ${fmtSignedPct(sc.bull, 0)}</small>` : ''}
-      </div>`; }).join('')}
+        <span class="n">${pc(h.day)}</span>
+        <span class="n">${pc(h.gain)}</span>
+      </div>`).join('')}
   </div>
   <aside class="panel pub-side">
     <h4 class="pub-s">By sector</h4>
@@ -244,6 +241,35 @@ function renderBookPublic() {
     ${href ? `<a class="pub-cta" href="${esc(href)}" target="_blank" rel="noopener">Weekly updates</a>` : ''}
   </aside>
   </div>`;
+}
+/* The 12-month figure, carried forward. The model that made it (perfModel) takes a live point when it is given a
+   later `asOf` and a later book value: the API sends the book's move since the snapshot and the two benchmark
+   ETFs' prices now. It does so only for the snapshot it was told about (`since.at` is this page's own asOf), and
+   only while the book is the one the snapshot saw (the weights at the snapshot, sorted, within two points of
+   this page's): after a trade the figure stays as of the snapshot, and the header says so. */
+function extendLive(D, B) {
+  const s = B && B.since;
+  if (!s || s.at !== D.meta.asOf || !(s.book > 0) || !s.bench || D.indices.some((x) => !(s.bench[x.isin] > 0))) return null;
+  const v = D.holdings.map((h) => h.qty * h.price), tot = v.reduce((a, b) => a + b, 0);
+  const mine = v.map((x) => x / tot).sort((a, b) => b - a), theirs = (s.weights || []).slice().sort((a, b) => b - a);
+  if (mine.length !== theirs.length || mine.some((w, i) => Math.abs(w - theirs[i]) > 0.02)) return null;
+  const t = Date.parse(B.updated);
+  if (!(t > Date.parse(D.meta.asOf))) return null;
+  const D2 = JSON.parse(JSON.stringify(D));
+  D2.meta.asOf = new Date(t).toISOString();
+  D2.history.points[D2.history.points.length - 1][1] = tot;   // the snapshot's own valuation, as the model took it then
+  D2.holdings.forEach((h) => { h.price *= s.book; });
+  D2.live = { t, p: s.bench };
+  return D2;
+}
+async function loadBook() {
+  try {
+    const r = await fetch(BOOK_SOURCE, { cache: 'no-store' });
+    const j = r.ok ? await r.json() : null;
+    if (!j || !Array.isArray(j.holdings) || !j.holdings.length) return;
+    state.book = j; DATA_ACTIVE = extendLive(DATA_SNAP, j) || DATA_SNAP; state.live = DATA_ACTIVE !== DATA_SNAP;
+    render();
+  } catch (e) { /* the snapshot stays */ }
 }
 function positionDetail(h) {
   const cv = h.conviction || {}, rs = h.research, sc = h.sc, c = h.comment, cons = rs && rs.cons;

@@ -271,3 +271,21 @@ mark, their score if known and the section result bands from the score report. T
 both absolute numbers, so the back-check reads them as one margin (score minus pass mark) and compares it with
 the estimated margin before the exam (estimate minus assumed pass mark). Each section's estimate is also checked
 against its result band.
+
+
+## riccardorao.com: what the website takes from here
+
+The website does not keep a copy of these tools: at every deploy it fetches this repository's `main` and builds from it
+(`tools/build/import-app.js` in the website's repository). So this is the one place to change them.
+
+| Tool on the site | Source here |
+|---|---|
+| CFA Prep Tracker | `cfa/cfa-tracker.html` |
+| Conti di Casa | `household/` (built by `household/build.js`) |
+| Copenhagen Rent | `copenhagen/index.html` + `copenhagen/data/` (moved here from `riccardorao/copenhagen`, October 2026) |
+| Portfolio | `src/` (the page) + `public-data/portfolio.json` (the public data), made by `node pipeline/build_public.js public-data/portfolio.json dist/public.html` |
+
+**Updating the portfolio** (the only step that needs the private data, so it is run on your own machine): `npm run public`
+rebuilds `public-data/portfolio.json` from `data/private/data.json`: money rescaled so the book is 100, names and tickers,
+no euro amounts, no ISINs, checked before it is written. Commit that one file and push: the website builds again by itself
+(`.github/workflows/redeploy-site.yml`). Nothing else from `data/private/` ever leaves the machine.

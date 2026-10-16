@@ -1,0 +1,21 @@
+# riccardorao.com is built from this repository's main (the tools in cfa/, household/, copenhagen/ and the
+# portfolio in src/ + public-data/). A push to main asks Vercel to build the site again, so a change here
+# reaches the site without anyone touching the website's repository.
+#
+# One-time setup: in the website's Vercel project, Settings → Git → Deploy Hooks, create a hook for the
+# production branch; add its URL here as the repository secret SITE_DEPLOY_HOOK (Settings → Secrets → Actions).
+name: Redeploy riccardorao.com
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  redeploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask Vercel to build the site again
+        env:
+          HOOK: ${{ secrets.SITE_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then echo "SITE_DEPLOY_HOOK is not set: nothing to do"; exit 0; fi
+          curl --fail --silent --show-error -X POST "$HOOK"

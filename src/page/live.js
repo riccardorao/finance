@@ -104,7 +104,7 @@ async function boot() {
   window.addEventListener('hashchange', () => setTab(location.hash.slice(1), false));
   watchResearch();
   $('#btn-refresh').addEventListener('click', liveRefresh);
-  if (PUB) return; // and nothing to refresh live: a refresh would bring the names back
+  if (PUB) { if (BOOK_SOURCE) loadBook(); return; }
   try {
     const mcp = window.claude && window.claude.use ? await window.claude.use('mcp') : null;
     if (mcp) { MCP = mcp; state.canLive = true; renderHeader(); liveRefresh(); }
