@@ -3,7 +3,7 @@
 | File | What it is |
 |---|---|
 | `dividendo-firenze-it.html` | Italian white-paper edition: interactive on screen, A4 layout when printed (Stampa → Salva come PDF) |
-| `white-paper-dividendo-firenze.pdf` | A4 PDF of the Italian white paper, central scenario (17 pages) |
+| `white-paper-dividendo-firenze.pdf` | A4 PDF of the Italian white paper, central scenario (26 pages) |
 | `dividendo-firenze.html` | English simulator, same model and numbers |
 
 `dividendo-firenze.html` is a single-page, offline simulator of a proposed reform of Florence's tourist tax
