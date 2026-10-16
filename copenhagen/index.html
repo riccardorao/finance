@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Copenhagen Rent Evaluator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: inputs on the left; verdict, map and two tables on the right; on a phone one column with an Inputs/Results switch. */
+:root {
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --bg: #f2f1ed; --surface: #fcfcfb; --surface-2: #f5f4f0; --line: #e4e2dc; --line-2: #c9c6be;
+  --ink: #161615; --ink-2: #52514e; --ink-3: #6b6a65;
+  --accent: #256abf; --accent-hover: #184f95; --on-accent: #ffffff; --accent-soft: #e3eefb;
+  --star: #c98500; --star-off: #dcd9d1;
+  --map-land: #ecebe6; --map-park: #cfe5d3; --map-water: #dde9f4;
+  --good: #0ca30c; --warn: #fab219; --crit: #d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121211; --surface: #1a1a19; --surface-2: #222220; --line: #2d2d2b; --line-2: #46463f;
+    --ink: #f4f4f1; --ink-2: #c3c2b7; --ink-3: #9a998f;
+    --accent: #3987e5; --accent-hover: #6da7ec; --on-accent: #0b0b0b; --accent-soft: #1d2b3f;
+    --star: #f0b429; --star-off: #3a3a36;
+    --map-land: #24241f; --map-park: #1f3a27; --map-water: #18222d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121211; --surface: #1a1a19; --surface-2: #222220; --line: #2d2d2b; --line-2: #46463f;
+  --ink: #f4f4f1; --ink-2: #c3c2b7; --ink-3: #9a998f;
+  --accent: #3987e5; --accent-hover: #6da7ec; --on-accent: #0b0b0b; --accent-soft: #1d2b3f;
+  --star: #f0b429; --star-off: #3a3a36;
+  --map-land: #24241f; --map-park: #1f3a27; --map-water: #18222d;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 14px/1.45 var(--font); -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; color: inherit; }
+h1, h2, h3, p { margin: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* top bar */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); border-bottom: 1px solid var(--line); }
+.topbar-in { max-width: 1240px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.brand { flex: 1 1 260px; min-width: 0; }
+.brand h1 { font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+.brand p { color: var(--ink-3); font-size: 12.5px; }
+.top-actions { display: flex; gap: 8px; align-items: center; }
+.viewtabs { display: none; width: 100%; gap: 4px; background: var(--surface-2); padding: 3px; border-radius: 8px; border: 1px solid var(--line); }
+.viewtabs button { flex: 1; border: 0; background: transparent; padding: 7px; border-radius: 6px; font-weight: 500; color: var(--ink-2); cursor: pointer; }
+.viewtabs button[aria-pressed="true"] { background: var(--surface); color: var(--ink); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px; line-height: 1.3; white-space: nowrap; flex: none; }
+.btn:hover { border-color: var(--ink-3); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--ink-2); }
+.btn.ghost:hover { background: var(--surface-2); color: var(--ink); }
+.btn.danger { color: var(--crit); }
+.btn.sm { padding: 3px 8px; font-size: 12px; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.sample-note { max-width: 1240px; margin: 0 auto; padding: 0 16px 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--ink-2); font-size: 12.5px; }
+.sample-note .pill { background: var(--accent-soft); color: var(--ink); border-radius: 99px; padding: 2px 10px; font-weight: 500; }
+
+/* layout */
+.shell { max-width: 1240px; margin: 0 auto; padding: 16px 16px 56px; }
+.cols { display: grid; grid-template-columns: minmax(300px, 370px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.inputs { position: sticky; top: calc(64px + env(safe-area-inset-top, 0px)); max-height: calc(100dvh - 80px); overflow-y: auto; scrollbar-gutter: stable; padding-right: 4px; }
+.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.results { min-width: 0; }
+@media (max-width: 960px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+  .inputs { position: static; max-height: none; overflow: visible; padding-right: 0; }
+  .viewtabs { display: flex; }
+  .shell[data-view="results"] .inputs { display: none; }
+  .shell[data-view="inputs"] .results { display: none; }
+}
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.card h2 { font-size: 15px; font-weight: 650; }
+.card-head { margin-bottom: 14px; }
+.eyebrow { text-transform: uppercase; letter-spacing: .06em; font-size: 11px; font-weight: 600; color: var(--ink-3); }
+
+/* fields */
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
+.fields.addr { grid-template-columns: minmax(0, 1fr) 84px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+.field > label { font-size: 12px; color: var(--ink-2); font-weight: 500; }
+.hint { font-size: 11.5px; color: var(--ink-3); line-height: 1.35; }
+.inp { position: relative; display: flex; }
+.inp input, select { width: 100%; min-width: 0; height: 34px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.inp input[type="number"] { font-variant-numeric: tabular-nums; }
+.inp .unit { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); color: var(--ink-3); font-size: 12px; pointer-events: none; }
+.inp.has-unit input { padding-right: 40px; }
+.inp input:hover, select:hover { border-color: var(--ink-3); }
+.sec-title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+details.fine { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+details.fine > summary { cursor: pointer; font-size: 12.5px; color: var(--ink-2); font-weight: 500; }
+details.fine .fields { margin-top: 12px; }
+details.card > summary { cursor: pointer; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; list-style: none; }
+details.card > summary::-webkit-details-marker { display: none; }
+details.card > summary h2::before { content: "▸ "; color: var(--ink-3); }
+details.card[open] > summary h2::before { content: "▾ "; }
+
+.loc { font-size: 12.5px; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.loc b { color: var(--ink); font-weight: 600; }
+.loc .row { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.loc .sugg { display: flex; flex-wrap: wrap; gap: 6px; }
+.loc .warn { color: var(--ink); }
+
+.opt-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.opt { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; }
+.opt[data-open="true"] { background: var(--surface); border-color: var(--line-2); }
+.opt-head { width: 100%; background: transparent; border: 0; cursor: pointer; padding: 10px 12px; display: flex; gap: 10px; align-items: center; text-align: left; }
+.opt-head .t { min-width: 0; flex: 1; }
+.opt-head .t b { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.opt-head .t span { color: var(--ink-3); font-size: 12px; }
+.opt-head .chev { width: 7px; height: 7px; border-right: 2px solid var(--ink-3); border-bottom: 2px solid var(--ink-3); transform: rotate(45deg); flex: none; margin-right: 4px; }
+.opt[data-open="true"] .chev { transform: rotate(-135deg); }
+.opt-body { padding: 4px 12px 12px; display: flex; flex-direction: column; gap: 12px; }
+.opt-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* stars */
+.star-rows { display: flex; flex-direction: column; gap: 8px; }
+.star-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.star-row .sl { min-width: 0; font-size: 13px; }
+.stars.stars-in { font-size: 24px; letter-spacing: 3px; cursor: pointer; flex: none; border-radius: 4px; }
+.stars-in:hover .fg { filter: brightness(1.1); }
+.area-block { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+.area-block:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+.area-block h3 { font-size: 13.5px; font-weight: 650; margin: 0 0 8px; display: flex; justify-content: space-between; gap: 8px; }
+.area-block h3 span { font-weight: 400; color: var(--ink-3); font-size: 12px; }
+.stars { position: relative; display: inline-block; line-height: 1; letter-spacing: 1px; font-size: 16px; vertical-align: -2px; white-space: nowrap; }
+.stars .bg { color: var(--star-off); }
+.stars .fg { position: absolute; left: 0; top: 0; overflow: hidden; white-space: nowrap; color: var(--star); }
+.stars.lg { font-size: 34px; letter-spacing: 3px; }
+.sv { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.sv .n { font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 12.5px; min-width: 1.8em; text-align: left; }
+.na { color: var(--ink-3); font-size: 12px; font-style: italic; }
+.key-tag { font-size: 11px; font-weight: 600; background: var(--accent-soft); color: var(--ink); border-radius: 99px; padding: 1px 8px; margin-left: 6px; white-space: nowrap; }
+.src-tag { font-size: 11px; color: var(--ink-3); margin-left: 6px; white-space: nowrap; }
+.prio { display: flex; flex-direction: column; gap: 8px; }
+.prio-row { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 10px; align-items: center; font-size: 13px; }
+.prio-row select { height: 30px; }
+
+/* statuses */
+.status { --c: var(--good); display: inline-flex; align-items: center; gap: 5px; border: 1px solid color-mix(in srgb, var(--c) 50%, transparent); background: color-mix(in srgb, var(--c) 12%, var(--surface)); color: var(--ink); border-radius: 99px; padding: 1px 9px 1px 7px; font-size: 12px; font-weight: 550; white-space: nowrap; }
+.status i { font-style: normal; color: var(--c); font-weight: 800; }
+.status.warn { --c: var(--warn); }
+.status.bad { --c: var(--crit); }
+
+/* verdict */
+.verdict { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 24px; align-items: center; }
+.v-name { font-size: 26px; font-weight: 650; letter-spacing: -.02em; line-height: 1.15; margin: 4px 0 6px; overflow-wrap: anywhere; }
+.v-line { color: var(--ink-2); display: flex; gap: 8px 10px; flex-wrap: wrap; align-items: center; }
+.hero { text-align: right; line-height: 1; }
+.hero .n { font-size: 56px; font-weight: 700; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.hero .of { font-size: 16px; color: var(--ink-3); font-weight: 500; margin-left: 4px; }
+.hero .cap { margin-top: 8px; }
+@media (max-width: 560px) { .verdict { grid-template-columns: minmax(0, 1fr); } .hero { text-align: left; } }
+
+/* map */
+.map-wrap { position: relative; width: 100%; border-radius: 8px; overflow: hidden; background: var(--map-water); }
+.map-wrap svg { display: block; width: 100%; }
+.map-wrap.placing { cursor: crosshair; outline: 2px solid var(--accent); }
+.map-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--accent-soft); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; font-size: 13px; }
+.map-legend { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px 16px; font-size: 12.5px; }
+.map-legend li { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.map-legend .pin { flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.map-legend span.t { min-width: 0; }
+.map-legend small { color: var(--ink-3); display: block; }
+.map-key { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-3); margin-top: 8px; }
+.map-key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+/* tables */
+.scroll { overflow-x: auto; max-width: 100%; }
+table.tbl { border-collapse: collapse; width: 100%; font-size: 13px; }
+.tbl th, .tbl td { padding: 9px 8px; text-align: right; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; }
+.tbl thead th { color: var(--ink-2); font-weight: 600; font-size: 12px; border-bottom: 1px solid var(--line-2); vertical-align: bottom; }
+.tbl thead th small { display: block; font-weight: 400; color: var(--ink-3); }
+.tbl tbody th { font-weight: 600; white-space: normal; min-width: 120px; }
+.tbl.stars-tbl td { text-align: left; }
+.tbl td small { display: block; color: var(--ink-3); font-size: 11.5px; }
+.tbl td.best { font-weight: 650; }
+.tbl td.best::before { content: "●"; color: var(--accent); font-size: 8px; margin-right: 6px; vertical-align: 2px; }
+.tbl td.neg { color: var(--crit); font-weight: 600; }
+.rank { color: var(--ink-3); font-weight: 400; font-size: 12px; margin-right: 6px; }
+.chipcell { margin-left: 6px; }
+
+.notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.notes li { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
+.notes .status { flex: none; margin-top: 1px; }
+.empty { padding: 24px 16px; text-align: center; color: var(--ink-2); }
+details.how summary { cursor: pointer; font-weight: 600; font-size: 13px; color: var(--ink-2); }
+details.how ul { margin: 10px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; color: var(--ink-2); max-width: 80ch; }
+.small-note { font-size: 12px; color: var(--ink-3); margin-top: 10px; }
+
+.opt-head .t .stars { font-size: 14px; letter-spacing: 1px; vertical-align: -2px; margin-left: 4px; }
+.opt-head .t .stars .bg { color: var(--star-off); }
+.opt-head .t .stars .fg { color: var(--star); }
+.star-row > .stars { font-size: 24px; letter-spacing: 3px; flex: none; }
+.status.ico { padding: 0; width: 20px; height: 20px; justify-content: center; font-size: 12px; font-weight: 800; color: var(--c); }
+.loc { gap: 8px; }
+.loc-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.loc-top span { color: var(--ink-3); font-size: 12px; }
+.facts { display: flex; flex-wrap: wrap; gap: 6px; }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: 99px; padding: 1px 9px; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.fact b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.loc-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.v-line .num { font-variant-numeric: tabular-nums; color: var(--ink); }
+.hero .cap { margin: 0 0 8px; }
+.hero .of { margin-left: 6px; }
+.tbl.stars-tbl td, .tbl.stars-tbl th:not(:first-child) { text-align: center; }
+.tbl.stars-tbl .stars { font-size: 15px; letter-spacing: 0; }
+.flag-list { display: flex; flex-direction: column; gap: 10px; }
+.flag-row { display: flex; gap: 6px 14px; align-items: center; flex-wrap: wrap; }
+.flag-row b { font-weight: 600; font-size: 13px; min-width: 150px; }
+.flags { display: flex; gap: 6px; flex-wrap: wrap; }
+.map-legend { margin-top: 10px; }
+@media (max-width: 560px) {
+  .flag-row b { min-width: 100%; }
+  .tbl th, .tbl td { padding: 8px 5px; }
+  .tbl tbody th { min-width: 88px; font-size: 12.5px; }
+  .tbl.stars-tbl .stars { font-size: 12px; }
+  .rank { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } .stars-in button:hover { transform: none; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <h1>Copenhagen Rent Evaluator</h1>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="btn-sample" type="button">Load example</button>
+      <button class="btn" id="btn-clear" type="button">Clear</button>
+      <button class="btn" id="btn-theme" type="button" aria-label="Switch between light and dark theme" title="Change theme">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>
+      </button>
+    </div>
+    <div class="viewtabs" role="group" aria-label="Change view">
+      <button type="button" id="tab-inputs" aria-pressed="false">Inputs</button>
+      <button type="button" id="tab-results" aria-pressed="true">Results</button>
+    </div>
+  </div>
+  <div class="sample-note" id="sample-note" hidden>
+    <span class="pill">Example data</span>
+    <button class="btn ghost sm" id="btn-dismiss-sample" type="button">Close</button>
+  </div>
+</header>
+
+<div class="shell" id="shell" data-view="results">
+  <div class="cols">
+    <aside class="inputs" id="inputs" aria-label="Inputs"></aside>
+    <main class="results stack" id="results" aria-live="polite"></main>
+  </div>
+</div>
+<datalist id="street-list"></datalist>
+
+<script src="data/cph-data.js"></script>
+<script>
+(function () {
+'use strict';
+
+/* ---------- utilities ---------- */
+const KEY = 'copenhagen-rental-evaluator-v4';
+const OLD_KEYS = ['copenhagen-rental-evaluator-v3', 'copenhagen-rental-evaluator-v2'];
+const THEME_KEY = 'copenhagen-rental-evaluator-theme';
+const MAX_OPTIONS = 8;
+
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'style') e.style.cssText = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (['value', 'checked', 'selected', 'disabled'].includes(k)) e[k] = v;
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid == null || kid === false) continue;
+    e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return e;
+}
+const $ = s => document.querySelector(s);
+const uid = () => 'o' + Math.random().toString(36).slice(2, 8);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const nf = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 });
+const nf1 = new Intl.NumberFormat('en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const kr = n => (n < 0 ? '−' : '') + nf.format(Math.abs(Math.round(n)));
+const pct = x => Math.round(x * 100) + '%';
+const metres = d => d < 1000 ? `${Math.round(d / 10) * 10} m` : `${nf1.format(d / 1000)} km`;
+const num = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+const nz = (v, d) => (v !== '' && v !== null && v !== undefined && Number.isFinite(+v) ? +v : d);
+
+/* ---------- geographic data ---------- */
+const D = window.CPH_DATA || null;
+const E5 = 1e5;
+const LAT0 = 55.68, LON0 = 12.56, KX = Math.cos(LAT0 * Math.PI / 180) * 111320, KY = 110574;
+const toXY = (lat, lon) => [(lon - LON0) * KX, (lat - LAT0) * KY];
+const norm = s => String(s || '').toLowerCase().replace(/ø/g, 'o').replace(/æ/g, 'ae').replace(/å/g, 'a')
+  .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/aa/g, 'a').replace(/[^a-z0-9]+/g, ' ').trim();
+const OUTSIDE = 'Outside Copenhagen';
+const AREAS = (D ? D.districts.map(d => d.name) : ['Amager Vest', 'Amager Øst', 'Bispebjerg', 'Brønshøj-Husum', 'Christianshavn', 'Frederiksberg', 'Indre By',
+  'Indre Nørrebro', 'Kongens Enghave', 'Valby', 'Vanløse', 'Vesterbro', 'Ydre Nørrebro', 'Østerbro']).concat([OUTSIDE]);
+const SAFE = (D && D.safety) || {};
+/* Safety from the municipal survey: the average of "safe in the neighbourhood" and "safe in the evening", 70% = 1 star, 90% = 5 stars */
+const safetyStars = area => { const v = SAFE[area]; return v ? clamp(1 + 4 * ((v.tryg + v.aften) / 2 - 70) / 20, 1, 5) : null; };
+const STREETS = D ? Object.keys(D.addr) : [];
+const STREET_BY_NORM = new Map(STREETS.map(s => [norm(s), s]));
+const PARKS = D ? D.parks.map(poly => poly[0].map(([x, y]) => toXY(y / E5, x / E5))) : [];
+const STATIONS = D ? D.stations.map(([name, t, la, lo]) => ({ name, type: { M: 'Metro', S: 'S-train', T: 'Station' }[t], lat: la / E5, lon: lo / E5 })) : [];
+const streetCache = new Map();
+
+function streetRows(name) {
+  if (!streetCache.has(name)) {
+    const raw = D && D.addr[name];
+    streetCache.set(name, raw ? raw.split(';').map(t => { const [hn, la, lo, db] = t.split(','); return { hn, lat: +la / E5, lon: +lo / E5, db: +db < 0 ? null : +db }; }) : null);
+  }
+  return streetCache.get(name);
+}
+function suggestStreets(q) {
+  const n = norm(q);
+  if (n.length < 2) return [];
+  const pre = [], sub = [];
+  for (const [k, v] of STREET_BY_NORM) {
+    if (k.startsWith(n)) pre.push(v); else if (sub.length < 6 && k.includes(n)) sub.push(v);
+    if (pre.length >= 6) break;
+  }
+  if (pre.length || sub.length) return pre.concat(sub).slice(0, 6);
+  // no match: suggest streets within 2 typos
+  const scored = [];
+  for (const [k, v] of STREET_BY_NORM) { const d = editDistance(n, k, 2); if (d <= 2) scored.push([d, v]); }
+  return scored.sort((a, b) => a[0] - b[0]).slice(0, 6).map(x => x[1]);
+}
+function editDistance(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    let rowMin = i;
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      rowMin = Math.min(rowMin, cur[j]);
+    }
+    if (rowMin > max) return max + 1;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+function inRing(px, py, ring) {
+  let c = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+function districtOf(lat, lon) {
+  if (!D) return null;
+  const px = lon * E5, py = lat * E5;
+  for (const d of D.districts) for (const poly of d.rings) if (inRing(px, py, poly[0])) return d.name;
+  return OUTSIDE;
+}
+function segDist(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy;
+  const t = l ? clamp(((px - ax) * dx + (py - ay) * dy) / l, 0, 1) : 0;
+  return Math.hypot(px - ax - t * dx, py - ay - t * dy);
+}
+function nearestPark(lat, lon) {
+  const [px, py] = toXY(lat, lon);
+  let best = Infinity;
+  for (const ring of PARKS) {
+    if (inRing(px, py, ring)) return 0;
+    for (let i = 1; i < ring.length; i++) best = Math.min(best, segDist(px, py, ring[i - 1][0], ring[i - 1][1], ring[i][0], ring[i][1]));
+  }
+  return best;
+}
+function nearestStation(lat, lon) {
+  const [px, py] = toXY(lat, lon);
+  let best = null;
+  for (const s of STATIONS) {
+    const [sx, sy] = toXY(s.lat, s.lon), d = Math.hypot(px - sx, py - sy);
+    if (!best || d < best.d) best = { ...s, d };
+  }
+  return best;
+}
+/* Where an option is: a point on the map, the exact house number, the nearest house number, or the middle of the street. */
+function locate(o) {
+  if (o.pinned && o.lat && o.lon) return { lat: o.lat, lon: o.lon, db: null, label: 'Point chosen on the map', precision: 'mappa' };
+  if (!o.street || !D) return null;
+  const name = STREET_BY_NORM.get(norm(o.street));
+  if (!name) return null;
+  const rows = streetRows(name);
+  const want = norm(o.hn).replace(/ /g, '');
+  if (want) {
+    const exact = rows.find(r => norm(r.hn).replace(/ /g, '') === want);
+    if (exact) return { lat: exact.lat, lon: exact.lon, db: exact.db, label: `${name} ${exact.hn}`, precision: 'civico', street: name };
+    const n = parseInt(want, 10);
+    if (n) {
+      let near = null;
+      for (const r of rows) { const d = Math.abs((parseInt(r.hn, 10) || 0) - n); if (!near || d < near.d) near = { d, r }; }
+      if (near) return { lat: near.r.lat, lon: near.r.lon, db: near.r.db, label: `${name} ${near.r.hn}`, precision: 'vicino', street: name, asked: o.hn };
+    }
+  }
+  const mid = rows[Math.floor(rows.length / 2)];
+  const dbs = rows.map(r => r.db).filter(x => x != null).sort((a, b) => a - b);
+  return { lat: mid.lat, lon: mid.lon, db: dbs.length ? dbs[Math.floor(dbs.length / 2)] : null, label: name, precision: 'via', street: name };
+}
+const geoCache = new Map();
+function geoFor(o) {
+  const key = `${o.pinned ? o.lat + ',' + o.lon : ''}|${norm(o.street)}|${norm(o.hn)}`;
+  if (!geoCache.has(key)) {
+    const loc = locate(o);
+    geoCache.set(key, loc ? { ...loc, district: districtOf(loc.lat, loc.lon), station: nearestStation(loc.lat, loc.lon), park: nearestPark(loc.lat, loc.lon) } : null);
+  }
+  return geoCache.get(key);
+}
+
+/* ---------- criteria ---------- */
+const AREA_CRIT = [
+  ['sicurezza', 'Safety', 'Crime and how safe it feels, in the evening too.'],
+  ['servizi', 'Amenities', 'Supermarkets, doctor, gyms, shops.'],
+  ['vita', 'Social life', 'Restaurants, bars, culture.'],
+];
+const AREA_KEYS = AREA_CRIT.map(c => c[0]);
+const ZONE_KEYS = ['sicurezza', 'trasporti', 'verde', 'quiete', 'servizi', 'vita'];
+const CRIT = [
+  ['costi', 'Rent and costs', 3, 'calculated'],
+  ['sicurezza', 'Safety', 3, 'survey'],
+  ['trasporti', 'Metro and train', 2, 'data'],
+  ['pendolarismo', 'Commute', 2, 'calculated'],
+  ['alloggio', 'Quality of the flat', 2, 'your rating'],
+  ['verde', 'Green space', 1, 'data'],
+  ['quiete', 'Quiet', 1, 'data'],
+  ['servizi', 'Amenities', 1, 'your rating'],
+  ['vita', 'Social life', 1, 'your rating'],
+];
+const WEIGHT_OPTS = [['0', 'Ignore'], ['1', 'Low'], ['2', 'Medium'], ['3', 'High']];
+const AREA_ALIASES = { 'Vesterbro-Kongens Enghave': ['Vesterbro', 'Kongens Enghave'], 'Sydhavn': ['Kongens Enghave'], 'Nørrebro': ['Indre Nørrebro', 'Ydre Nørrebro'],
+  'Amager Vest / Ørestad': ['Amager Vest'], 'Bispebjerg / Nordvest': ['Bispebjerg'],
+  // the Italian version stored this name in saved shortlists
+  'Fuori Copenaghen': [OUTSIDE] };
+const aliasOf = name => AREA_ALIASES[name] || [name];
+
+/* ---------- state ---------- */
+function baseProfile() { return { takeHome: 0, otherCosts: 0, stay: 12, days: 4, timePct: 50, furnCost: 18000, notice: 3 }; }
+function baseWeights() { return Object.fromEntries(CRIT.map(([k, , w]) => [k, w])); }
+function blankRatings() { return Object.fromEntries(AREA_KEYS.map(k => [k, 0])); }
+function blankOption() {
+  return { id: uid(), name: 'New option', street: '', hn: '', lat: 0, lon: 0, pinned: false, area: AREAS[0],
+    rent: 0, utils: 0, deposit: 0, lease: 12, furnished: true, commuteMin: 20, fare: 0, perks: 0, quality: 0 };
+}
+function blankState() { const o = blankOption(); o.name = 'Option 1'; return { profile: baseProfile(), weights: baseWeights(), areas: {}, options: [o], sample: false }; }
+function sampleState() {
+  const mk = o => ({ ...blankOption(), ...o });
+  return {
+    sample: true,
+    profile: { ...baseProfile(), takeHome: 38000, otherCosts: 5000 },
+    weights: baseWeights(),
+    areas: {
+      'Indre Nørrebro': { sicurezza: 0, servizi: 5, vita: 5 },
+      'Østerbro': { sicurezza: 0, servizi: 4, vita: 3 },
+      'Amager Vest': { sicurezza: 0, servizi: 3, vita: 2.5 },
+    },
+    options: [
+      mk({ name: 'One-bedroom in Nørrebro', street: 'Fælledvej', hn: '10A', area: 'Indre Nørrebro', rent: 11500, utils: 1000, deposit: 34500, lease: 0, furnished: false, commuteMin: 18, fare: 60, perks: 230, quality: 3.5 }),
+      mk({ name: 'Furnished in Østerbro', street: 'Willemoesgade', hn: '20', area: 'Østerbro', rent: 14800, utils: 0, deposit: 29600, lease: 6, furnished: true, commuteMin: 25, fare: 480, perks: 400, quality: 4 }),
+      mk({ name: 'New build, Ørestad', street: 'Ørestads Boulevard', hn: '55A', area: 'Amager Vest', rent: 12900, utils: 1100, deposit: 38700, lease: 12, furnished: false, commuteMin: 22, fare: 500, perks: 580, quality: 5 }),
+    ],
+  };
+}
+function normalize(raw) {
+  const b = blankState();
+  if (!raw || typeof raw !== 'object') return b;
+  const P = baseProfile(), rp = raw.profile || {};
+  for (const k of Object.keys(P)) P[k] = Math.max(0, nz(rp[k], P[k]));
+  P.stay = Math.max(1, P.stay);
+  const W = baseWeights(), rw = raw.weights || {};
+  for (const k of Object.keys(W)) W[k] = clamp(Math.round(nz(rw[k], W[k])), 0, 3);
+  const areas = {};
+  const ra = raw.areas && typeof raw.areas === 'object' ? raw.areas : {};
+  for (const [name, r] of Object.entries(ra)) {
+    for (const a of aliasOf(name)) {
+      if (!AREAS.includes(a) || !r) continue;
+      areas[a] = areas[a] || blankRatings();
+      for (const k of AREA_KEYS) areas[a][k] = Math.max(areas[a][k], clamp(Math.round(nz(r[k], 0) * 2) / 2, 0, 5));
+    }
+  }
+  const opts = (Array.isArray(raw.options) && raw.options.length ? raw.options : b.options).slice(0, MAX_OPTIONS).map((r, i) => {
+    r = r || {};
+    const o = blankOption();
+    o.id = String(r.id || o.id).slice(0, 20);
+    o.name = String(r.name ?? 'Option ' + (i + 1)).slice(0, 80);
+    o.street = String(r.street || '').slice(0, 80);
+    o.hn = String(r.hn || '').slice(0, 10);
+    const a = aliasOf(r.area)[0];
+    o.area = AREAS.includes(a) ? a : AREAS[0];
+    for (const k of ['rent', 'utils', 'deposit', 'lease', 'commuteMin', 'fare', 'perks']) o[k] = Math.max(0, nz(r[k], o[k]));
+    o.lat = nz(r.lat, 0); o.lon = nz(r.lon, 0); o.pinned = !!r.pinned && !!o.lat && !!o.lon;
+    o.quality = clamp(Math.round(nz(r.quality, 0) * 2) / 2, 0, 5);
+    o.furnished = r.furnished !== false;
+    return o;
+  });
+  const seen = new Set(); opts.forEach(o => { while (seen.has(o.id)) o.id += 'x'; seen.add(o.id); });
+  return { profile: P, weights: W, areas, options: opts, sample: !!raw.sample };
+}
+function load() {
+  for (const k of [KEY, ...OLD_KEYS]) {
+    try { const t = localStorage.getItem(k); if (t) return normalize(JSON.parse(t)); } catch (e) { /* ignore */ }
+  }
+  return null;
+}
+let saveTimer = 0;
+function flush() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } }
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveTimer = 0; flush(); }, 250); }
+window.addEventListener('pagehide', () => { if (saveTimer) { clearTimeout(saveTimer); flush(); } });
+
+let S = load() || sampleState();
+const ui = { open: S.options[0] && S.options[0].id, placing: null };
+const ratingsFor = area => (S.areas[area] = S.areas[area] || blankRatings());
+const areaOf = o => { const g = geoFor(o); return g ? g.district : o.area; };
+
+/* ---------- model ---------- */
+function compute(o, S) {
+  const P = S.profile, income = P.takeHome;
+  const stay = Math.max(1, P.stay);
+  const commit = o.lease > 0 ? o.lease : P.notice;
+  const H = Math.max(stay, commit);
+  const housing = o.rent + o.utils;
+  const housingNet = Math.max(0, housing - o.perks);
+  const furn = o.furnished ? 0 : P.furnCost;
+  const setup = furn / H;
+  const hours = o.commuteMin * 2 / 60 * P.days * 52 / 12;
+  const hourly = income > 0 ? income / (37 * 52 / 12) : 0;
+  const time = hours * hourly * P.timePct / 100;
+  const allIn = housingNet + o.fare + time + setup;
+  const cash = housing + o.fare;
+  const share = income > 0 ? housing / income : null;
+  const left = income > 0 ? income - P.otherCosts - cash : null;
+  let level = 'good', why = '';
+  if (share != null) {
+    if (left < 0) { level = 'bad'; why = `monthly costs exceed your take-home pay by ${kr(-left)} kr.`; }
+    else if (share > 0.4) { level = 'bad'; why = `rent and utilities take ${pct(share)} of take-home pay, over 40%.`; }
+    else if (share > 0.3) { level = 'warn'; why = `rent and utilities take ${pct(share)} of take-home pay, over 30%.`; }
+  }
+  return {
+    o, ready: o.rent > 0, geo: geoFor(o), area: areaOf(o), housing, allIn, cash, share, left,
+    upfront: o.deposit + furn, commit, H,
+    status: { level, why, label: { good: 'Affordable', warn: 'Stretching it', bad: 'Not affordable' }[level] },
+  };
+}
+function weighted(sc, keys, W) {
+  let tw = 0, ts = 0;
+  for (const k of keys) { const w = W[k]; if (sc[k] != null && w > 0) { tw += w; ts += w * sc[k]; } }
+  return tw > 0 ? ts / tw : null;
+}
+function evaluate(S) {
+  const list = S.options.map(o => compute(o, S));
+  const ranked = list.filter(m => m.ready);
+  const costs = ranked.map(m => m.allIn), cmin = Math.min(...costs), cmax = Math.max(...costs);
+  for (const m of ranked) {
+    const o = m.o, g = m.geo, sc = {}, r = S.areas[m.area] || {};
+    const income = S.profile.takeHome;
+    sc.costi = income > 0 ? clamp(5 * (0.55 - m.allIn / income) / 0.30, 0, 5)
+      : (cmax > cmin ? 1 + 4 * (cmax - m.allIn) / (cmax - cmin) : 5);
+    sc.pendolarismo = clamp(5 * (60 - o.commuteMin) / 50, 0, 5);
+    sc.trasporti = g ? clamp(5 - (g.station.d - 300) / 300, 1, 5) : null;
+    sc.verde = g ? clamp(5 - (g.park - 200) / 250, 1, 5) : null;
+    sc.quiete = g && g.db != null ? clamp(5 - (g.db - 50) / 5, 1, 5) : null;
+    for (const k of AREA_KEYS) sc[k] = r[k] > 0 ? r[k] : null;
+    m.safety = SAFE[m.area] || null;
+    if (m.safety) sc.sicurezza = safetyStars(m.area);
+    sc.alloggio = o.quality > 0 ? o.quality : null;
+    m.sc = sc;
+    m.zona = weighted(sc, ZONE_KEYS, Object.fromEntries(ZONE_KEYS.map(k => [k, S.weights[k] || 1])));
+    m.overall = weighted(sc, CRIT.map(c => c[0]), S.weights) ?? 0;
+  }
+  ranked.sort((a, b) => (a.status.level === 'bad') - (b.status.level === 'bad') || b.overall - a.overall || a.allIn - b.allIn);
+  ranked.forEach((m, i) => { m.rank = i + 1; });
+  return { list, ranked };
+}
+
+/* ---------- components ---------- */
+const half = v => Math.round(clamp(v, 0, 5) * 2) / 2;
+function stars(v, lg, tip) {
+  if (v == null) return h('span', { class: 'na', title: 'Not available' }, '–');
+  const r = half(v);
+  return h('span', { class: 'stars' + (lg ? ' lg' : ''), role: 'img', title: tip, 'aria-label': `${r} out of 5 stars` },
+    h('span', { class: 'bg', 'aria-hidden': 'true' }, '★★★★★'),
+    h('span', { class: 'fg', 'aria-hidden': 'true', style: `width:${r / 5 * 100}%` }, '★★★★★'));
+}
+/* star rating in steps of 0.5: click the left or right half of a star; the same click again clears it */
+function starInput(id, label, get, set) {
+  const fg = h('span', { class: 'fg', 'aria-hidden': 'true' }, '★★★★★');
+  const box = h('div', { class: 'stars stars-in', id, role: 'slider', tabindex: '0', 'aria-label': label, 'aria-valuemin': 0, 'aria-valuemax': 5 },
+    h('span', { class: 'bg', 'aria-hidden': 'true' }, '★★★★★'), fg);
+  const paint = () => { fg.style.width = get() / 5 * 100 + '%'; box.setAttribute('aria-valuenow', String(get())); };
+  const put = v => { set(v); paint(); changed(); };
+  box.addEventListener('click', e => {
+    const r = box.getBoundingClientRect();
+    const v = clamp(Math.ceil((e.clientX - r.left) / r.width * 10) / 2, 0.5, 5);
+    put(v === get() ? 0 : v);
+  });
+  box.addEventListener('keydown', e => {
+    const k = { ArrowRight: 0.5, ArrowUp: 0.5, ArrowLeft: -0.5, ArrowDown: -0.5 }[e.key];
+    if (k) { e.preventDefault(); put(clamp(get() + k, 0, 5)); }
+    else if (e.key === 'Home' || e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); put(0); }
+    else if (e.key === 'End') { e.preventDefault(); put(5); }
+  });
+  paint();
+  return h('div', { class: 'star-row' }, h('span', { class: 'sl' }, label), box);
+}
+const ICON = { good: '✓', warn: '!', bad: '✕' };
+const statusChip = st => h('span', { class: 'status ico ' + st.level, role: 'img', title: st.label, 'aria-label': st.label }, ICON[st.level]);
+const flag = (level, text) => h('span', { class: 'status ' + level }, h('i', { 'aria-hidden': 'true' }, ICON[level]), text);
+
+/* ---------- inputs panel ---------- */
+const inputsEl = $('#inputs');
+let rafId = 0;
+function changed() { save(); cancelAnimationFrame(rafId); rafId = requestAnimationFrame(() => { renderResults(); updateSummaries(); }); }
+function refresh() { save(); renderInputs(); renderResults(); updateSummaries(); }
+
+function numField(id, label, get, set, o = {}) {
+  const inp = h('input', { id, type: 'number', min: 0, step: 'any', inputmode: 'decimal', value: String(get()) });
+  inp.addEventListener('input', () => { set(num(inp.value)); changed(); });
+  return h('div', { class: 'field' + (o.wide ? ' wide' : '') },
+    h('label', { for: id }, label),
+    h('div', { class: 'inp' + (o.unit ? ' has-unit' : '') }, inp, o.unit ? h('span', { class: 'unit' }, o.unit) : null));
+}
+function textField(id, label, get, set, o = {}) {
+  const inp = h('input', { id, type: 'text', maxlength: o.max || 80, value: get(), list: o.list, autocomplete: 'off', placeholder: o.placeholder });
+  inp.addEventListener('input', () => { set(inp.value); changed(); });
+  return h('div', { class: 'field' + (o.wide ? ' wide' : '') }, h('label', { for: id }, label), h('div', { class: 'inp' }, inp));
+}
+function selectField(id, label, get, set, options, o = {}) {
+  const sel = h('select', { id }, options.map(([v, l]) => h('option', { value: v, selected: v === get() }, l)));
+  sel.addEventListener('change', () => { set(sel.value); if (o.rerender) refresh(); else changed(); });
+  return h('div', { class: 'field' + (o.wide ? ' wide' : '') }, h('label', { for: id }, label), sel);
+}
+
+/* location box: updated on every keystroke without rebuilding the card */
+function locBox(o) {
+  const box = h('div', { class: 'loc', 'data-loc': o.id });
+  fillLoc(box, o);
+  return box;
+}
+function fillLoc(box, o) {
+  const g = geoFor(o), kids = [];
+  const fact = (k, v) => h('span', { class: 'fact' }, k, h('b', null, v));
+  if (!D) {
+    kids.push(h('span', { class: 'na' }, 'Geographic data not loaded'));
+  } else if (g) {
+    kids.push(h('div', { class: 'loc-top' }, h('b', null, g.label), h('span', null, g.district)));
+    kids.push(h('div', { class: 'facts' }, fact('Metro ', metres(g.station.d)), fact('Park ', g.park === 0 ? '0 m' : metres(g.park)), fact('Noise ', g.db != null ? `${g.db} dB` : '–')));
+  } else if (o.street) {
+    const sugg = suggestStreets(o.street);
+    kids.push(h('span', { class: 'na' }, sugg.length ? 'Street not found. Did you mean:' : 'Street not found'));
+    if (sugg.length) kids.push(h('div', { class: 'sugg' }, sugg.map(s => h('button', { class: 'btn sm', type: 'button', onclick: () => {
+      o.street = s; o.pinned = false; const el = document.getElementById(`o-${o.id}-street`); if (el) el.value = s; changed(); fillLoc(box, o);
+    } }, s))));
+  } else {
+    kids.push(h('span', { class: 'na' }, 'Type the street'));
+  }
+  if (D) kids.push(h('div', { class: 'loc-actions' }, h('button', { class: 'btn sm', type: 'button', onclick: () => startPlacing(o) }, o.pinned ? 'Move on the map' : 'On the map'),
+    o.pinned ? h('button', { class: 'btn ghost sm', type: 'button', onclick: () => { o.pinned = false; refresh(); } }, 'Use the address') : null));
+  box.replaceChildren(...kids);
+}
+function startPlacing(o) {
+  ui.placing = o.id;
+  if (matchMedia('(max-width: 960px)').matches) setView('results');
+  renderResults();
+  const m = $('#map-card'); if (m) m.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function optionCard(o) {
+  const open = ui.open === o.id, f = k => `o-${o.id}-${k}`;
+  const card = h('div', { class: 'opt', 'data-open': String(open) },
+    h('button', { class: 'opt-head', type: 'button', 'aria-expanded': String(open), onclick: () => { ui.open = open ? null : o.id; renderInputs(); updateSummaries(); } },
+      h('span', { class: 't' }, h('b', { 'data-name': o.id }, o.name || 'Untitled'), h('span', { 'data-sum': o.id })),
+      h('span', { class: 'chev', 'aria-hidden': 'true' })));
+  if (!open) return card;
+  const box = locBox(o);
+  const g = geoFor(o);
+  card.append(h('div', { class: 'opt-body' },
+    h('div', { class: 'fields' }, textField(f('name'), 'Name', () => o.name, v => { o.name = v; }, { wide: true })),
+    h('div', { class: 'fields addr' },
+      textField(f('street'), 'Street', () => o.street, v => { o.street = v; o.pinned = false; fillLoc(box, o); }, { list: 'street-list' }),
+      textField(f('hn'), 'Number', () => o.hn, v => { o.hn = v; fillLoc(box, o); }, { max: 10 })),
+    box,
+    g ? null : selectField(f('area'), 'Neighbourhood', () => o.area, v => { o.area = v; }, AREAS.map(a => [a, a]), { wide: true, rerender: true }),
+    h('div', { class: 'fields' },
+      numField(f('rent'), 'Rent', () => o.rent, v => { o.rent = v; }, { unit: 'kr' }),
+      numField(f('utils'), 'Utilities', () => o.utils, v => { o.utils = v; }, { unit: 'kr' }),
+      numField(f('deposit'), 'Deposit', () => o.deposit, v => { o.deposit = v; }, { unit: 'kr' }),
+      numField(f('lease'), 'Lease', () => o.lease, v => { o.lease = v; }, { unit: 'months' }),
+      selectField(f('furnished'), 'Furnishing', () => (o.furnished ? 'si' : 'no'), v => { o.furnished = v === 'si'; }, [['si', 'Furnished'], ['no', 'Unfurnished']]),
+      numField(f('commuteMin'), 'Commute', () => o.commuteMin, v => { o.commuteMin = v; }, { unit: 'min' }),
+      numField(f('fare'), 'Transport', () => o.fare, v => { o.fare = v; }, { unit: 'kr' }),
+      numField(f('perks'), 'Included services', () => o.perks, v => { o.perks = v; }, { unit: 'kr' })),
+    starInput(f('quality'), 'Flat', () => o.quality, v => { o.quality = v; }),
+    h('div', { class: 'opt-actions' },
+      h('button', { class: 'btn sm', type: 'button', disabled: S.options.length >= MAX_OPTIONS, onclick: () => { const c = { ...o, id: uid(), name: o.name + ' (copy)' }; S.options.splice(S.options.indexOf(o) + 1, 0, c); ui.open = c.id; refresh(); } }, 'Duplicate'),
+      h('button', { class: 'btn sm danger', type: 'button', disabled: S.options.length <= 1, onclick: () => { S.options = S.options.filter(x => x !== o); if (ui.open === o.id) ui.open = null; refresh(); } }, 'Delete'))));
+  return card;
+}
+
+function renderInputs() {
+  const keep = inputsEl.scrollTop, P = S.profile;
+  const you = h('section', { class: 'card' },
+    h('div', { class: 'sec-title' }, h('h2', null, 'You')),
+    h('div', { class: 'fields' },
+      numField('p-takeHome', 'Monthly take-home pay', () => P.takeHome, v => { P.takeHome = v; }, { unit: 'kr', wide: true }),
+      numField('p-other', 'Other costs', () => P.otherCosts, v => { P.otherCosts = v; }, { unit: 'kr' }),
+      numField('p-stay', 'Length of stay', () => P.stay, v => { P.stay = Math.max(1, v); }, { unit: 'months' })),
+    h('details', { class: 'fine' }, h('summary', null, 'More'),
+      h('div', { class: 'fields' },
+        numField('p-days', 'Days in the office', () => P.days, v => { P.days = clamp(v, 0, 7); }, { unit: '/week' }),
+        numField('p-time', 'Value of your time', () => P.timePct, v => { P.timePct = v; }, { unit: '%' }),
+        numField('p-furn', 'Furnishing cost', () => P.furnCost, v => { P.furnCost = v; }, { unit: 'kr' }),
+        numField('p-notice', 'Notice period', () => P.notice, v => { P.notice = v; }, { unit: 'months' }))));
+
+  const opts = h('section', { class: 'card' },
+    h('div', { class: 'sec-title' }, h('h2', null, 'Shortlist'),
+      h('button', { class: 'btn primary sm', type: 'button', disabled: S.options.length >= MAX_OPTIONS, onclick: () => { const o = blankOption(); o.name = 'Option ' + (S.options.length + 1); S.options.push(o); ui.open = o.id; refresh(); } }, '+ Add')),
+    h('div', { class: 'opt-list' }, S.options.map(optionCard)));
+
+  const used = AREAS.filter(a => S.options.some(o => areaOf(o) === a));
+  const areas = h('section', { class: 'card' },
+    h('div', { class: 'sec-title' }, h('h2', null, 'Neighbourhoods')),
+    used.map(a => {
+      const r = ratingsFor(a);
+      const sv = SAFE[a];
+      return h('div', { class: 'area-block' },
+        h('h3', null, a),
+        h('div', { class: 'star-rows' },
+          sv ? h('div', { class: 'star-row' }, h('span', { class: 'sl' }, 'Safety'), stars(safetyStars(a), false, `${sv.tryg}% feel safe · ${sv.aften}% in the evening · ${sv.krim} crimes per 1,000 residents`)) : null,
+          AREA_CRIT.filter(([k]) => !(sv && k === 'sicurezza')).map(([k, l]) => starInput(`a-${AREAS.indexOf(a)}-${k}`, l, () => r[k], v => { r[k] = v; }))));
+    }));
+
+  const prio = h('details', { class: 'card' },
+    h('summary', null, h('h2', null, 'Priorities')),
+    h('div', { class: 'prio', style: 'margin-top:12px' },
+      CRIT.map(([k, l]) => {
+        const sel = h('select', { id: `w-${k}`, 'aria-label': `Weight of ${l}` }, WEIGHT_OPTS.map(([v, t]) => h('option', { value: v, selected: +v === S.weights[k] }, t)));
+        sel.addEventListener('change', () => { S.weights[k] = +sel.value; changed(); });
+        return h('div', { class: 'prio-row' }, h('span', null, l, k === 'costi' ? h('span', { class: 'key-tag' }, 'key') : null), sel);
+      })));
+
+  inputsEl.replaceChildren(h('div', { class: 'stack' }, you, opts, areas, prio));
+  inputsEl.scrollTop = keep;
+}
+let lastAreas = '';
+function updateSummaries() {
+  const E = evaluate(S);
+  for (const m of E.list) {
+    const a = inputsEl.querySelector(`[data-sum="${m.o.id}"]`);
+    if (a) a.replaceChildren(...(m.ready ? [`${m.area} · ${kr(m.allIn)} kr `, stars(m.overall)] : [`${m.area} · rent missing`]));
+    const n = inputsEl.querySelector(`[data-name="${m.o.id}"]`);
+    if (n) n.textContent = m.o.name || 'Untitled';
+  }
+  // if the set of neighbourhoods changes (a new street), refresh the ratings box
+  const areasNow = S.options.map(areaOf).join('|') + '|' + S.options.map(o => !!geoFor(o)).join('');
+  if (lastAreas && areasNow !== lastAreas) {
+    const focused = document.activeElement && document.activeElement.id;
+    renderInputs();
+    if (focused) { const el = document.getElementById(focused); if (el) { el.focus(); if (el.setSelectionRange && el.type === 'text') el.setSelectionRange(el.value.length, el.value.length); } }
+  }
+  lastAreas = areasNow;
+}
+
+/* ---------- results ---------- */
+const resultsEl = $('#results');
+
+function verdictCard(E) {
+  const best = E.ranked[0];
+  return h('section', { class: 'card verdict' },
+    h('div', null,
+      h('div', { class: 'eyebrow' }, 'Best'),
+      h('div', { class: 'v-name' }, best.o.name || 'Untitled'),
+      h('div', { class: 'v-line' }, best.share != null ? [statusChip(best.status), h('b', { class: 'num' }, pct(best.share))] : null, h('span', null, best.area))),
+    h('div', { class: 'hero' },
+      h('div', { class: 'cap' }, stars(best.overall, true)),
+      h('div', null, h('span', { class: 'n' }, kr(best.allIn)), h('span', { class: 'of' }, 'kr/month'))));
+}
+
+function mapCard(E) {
+  if (!D) return null;
+  const placingOpt = ui.placing && S.options.find(o => o.id === ui.placing);
+  const host = h('div', { class: 'map-wrap' + (placingOpt ? ' placing' : ''), id: 'map-host' });
+  const pinned = E.ranked.filter(m => m.geo);
+  return h('section', { class: 'card', id: 'map-card' },
+    h('div', { class: 'card-head' }, h('h2', null, 'Map')),
+    placingOpt ? h('div', { class: 'map-banner' }, h('span', null, `Click on the map: ${placingOpt.name}`),
+      h('button', { class: 'btn sm', type: 'button', onclick: () => { ui.placing = null; renderResults(); } }, 'Cancel')) : null,
+    host,
+    pinned.length ? h('ul', { class: 'map-legend' }, pinned.map(m => h('li', null, h('span', { class: 'pin' }, m.rank), h('span', { class: 't' }, m.o.name)))) : null);
+}
+
+function drawMap(host, E) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, text) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v); if (text != null) e.textContent = text; return e; };
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const pts = [];
+  for (const d of D.districts) for (const poly of d.rings) for (const [x, y] of poly[0]) { const [px, py] = toXY(y / E5, x / E5); pts.push(1); minX = Math.min(minX, px); maxX = Math.max(maxX, px); minY = Math.min(minY, py); maxY = Math.max(maxY, py); }
+  for (const m of E.ranked) if (m.geo) { const [px, py] = toXY(m.geo.lat, m.geo.lon); if (Math.hypot(px, py) < 20000) { minX = Math.min(minX, px - 400); maxX = Math.max(maxX, px + 400); minY = Math.min(minY, py - 400); maxY = Math.max(maxY, py + 400); } }
+  const pad = 300; minX -= pad; maxX += pad; minY -= pad; maxY += pad;
+  const W = Math.max(280, host.clientWidth);
+  const s = Math.min(W / (maxX - minX), (W < 560 ? 420 : 520) / (maxY - minY));
+  const Hh = (maxY - minY) * s;
+  const ox = (W - (maxX - minX) * s) / 2;
+  const P = (lat, lon) => { const [x, y] = toXY(lat, lon); return [ox + (x - minX) * s, (maxY - y) * s]; };
+  const path = ring => ring.map(([x, y], i) => { const [a, b] = P(y / E5, x / E5); return (i ? 'L' : 'M') + a.toFixed(1) + ',' + b.toFixed(1); }).join('') + 'Z';
+  const svg = el('svg', { viewBox: `0 0 ${W} ${Hh}`, height: Hh, role: 'img', 'aria-label': 'Map of the neighbourhoods of Copenhagen and Frederiksberg with the shortlisted homes' });
+  const gLand = el('g'), gPark = el('g'), gLbl = el('g'), gSt = el('g'), gPin = el('g');
+  for (const d of D.districts) {
+    let cx = 0, cy = 0, n = 0, big = null;
+    for (const poly of d.rings) { gLand.append(el('path', { d: path(poly[0]), fill: 'var(--map-land)', stroke: 'var(--line-2)', 'stroke-width': 1 })); if (!big || poly[0].length > big.length) big = poly[0]; }
+    for (const [x, y] of big) { cx += x; cy += y; n++; }
+    const [lx, ly] = P(cy / n / E5, cx / n / E5);
+    gLbl.append(el('text', { x: lx, y: ly, 'text-anchor': 'middle', 'font-size': W < 560 ? 9 : 11, fill: 'var(--ink-3)', 'font-weight': 500 }, d.name === 'Vesterbro-Kongens Enghave' ? 'Vesterbro-Kgs. Enghave' : d.name));
+  }
+  for (const poly of D.parks) gPark.append(el('path', { d: path(poly[0]), fill: 'var(--map-park)' }));
+  for (const st of STATIONS) {
+    if (districtOf(st.lat, st.lon) === OUTSIDE) continue;
+    const [x, y] = P(st.lat, st.lon);
+    const c = el('circle', { cx: x, cy: y, r: 2.6, fill: 'var(--ink-3)' }); c.append(el('title', null, `${st.type} ${st.name}`)); gSt.append(c);
+  }
+  for (const m of [...E.ranked].reverse()) {
+    if (!m.geo) continue;
+    const [x, y] = P(m.geo.lat, m.geo.lon);
+    const g = el('g');
+    g.append(el('circle', { cx: x, cy: y, r: 11, fill: 'var(--accent)', stroke: 'var(--surface)', 'stroke-width': 2 }));
+    g.append(el('text', { x, y: y + 4, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: 'var(--on-accent)' }, m.rank));
+    g.append(el('title', null, `#${m.rank} ${m.o.name} · ${m.geo.label}`));
+    gPin.append(g);
+  }
+  svg.append(gLand, gPark, gLbl, gSt, gPin);
+  if (ui.placing) {
+    svg.addEventListener('click', e => {
+      const o = S.options.find(x => x.id === ui.placing); if (!o) return;
+      const r = svg.getBoundingClientRect(), k = W / r.width;
+      const x = (e.clientX - r.left) * k, y = (e.clientY - r.top) * k;
+      const mx = (x - ox) / s + minX, my = maxY - y / s;
+      o.lat = +(LAT0 + my / KY).toFixed(6); o.lon = +(LON0 + mx / KX).toFixed(6); o.pinned = true;
+      ui.placing = null; refresh();
+    });
+  }
+  host.replaceChildren(svg);
+}
+
+function starsCard(E) {
+  const cols = [['Overall', m => m.overall], ['Costs', m => m.sc.costi], ['Area', m => m.zona], ['Commute', m => m.sc.pendolarismo], ['Flat', m => m.sc.alloggio]];
+  return h('section', { class: 'card' },
+    h('div', { class: 'card-head' }, h('h2', null, 'Stars')),
+    h('div', { class: 'scroll' }, h('table', { class: 'tbl stars-tbl' },
+      h('thead', null, h('tr', null, h('th', { scope: 'col' }, ''), cols.map(([l]) => h('th', { scope: 'col' }, l)))),
+      h('tbody', null, E.ranked.map(m => h('tr', null,
+        h('th', { scope: 'row' }, h('span', { class: 'rank' }, '#' + m.rank), m.o.name || 'Untitled'),
+        cols.map(([, f]) => h('td', null, stars(f(m))))))))),
+    zoneDetail(E));
+}
+
+function zoneDetail(E) {
+  const cells = m => {
+    const g = m.geo, sv = m.safety;
+    return [
+      stars(m.sc.sicurezza, false, sv ? `${sv.tryg}% feel safe · ${sv.aften}% in the evening · ${sv.krim} crimes per 1,000 residents` : 'Your rating'),
+      stars(m.sc.trasporti, false, g ? `${g.station.name} · ${metres(g.station.d)}` : null),
+      stars(m.sc.verde, false, g ? (g.park === 0 ? 'Inside a park' : `Park ${metres(g.park)} away`) : null),
+      stars(m.sc.quiete, false, g && g.db != null ? `${g.db} dB` : null),
+      stars(m.sc.servizi), stars(m.sc.vita)];
+  };
+  return h('details', { class: 'fine' }, h('summary', null, 'Detail'),
+    h('div', { class: 'scroll', style: 'margin-top:10px' }, h('table', { class: 'tbl stars-tbl' },
+      h('thead', null, h('tr', null, ['', 'Safety', 'Metro', 'Green', 'Quiet', 'Amenities', 'Social'].map(x => h('th', { scope: 'col' }, x)))),
+      h('tbody', null, E.ranked.map(m => h('tr', null, h('th', { scope: 'row' }, m.o.name || 'Untitled'), cells(m).map(c => h('td', null, c))))))));
+}
+
+function costCard(E) {
+  const bestCost = E.ranked.length > 1 ? Math.min(...E.ranked.map(m => m.allIn)) : null;
+  return h('section', { class: 'card' },
+    h('div', { class: 'card-head' }, h('h2', null, 'Costs')),
+    h('div', { class: 'scroll' }, h('table', { class: 'tbl' },
+      h('thead', null, h('tr', null, ['', 'Kr/month', 'Rent/pay', 'Left over', 'Move-in', 'Lease'].map(x => h('th', { scope: 'col' }, x)))),
+      h('tbody', null, E.ranked.map(m => h('tr', null,
+        h('th', { scope: 'row' }, m.o.name || 'Untitled'),
+        h('td', { class: m.allIn === bestCost ? 'best' : '' }, kr(m.allIn)),
+        h('td', null, m.share != null ? [pct(m.share), h('span', { class: 'chipcell' }, statusChip(m.status))] : '–'),
+        h('td', { class: m.left != null && m.left < 0 ? 'neg' : '' }, m.left != null ? kr(m.left) : '–'),
+        h('td', null, kr(m.upfront)),
+        h('td', null, m.o.lease > 0 ? m.o.lease + ' m' : '∞')))))));
+}
+
+function watchCard(E) {
+  const rows = [];
+  for (const m of E.ranked) {
+    const g = m.geo, f = [];
+    if (m.status.level === 'bad') f.push(['bad', m.left != null && m.left < 0 ? 'Costs above take-home pay' : `Rent ${pct(m.share)}`]);
+    if (g && g.db != null && g.db >= 65) f.push(['warn', `Noise ${g.db} dB`]);
+    if (m.safety && m.safety.aften < 75) f.push(['warn', `Evening: ${m.safety.aften}% feel safe`]);
+    if (m.o.rent > 0 && m.o.deposit > m.o.rent * 3 + 1) f.push(['warn', 'Deposit > 3 months']);
+    if (m.commit > S.profile.stay) f.push(['warn', `Tied in for ${m.commit} months`]);
+    if (!g && D) f.push(['warn', 'No address']);
+    if (['servizi', 'vita'].every(k => m.sc[k] == null)) f.push(['warn', 'Ratings missing']);
+    if (f.length) rows.push(h('div', { class: 'flag-row' }, h('b', null, m.o.name || 'Untitled'), h('span', { class: 'flags' }, f.map(([l, t]) => flag(l, t)))));
+  }
+  if (!rows.length) return null;
+  return h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', null, 'Watch out')), h('div', { class: 'flag-list' }, rows));
+}
+
+function howCard() {
+  const P = S.profile;
+  return h('details', { class: 'card how' }, h('summary', null, 'How it works'),
+    h('ul', null,
+      h('li', null, 'Costs: 5 stars up to 25% of take-home pay, 0 from 55%.'),
+      h('li', null, 'Metro: 5 stars within 300 m, −1 every 300 m. Green space: 5 within 200 m, −1 every 250 m. Quiet: 5 at 50 dB, −1 every 5 dB.'),
+      h('li', null, 'Safety: the municipality\'s 2025 survey, the average of feeling safe by day and in the evening. 70% = 1 star, 90% = 5.'),
+      h('li', null, 'Commute: 5 stars at 10 min, 0 at 60 min. Overall: a weighted average (Priorities).'),
+      h('li', null, `Kr/month = rent + utilities − included services + transport + travel time (${P.timePct}% of hourly take-home pay) + furnishing spread over the lease.`),
+      h('li', null, 'Rent/pay: ✓ up to 30%, ! up to 40%, ✕ above that or with costs above take-home pay.'),
+      h('li', null, `Sources: Københavns Kommune (noise 2022, neighbourhoods, stations, parks, Tryghedsundersøgelse 2025), © OpenStreetMap contributors (Frederiksberg). ${D ? `Data from ${D.meta.built}.` : ''}`)));
+}
+
+function renderResults() {
+  const E = evaluate(S);
+  if (!E.ranked.length) {
+    resultsEl.replaceChildren(h('div', { class: 'card empty' }, 'Enter the rent for at least one option to see the comparison.'));
+    return;
+  }
+  const note = S.profile.takeHome > 0 ? null : h('div', { class: 'card empty' }, 'Add your take-home pay to check whether each option is affordable.');
+  resultsEl.replaceChildren(...[verdictCard(E), note, mapCard(E), starsCard(E), costCard(E), watchCard(E), howCard()].filter(Boolean));
+  const host = $('#map-host');
+  if (host) drawMap(host, E);
+}
+
+/* ---------- interface ---------- */
+function applyTheme(t) { if (t) document.documentElement.setAttribute('data-theme', t); else document.documentElement.removeAttribute('data-theme'); }
+try { const t = localStorage.getItem(THEME_KEY); if (t === 'light' || t === 'dark') applyTheme(t); } catch (e) { /* ignore */ }
+$('#btn-theme').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* ignore */ }
+});
+const shell = $('#shell');
+function setView(v) {
+  shell.dataset.view = v;
+  $('#tab-inputs').setAttribute('aria-pressed', String(v === 'inputs'));
+  $('#tab-results').setAttribute('aria-pressed', String(v === 'results'));
+  if (v === 'results') requestAnimationFrame(renderResults);
+}
+$('#tab-inputs').addEventListener('click', () => setView('inputs'));
+$('#tab-results').addEventListener('click', () => setView('results'));
+const syncNote = () => { $('#sample-note').hidden = !S.sample; };
+$('#btn-dismiss-sample').addEventListener('click', () => { S.sample = false; save(); syncNote(); });
+function replaceState(next) { S = next; ui.open = S.options[0].id; ui.placing = null; syncNote(); refresh(); }
+$('#btn-sample').addEventListener('click', () => replaceState(sampleState()));
+(function () {
+  const b = $('#btn-clear'); let armed = false, t = 0;
+  b.addEventListener('click', () => {
+    if (!armed) { armed = true; b.textContent = 'Click again to clear'; t = setTimeout(() => { armed = false; b.textContent = 'Clear'; }, 3500); return; }
+    clearTimeout(t); armed = false; b.textContent = 'Clear'; replaceState(blankState());
+  });
+})();
+let rt = 0, lastW = innerWidth;
+window.addEventListener('resize', () => { if (innerWidth === lastW) return; lastW = innerWidth; clearTimeout(rt); rt = setTimeout(() => { if (resultsEl.offsetParent !== null) renderResults(); }, 150); });
+
+$('#street-list').replaceChildren(...STREETS.map(s => h('option', { value: s })));
+syncNote(); renderInputs(); renderResults(); updateSummaries();
+window.RentalEvaluator = { compute, evaluate, normalize, sampleState, geoFor, suggestStreets, districtOf, get state() { return S; } };
+})();
+</script>
+</body>
+</html>
