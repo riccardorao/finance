@@ -1,0 +1,1131 @@
+<title>Il Dividendo di Firenze · White paper</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: un documento di lavoro su carta, con una colonna di leve a sinistra sullo schermo; in stampa solo il documento in A4. */
+:root{
+  --bg:#e9ece8; --paper:#fdfdfb; --sunk:#eef1ed; --ink:#172024; --ink2:#4a5654; --ink3:#727d7a; --line:#d3d9d3;
+  --accent:#9e1f2a; --accent-soft:#f5e3e4;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+  --gain:#2a78d6; --loss:#eb6834; --total:#33433f;
+  --good:#1d7a45; --warn:#9a6200; --bad:#b3261e;
+  --f-display:"Bodoni Moda","Didot","Bodoni 72",Georgia,serif;
+  --f-text:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --f-ui:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#101415; --paper:#181e20; --sunk:#20282a; --ink:#e8ece8; --ink2:#b3bdb9; --ink3:#86918d; --line:#323c3d;
+  --accent:#e1666f; --accent-soft:#3a2326;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+  --gain:#3987e5; --loss:#d95926; --total:#a8b8b2; --good:#5cc489; --warn:#e0a63a; --bad:#f07a70; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#101415; --paper:#181e20; --sunk:#20282a; --ink:#e8ece8; --ink2:#b3bdb9; --ink3:#86918d; --line:#323c3d;
+  --accent:#e1666f; --accent-soft:#3a2326;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+  --gain:#3987e5; --loss:#d95926; --total:#a8b8b2; --good:#5cc489; --warn:#e0a63a; --bad:#f07a70; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-text);font-size:16px;line-height:1.55;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:20px 48px}
+h1,h2,h3,h4{text-wrap:balance;margin:0}
+h1{font-family:var(--f-display);font-weight:500;font-size:clamp(2.2rem,5vw,3.4rem);line-height:1.04}
+h2{font-family:var(--f-display);font-weight:500;font-size:1.65rem;line-height:1.15}
+h3{font-family:var(--f-ui);font-weight:700;font-size:1.02rem;margin-top:6px}
+h4{font-family:var(--f-ui);font-weight:700;font-size:.92rem}
+p{margin:0}
+a{color:var(--accent)}
+.ui{font-family:var(--f-ui)}
+.eyebrow{font-family:var(--f-ui);font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink3);font-weight:600}
+.num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+button{font-family:var(--f-ui);font-size:.86rem;font-weight:600;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 13px;cursor:pointer}
+button:hover{border-color:var(--ink3)}
+button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.app{max-width:1360px;margin:0 auto;display:grid;gap:24px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1100px){.app{grid-template-columns:310px minmax(0,1fr)}}
+
+/* toolbar + rail */
+.toolbar{max-width:1360px;margin:0 auto 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-family:var(--f-ui)}
+.toolbar .sep{flex:1 1 auto}
+.toolbar .msg{font-size:.8rem;color:var(--ink3)}
+.paste{max-width:1360px;margin:0 auto 16px;display:grid;gap:8px;font-family:var(--f-ui);background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.paste textarea{width:100%;min-height:90px;font-family:var(--f-mono);font-size:.8rem;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:8px}
+aside.rail{align-self:start;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:16px;font-family:var(--f-ui)}
+@media (min-width:1100px){aside.rail{position:sticky;top:max(12px, env(safe-area-inset-top, 0px));max-height:calc(100vh - 24px);overflow:auto}}
+.rail h2{font-size:1.25rem}
+.rail .grp{border-top:1px solid var(--line);padding-top:12px;margin-top:12px;display:grid;gap:12px}
+.ctl{display:grid;gap:3px}
+.ctl .row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.ctl label{font-weight:600;font-size:.88rem}
+.ctl .val{font-family:var(--f-mono);font-size:.86rem;color:var(--accent);white-space:nowrap}
+.hint{font-size:.77rem;color:var(--ink3);line-height:1.35}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.sw{display:flex;gap:10px;align-items:flex-start;font-size:.88rem}
+.sw input{margin-top:3px;accent-color:var(--accent);width:16px;height:16px}
+select{font:inherit;font-size:.86rem;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);padding:5px 8px;width:100%}
+.exportbox{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;font-size:.8rem;color:var(--ink2);display:grid;gap:6px}
+
+/* paper */
+article.paper{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);min-width:0;padding-block:28px 40px;padding-inline:clamp(18px,5vw,64px);display:grid;gap:30px}
+article.paper>*{min-width:0}
+.cover{display:grid;gap:14px;padding-bottom:22px;border-bottom:2px solid var(--ink)}
+.cover .sub{font-family:var(--f-text);font-size:1.18rem;color:var(--ink2);max-width:60ch}
+.cover .meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:var(--f-ui);font-size:.85rem;color:var(--ink2)}
+.cover .meta b{color:var(--ink)}
+.disclaimer{font-family:var(--f-ui);font-size:.8rem;color:var(--ink3);border:1px solid var(--line);border-radius:4px;padding:8px 10px}
+.toc{font-family:var(--f-ui);font-size:.9rem;columns:2 240px;column-gap:28px;margin:0;padding-left:20px}
+.toc li{break-inside:avoid;margin-bottom:3px}
+section.chap{display:grid;gap:16px}
+section.chap>*,.prose>*,.two>*,.cascade>*,.box>*,#assump-groups>*{min-width:0}
+section.chap>header{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:18px}
+.prose{display:grid;gap:10px;max-width:72ch}
+p.lead{max-width:72ch}
+.prose p{hyphens:auto}
+.kpis{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:720px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.kpi{background:var(--paper);padding:13px 15px;display:grid;gap:3px;align-content:start;font-family:var(--f-ui)}
+.kpi .lab{font-size:.78rem;color:var(--ink2);font-weight:600}
+.kpi .big{font-family:var(--f-display);font-size:1.95rem;line-height:1.05;font-variant-numeric:lining-nums tabular-nums}
+.kpi .sub{font-size:.76rem;color:var(--ink3);font-family:var(--f-mono)}
+.kpi.lead .big{color:var(--accent)}
+@media (max-width:600px){.kpi .big{font-size:1.45rem}.kpi{padding:11px 12px}}
+ul.points{margin:0;padding-left:20px;display:grid;gap:7px;max-width:76ch}
+ul.points b{font-family:var(--f-mono);font-weight:500;font-size:.93em}
+ol.asks{margin:0;padding-left:22px;display:grid;gap:7px;max-width:76ch}
+.box{background:var(--sunk);border-radius:var(--r);padding:14px 16px;display:grid;gap:8px}
+figure{margin:0;display:grid;gap:8px;min-width:0}
+figcaption{font-family:var(--f-ui);font-size:.82rem;color:var(--ink2)}
+figcaption b{color:var(--ink)}
+.chart{width:100%;min-width:0}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--f-ui);fill:var(--ink2);font-size:12px}
+.chart .grid{stroke:var(--line);stroke-width:1;stroke-dasharray:2 3}
+.chart .axis{stroke:var(--line);stroke-width:1}
+.chart .lbl{fill:var(--ink);font-weight:600}
+.chart .val{font-family:var(--f-mono);fill:var(--ink2);font-size:11.5px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-family:var(--f-ui);font-size:.8rem;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-family:var(--f-ui);font-size:.86rem}
+th,td{padding:6px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:top}
+th:first-child,td:first-child{text-align:left}
+td.l,th.l{text-align:left}
+td.wrap{white-space:normal;min-width:180px}
+thead th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);font-weight:600;background:var(--sunk)}
+td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:0}
+tfoot td{font-weight:700;border-top:1px solid var(--ink3);border-bottom:0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:-1px}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.two{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){.two{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}}
+.cascade{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){.cascade{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.order{border-top:3px solid var(--ink);padding-top:10px;display:grid;gap:8px;align-content:start}
+.order:nth-child(2){border-top-color:var(--ink2)} .order:nth-child(3){border-top-color:var(--ink3)}
+.order h3 small{display:block;font-weight:400;color:var(--ink3);font-size:.8rem}
+.order ul{margin:0;padding-left:18px;display:grid;gap:7px;font-size:.93rem}
+.order li b{font-family:var(--f-mono);font-weight:500;font-size:.92em}
+.checks{display:grid;gap:8px;font-family:var(--f-ui);font-size:.9rem}
+.check{display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px;align-items:start}
+.chip{font-family:var(--f-ui);font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;border:1px solid currentColor;white-space:nowrap;text-align:center}
+.chip.ok{color:var(--good)} .chip.warn{color:var(--warn)} .chip.bad{color:var(--bad)}
+.alloc{display:grid;gap:12px;font-family:var(--f-ui)}
+.alloc .row{display:flex;justify-content:space-between;gap:10px;font-size:.88rem;flex-wrap:wrap}
+.bar{height:12px;background:var(--sunk);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent)}
+.hh dl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;margin:0;font-family:var(--f-ui);font-size:.9rem}
+.hh dt{color:var(--ink2)} .hh dd{margin:0;font-family:var(--f-mono);text-align:right}
+.hh .t{font-weight:700;color:var(--ink);border-top:1px solid var(--line);padding-top:4px}
+.hh dd.t{color:var(--accent)}
+.tag{font-family:var(--f-ui);font-size:.66rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:3px;white-space:nowrap}
+.tag.dato{background:var(--s1);color:#fff}
+.tag.stima{background:var(--ink2);color:var(--paper)}
+.tag.ipotesi{background:var(--sunk);color:var(--ink2);border:1px solid var(--line)}
+.assump input[type=number]{font-family:var(--f-mono);font-size:.84rem;width:92px;text-align:right;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:3px 6px}
+.assump td.desc{white-space:normal;min-width:220px;max-width:380px}
+.assump td.desc small{display:block;color:var(--ink3);font-size:.77rem;line-height:1.35}
+.eq{font-family:var(--f-mono);font-size:.86rem;background:var(--sunk);border-radius:4px;padding:8px 12px;overflow-x:auto;white-space:pre;line-height:1.6}
+.callout{border-left:3px solid var(--accent);padding:4px 0 4px 12px;color:var(--ink2);max-width:76ch}
+.callout b{color:var(--ink)}
+.srcs{font-family:var(--f-ui);font-size:.84rem;display:grid;gap:4px;padding-left:22px;margin:0}
+.diagram{overflow-x:auto}
+.diagram svg{min-width:640px;width:100%;height:auto;display:block}
+.diagram rect{fill:var(--sunk);stroke:var(--line)}
+.diagram rect.k{fill:var(--accent-soft);stroke:var(--accent)}
+.diagram text{font-family:var(--f-ui);font-size:13px;fill:var(--ink)}
+.diagram text.h{font-size:11px;fill:var(--ink3);letter-spacing:.1em;font-weight:700}
+.diagram path{stroke:var(--ink3);stroke-width:1.4;fill:none}
+#tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--paper);font-family:var(--f-ui);font-size:.8rem;line-height:1.35;padding:6px 9px;border-radius:5px;max-width:280px;opacity:0}
+#tip.on{opacity:1}
+.print-only{display:none}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+/* ---------- print: A4 white paper ---------- */
+@page{size:A4;margin:17mm 16mm 18mm}
+@media print{
+  :root,:root[data-theme="dark"],:root:not([data-theme="light"]){
+    --bg:#ffffff; --paper:#ffffff; --sunk:#f1f3f0; --ink:#111a1d; --ink2:#3f4a48; --ink3:#69736f; --line:#cdd3cd;
+    --accent:#9e1f2a; --accent-soft:#f5e3e4; --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+    --gain:#2a78d6; --loss:#eb6834; --total:#33433f; --good:#1d7a45; --warn:#9a6200; --bad:#b3261e; color-scheme:light;
+  }
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{font-size:10.4pt;line-height:1.45;padding:0;background:#fff}
+  .toolbar,.paste,aside.rail,.screen-only,#tip{display:none!important}
+  .print-only{display:block}
+  .app{display:block;max-width:none}
+  article.paper{border:0;padding:0;gap:18px;display:block}
+  article.paper>*{margin-bottom:16px}
+  .cover{min-height:245mm;align-content:start;padding-top:30mm;border-bottom:0;gap:18px}
+  .cover h1{font-size:40pt}
+  section.chap{break-before:page;gap:12px}
+  section.chap.flow{break-before:auto}
+  section.chap>header{border-top:2px solid var(--ink)}
+  figure,.tablewrap,.box,.kpis,.check,.order,.hh,.eq,tr{break-inside:avoid}
+  h2,h3,h4{break-after:avoid}
+  .tablewrap{overflow:visible;border-color:var(--line)}
+  th,td{padding:4px 7px}
+  table{font-size:8.6pt}
+  .assump input[type=number]{border:0;background:transparent;width:auto;padding:0;-moz-appearance:textfield;appearance:textfield}
+  .assump input::-webkit-outer-spin-button,.assump input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .diagram svg{min-width:0}
+  .kpi .big{font-size:20pt}
+  .prose,p.lead,ul.points,ol.asks,.callout{max-width:none}
+  a{color:var(--ink);text-decoration:none}
+  .srcs a::after{content:" — " attr(href);font-size:7.5pt;color:var(--ink3);word-break:break-all}
+}
+</style>
+
+<div class="toolbar" role="group" aria-label="Scenari ed esportazione">
+  <span class="eyebrow">Scenario</span>
+  <button type="button" id="sc-prudente" data-scen="prudente">Prudente</button>
+  <button type="button" id="sc-centrale" data-scen="centrale">Centrale</button>
+  <button type="button" id="sc-ambizioso" data-scen="ambizioso">Ambizioso</button>
+  <button type="button" id="sc-vigente" data-scen="vigente">A legislazione vigente</button>
+  <span class="sep"></span>
+  <button type="button" id="bt-reset">Ripristina tutte le ipotesi</button>
+  <button type="button" id="bt-summary">Copia la sintesi</button>
+  <button type="button" id="bt-copy">Copia lo scenario (JSON)</button>
+  <button type="button" id="bt-paste" aria-expanded="false" aria-controls="pastebox">Carica uno scenario</button>
+  <span class="msg" id="msg" aria-live="polite"></span>
+</div>
+<div class="paste" id="pastebox" hidden>
+  <label for="pastearea"><b>Incolla qui uno scenario in JSON</b> (ottenuto con «Copia lo scenario»). Tutti i numeri del documento si ricalcolano.</label>
+  <textarea id="pastearea" spellcheck="false"></textarea>
+  <div><button type="button" id="bt-apply">Applica lo scenario</button></div>
+</div>
+
+<div class="app">
+  <aside class="rail" aria-label="Leve della proposta">
+    <h2>Leve della proposta</h2>
+    <p class="hint">Ogni numero del documento si ricalcola. Le ipotesi di dettaglio sono nell'Allegato B.</p>
+    <div id="rail"></div>
+    <div class="exportbox">
+      <h4>Esportare il documento</h4>
+      <p>Il PDF A4 dello scenario centrale è nel repository: <span class="mono">firenze/white-paper-dividendo-firenze.pdf</span>.</p>
+      <p>Per un altro scenario: aprite questo file HTML in un browser e usate <b>Stampa → Salva come PDF</b>. L'impaginazione A4, con allegati, è già predisposta.</p>
+      <p>«Copia lo scenario» produce un testo JSON che riproduce esattamente gli stessi numeri su un altro computer.</p>
+    </div>
+  </aside>
+
+  <article class="paper">
+    <!-- COPERTINA -->
+    <header class="cover">
+      <span class="eyebrow">White paper · Documento di lavoro per la Commissione consiliare e le forze politiche</span>
+      <h1>Il Dividendo di Firenze</h1>
+      <p class="sub">Riforma progressiva dell'imposta di soggiorno, ritorno della residenza nel centro storico e dividendo civico per chi vive in città.</p>
+      <div class="meta"><span>Versione <b>1.0</b></span><span>Ottobre 2026</span><span>Scenario: <b id="scen-name">Centrale</b></span><span>Valori annui a regime, euro correnti</span></div>
+      <p class="disclaimer">Documento indipendente di proposta. Non è un atto del Comune di Firenze. I risultati sono stime di un modello con ipotesi dichiarate e modificabili (Allegato B), da validare con i dati amministrativi del Comune.</p>
+      <div>
+        <h4 class="ui" style="margin-bottom:6px">Indice</h4>
+        <ol class="toc">
+          <li><a href="#sintesi">Sintesi per i decisori</a></li>
+          <li><a href="#contesto">Il contesto</a></li>
+          <li><a href="#proposta">La proposta</a></li>
+          <li><a href="#domanda">Effetti sulla domanda turistica</a></li>
+          <li><a href="#bilancio">Il conto economico del Comune</a></li>
+          <li><a href="#casa">Il mercato abitativo</a></li>
+          <li><a href="#dividendo">Fondo Armonizzatore e dividendo civico</a></li>
+          <li><a href="#effetti">Effetti di primo, secondo e terzo ordine</a></li>
+          <li><a href="#rischi">Rischi, sensibilità e incertezza</a></li>
+          <li><a href="#fattibilita">Fattibilità giuridica e percorso attuativo</a></li>
+          <li><a href="#confronto">Confronto internazionale</a></li>
+          <li><a href="#allegati">Allegati: parametri, ipotesi, verifiche, metodo, fonti</a></li>
+        </ol>
+      </div>
+    </header>
+
+    <!-- 0 SINTESI -->
+    <section class="chap" id="sintesi">
+      <header><span class="eyebrow">Sintesi</span><h2>Sintesi per i decisori</h2></header>
+      <div class="kpis" id="kpis"></div>
+      <ul class="points" id="exec-points"></ul>
+      <div class="box">
+        <h3>Decisioni richieste alla Commissione</h3>
+        <ol class="asks">
+          <li><b>Mandato tecnico</b> agli uffici (Risorse finanziarie, Statistica, Fiscalità locale) per validare il modello con dati amministrativi: dichiarazioni dei gestori per fascia di prezzo, codici CIN, dati delle piattaforme (direttiva DAC7), anagrafe.</li>
+          <li><b>Fase 1 a legislazione vigente</b>: delibera tariffaria graduata in proporzione al prezzo entro il tetto di €10 per notte, esenzione per età under 30, istituzione del Fondo di garanzia per gli affitti a lungo termine.</li>
+          <li><b>Iniziativa istituzionale</b> (ANCI, parlamentari) per modificare l'art. 4 del D.Lgs. 23/2011: aliquota proporzionale al prezzo oltre il tetto nelle città ad alta intensità turistica, e chiarimento sulla quota del maggior gettito destinata allo Stato.</li>
+          <li><b>Accordo metropolitano</b> con i comuni della cintura su tariffe e regole per gli affitti brevi, per evitare lo spostamento dei flussi.</li>
+          <li><b>Vincolo di destinazione</b>: Fondo Armonizzatore e Dividendo civico con bilancio separato e rendicontazione pubblica annuale.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 1 CONTESTO -->
+    <section class="chap" id="contesto">
+      <header><span class="eyebrow">Capitolo 1</span><h2>Il contesto</h2></header>
+      <div class="prose">
+        <p>Firenze ospita ogni anno circa 9,2 milioni di presenze registrate nelle strutture ufficiali, che salgono a circa 14 milioni di notti tassate se si includono le locazioni turistiche non rilevate dalle statistiche. A queste si aggiungono circa 5,6 milioni di escursionisti giornalieri. La popolazione residente è scesa a 363.737 abitanti a fine novembre 2025, con un calo di circa 2.000 persone in un anno.</p>
+        <p>Gli annunci Airbnb sono 12.211, per l'85% nel centro. Oltre il 60% appartiene a gestori con quattro o più unità, e circa la metà delle abitazioni non occupate da residenti è destinata ad affitto breve. I canoni richiesti sono in media di €21,7 al m² al mese in città e di €24,6 nel centro storico.</p>
+        <p>L'imposta di soggiorno ha reso €76,9 milioni nel 2024 e circa €82 milioni nel 2025, con tariffe fisse per categoria da €3,50 a €8 per persona per notte. La tariffa fissa pesa in proporzione molto di più su chi spende poco: €6 sono l'8% di un posto letto da €70, ma poco più dell'1% di una suite da €520 a persona.</p>
+      </div>
+      <figure>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Indicatore</th><th>Valore</th><th class="l">Fonte</th></tr></thead>
+          <tbody>
+            <tr><td>Residenti (30 novembre 2025)</td><td class="num">363.737</td><td class="l">Comune di Firenze [9]</td></tr>
+            <tr><td>Presenze registrate</td><td class="num">≈ 9,2 mln</td><td class="l">IRPET [1]</td></tr>
+            <tr><td>Notti tassate stimate, incluse locazioni turistiche</td><td class="num">≈ 14 mln</td><td class="l">IRPET [3], stima del modello</td></tr>
+            <tr><td>Escursionisti giornalieri</td><td class="num">≈ 5,6 mln</td><td class="l">Federalberghi in La Nazione [10]</td></tr>
+            <tr><td>Gettito imposta di soggiorno 2024 / 2025</td><td class="num">€76,9 / ≈ €82 mln</td><td class="l">IRPET [1], JFC [2]</td></tr>
+            <tr><td>Tariffe attuali (1★ … 5★, locazioni €6)</td><td class="num">€3,50 … €8</td><td class="l">Delibera DG/2024/00535 [2]</td></tr>
+            <tr><td>Annunci Airbnb (quota nel centro)</td><td class="num">12.211 (85%)</td><td class="l">L'Indipendente [4]</td></tr>
+            <tr><td>Annunci di gestori con 4+ unità</td><td class="num">&gt; 60%</td><td class="l">Banca d'Italia–IRPET [5]</td></tr>
+            <tr><td>Canone richiesto, città / centro</td><td class="num">€21,7 / €24,6 al m²</td><td class="l">Idealista in La Nazione [6]</td></tr>
+            <tr><td>Costo del servizio rifiuti (TARI) 2026</td><td class="num">€135,8 mln</td><td class="l">La Nazione [8]</td></tr>
+            <tr><td>Addizionale comunale IRPEF</td><td class="num">0,2%, esenti fino a €25.000</td><td class="l">CISL [11]</td></tr>
+          </tbody></table></div>
+        <figcaption><b>Tabella 1</b> – Firenze in cifre. Numeri tra parentesi quadre: elenco delle fonti in fondo al documento.</figcaption>
+      </figure>
+    </section>
+
+    <!-- 2 PROPOSTA -->
+    <section class="chap" id="proposta">
+      <header><span class="eyebrow">Capitolo 2</span><h2>La proposta</h2></header>
+      <div class="prose">
+        <p>La riforma sostituisce le tariffe fisse per categoria con una funzione ibrida: un <b>pavimento</b> uguale per tutti gli ospiti tassabili e un'<b>aliquota proporzionale</b> al prezzo della camera, che scatta quando supera il pavimento. Chi spende poco paga di più che oggi, in modo da scoraggiare il turismo di massa a basso valore aggiunto e rendere meno conveniente l'affitto breve non professionale. Chi spende molto paga in proporzione a quanto spende.</p>
+        <p class="eq">t(p) = max( T_min , α · p_notte )        esenti: cittadini UE under 30, minori, notti oltre la settima</p>
+        <p id="tax-intro"></p>
+      </div>
+      <figure>
+        <div class="chart" id="ch-tax"></div>
+        <div class="legend" id="lg-tax"></div>
+        <figcaption><b>Figura 1</b> – Imposta per notte in funzione del prezzo per persona (scale logaritmiche). Cerchi vuoti: tariffa attuale al prezzo mediano di ciascuna tipologia; cerchi pieni: dopo la riforma.</figcaption>
+      </figure>
+      <figure>
+        <div class="tablewrap"><table id="tb-tax"></table></div>
+        <figcaption><b>Tabella 2</b> – Imposta per tipologia di visitatore e gettito lordo, oggi e dopo la riforma.</figcaption>
+      </figure>
+      <div class="prose">
+        <h3>Gli altri strumenti</h3>
+        <p><b>Fondo Armonizzatore</b>: finanzia la transizione con quattro linee: riconversione commerciale verso esercizi di vicinato, riqualificazione dei lavoratori del turismo a bassa qualifica, garanzia pubblica sugli affitti a lungo termine, attrazione di imprese e talenti nei settori ad alta intensità di conoscenza.</p>
+        <p><b>Dividendo civico</b>: l'avanzo strutturale netto, dopo una riserva prudenziale, è vincolato a sgravi per i residenti: azzeramento dell'addizionale comunale IRPEF, riduzione della TARI domestica, trasporto pubblico gratuito.</p>
+      </div>
+    </section>
+
+    <!-- 3 DOMANDA -->
+    <section class="chap" id="domanda">
+      <header><span class="eyebrow">Capitolo 3</span><h2>Effetti sulla domanda turistica</h2></header>
+      <div class="prose"><p>La domanda è divisa in cinque tipologie. Per ciascuna il prezzo per notte segue una distribuzione log-normale attorno alla mediana, e i pernottamenti reagiscono al costo complessivo per notte con un'elasticità costante. I gestori assorbono una parte di ogni aumento. Una quota delle notti perse si sposta nei comuni della cintura collegati da treno e tramvia, e quegli ospiti tornano in centro di giorno.</p></div>
+      <figure>
+        <div class="chart" id="ch-demand"></div>
+        <div class="legend"><span><i style="background:var(--sunk);border:1px solid var(--line)"></i>Oggi</span><span><i style="background:var(--ink3)"></i>Dopo la riforma (colore della tipologia)</span></div>
+        <figcaption><b>Figura 2</b> – Pernottamenti annui per tipologia di visitatore.</figcaption>
+      </figure>
+      <figure>
+        <div class="tablewrap"><table id="tb-demand"></table></div>
+        <figcaption><b>Tabella 3</b> – Pernottamenti, variazione, imposta media e spostamento verso la cintura.</figcaption>
+      </figure>
+      <p class="callout" id="crowd-note"></p>
+    </section>
+
+    <!-- 4 BILANCIO -->
+    <section class="chap" id="bilancio">
+      <header><span class="eyebrow">Capitolo 4</span><h2>Il conto economico del Comune</h2></header>
+      <div class="prose"><p>Il gettito attuale finanzia già servizi esistenti: il dividendo può venire solo dall'incremento. Saldo = (incremento netto dell'imposta − perdite collaterali + risparmi operativi) − Fondo Armonizzatore. La riqualificazione dei lavoratori è un costo una tantum dei primi tre anni e non entra nel saldo a regime (Capitolo 6, Figura 6).</p></div>
+      <figure>
+        <div class="chart" id="ch-wf"></div>
+        <div class="legend"><span><i style="background:var(--gain)"></i>Aumenta il saldo</span><span><i style="background:var(--loss)"></i>Riduce il saldo</span><span><i style="background:var(--total)"></i>Subtotale</span></div>
+        <figcaption><b>Figura 3</b> – Dall'incremento di gettito al saldo strutturale a regime, milioni di euro all'anno.</figcaption>
+      </figure>
+    </section>
+
+    <!-- 5 CASA -->
+    <section class="chap" id="casa">
+      <header><span class="eyebrow">Capitolo 5</span><h2>Il mercato abitativo</h2></header>
+      <div class="prose"><p>Ogni appartamento in affitto breve rende un multiplo <i>R</i> di ciò che renderebbe in locazione a lungo termine. Il proprietario passa al lungo termine quando la riforma riduce il reddito netto dell'affitto breve sotto quello della locazione, al netto di uno sconto per il rischio (morosità, tempi di sfratto, perdita di flessibilità). Il Fondo di garanzia riduce quello sconto e quindi sposta la soglia.</p></div>
+      <div class="two">
+        <figure>
+          <div class="chart" id="ch-prem"></div>
+          <div class="legend"><span><i style="background:var(--accent)"></i>Appartamenti che passano al lungo termine</span><span><i style="background:var(--ink3)"></i>Stock attuale di affitti brevi</span></div>
+          <figcaption><b>Figura 4</b> – Distribuzione del premio dell'affitto breve e soglia di conversione.</figcaption>
+        </figure>
+        <figure>
+          <div class="tablewrap"><table id="tb-house"></table></div>
+          <figcaption><b>Tabella 4</b> – Effetti sul mercato abitativo a regime.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 6 DIVIDENDO -->
+    <section class="chap" id="dividendo">
+      <header><span class="eyebrow">Capitolo 6</span><h2>Fondo Armonizzatore e dividendo civico</h2></header>
+      <p class="lead" id="div-intro"></p>
+      <div class="two">
+        <figure>
+          <div class="tablewrap"><table id="tb-fund"></table></div>
+          <figcaption><b>Tabella 5</b> – Fondo Armonizzatore e risorse per il dividendo, a regime.</figcaption>
+        </figure>
+        <figure>
+          <div class="alloc" id="alloc"></div>
+          <figcaption><b>Figura 5</b> – Copertura degli sgravi, nell'ordine di priorità scelto.</figcaption>
+        </figure>
+      </div>
+      <div class="box hh" id="hh"></div>
+      <figure>
+        <div class="chart" id="ch-path"></div>
+        <figcaption><b>Figura 6</b> – Saldo nei primi cinque anni. La domanda si adegua in circa un anno, le riconversioni in tre o quattro; la riqualificazione dei lavoratori pesa sui primi tre anni.</figcaption>
+      </figure>
+    </section>
+
+    <!-- 7 EFFETTI -->
+    <section class="chap" id="effetti">
+      <header><span class="eyebrow">Capitolo 7</span><h2>Effetti di primo, secondo e terzo ordine</h2></header>
+      <figure>
+        <div class="diagram" id="diagram"></div>
+        <figcaption><b>Figura 7</b> – Catena causale della riforma: dagli effetti diretti sui prezzi a quelli sulla struttura della città.</figcaption>
+      </figure>
+      <div class="cascade" id="cascade"></div>
+    </section>
+
+    <!-- 8 RISCHI -->
+    <section class="chap" id="rischi">
+      <header><span class="eyebrow">Capitolo 8</span><h2>Rischi, sensibilità e incertezza</h2></header>
+      <p class="lead" id="mc-intro"></p>
+      <figure>
+        <div class="tablewrap"><table id="tb-mc"></table></div>
+        <figcaption><b>Tabella 6</b> – Intervallo di incertezza: 400 simulazioni con le ipotesi più incerte estratte a caso negli intervalli indicati in Allegato D.</figcaption>
+      </figure>
+      <figure>
+        <div class="chart" id="ch-tornado"></div>
+        <figcaption><b>Figura 8</b> – Sensibilità del saldo strutturale: ogni barra ricalcola il modello con un'ipotesi al valore basso e alto, tutto il resto invariato. Le barre più lunghe indicano i dati da raccogliere per primi.</figcaption>
+      </figure>
+      <figure>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Rischio</th><th class="l">Probabilità</th><th class="l">Impatto</th><th class="l">Mitigazione</th></tr></thead>
+          <tbody>
+            <tr><td class="wrap">Gettito inferiore alle attese (domanda più elastica, più evasione)</td><td class="l">Media</td><td class="l">Alto</td><td class="l wrap">Riserva prudenziale; dividendo erogato solo dal secondo anno; monitoraggio trimestrale.</td></tr>
+            <tr><td class="wrap">Contenzioso su tariffa oltre il tetto o su esenzione legata alla cittadinanza</td><td class="l">Alta senza norma nazionale</td><td class="l">Alto</td><td class="l wrap">Fase 1 a legislazione vigente; esenzione per sola età o tessera studente.</td></tr>
+            <tr><td class="wrap">Spostamento dei flussi nella cintura metropolitana</td><td class="l">Media</td><td class="l">Medio</td><td class="l wrap">Accordo metropolitano su tariffe e regole per gli affitti brevi.</td></tr>
+            <tr><td class="wrap">Crescita dell'affitto breve abusivo</td><td class="l">Media</td><td class="l">Medio</td><td class="l wrap">Incrocio CIN–piattaforme (DAC7), sanzioni, riscossione tramite piattaforma.</td></tr>
+            <tr><td class="wrap">Perdita di posti di lavoro a bassa qualifica</td><td class="l">Alta</td><td class="l">Medio</td><td class="l wrap">Linea di transizione del Fondo; accordi con enti di formazione.</td></tr>
+            <tr><td class="wrap">Shock turistico (crisi sanitarie, geopolitiche)</td><td class="l">Bassa</td><td class="l">Molto alto</td><td class="l wrap">Riserva; dividendo come sgravio annuale rivedibile, non come spesa rigida.</td></tr>
+            <tr><td class="wrap">Quota del maggior gettito allo Stato</td><td class="l">Certa nel 2026</td><td class="l">Medio</td><td class="l wrap">Negoziazione in sede ANCI; il modello la include già.</td></tr>
+          </tbody></table></div>
+        <figcaption><b>Tabella 7</b> – Registro dei rischi.</figcaption>
+      </figure>
+    </section>
+
+    <!-- 9 FATTIBILITA -->
+    <section class="chap" id="fattibilita">
+      <header><span class="eyebrow">Capitolo 9</span><h2>Fattibilità giuridica e percorso attuativo</h2></header>
+      <div class="checks" id="checks"></div>
+      <figure>
+        <div class="tablewrap"><table id="tb-phases"></table></div>
+        <figcaption><b>Tabella 8</b> – Percorso in tre fasi: risultati a regime dello scenario a legislazione vigente e dello scenario in esame.</figcaption>
+      </figure>
+      <div class="prose">
+        <p><b>Fase 1 (2027), a legislazione vigente.</b> Tariffe graduate per prezzo entro €10 per notte, come già consentito ai capoluoghi con presenze superiori a venti volte i residenti; esenzione per età; Fondo di garanzia; avvio della raccolta dati per fascia di prezzo.</p>
+        <p><b>Fase 2 (2027–2028), modifica normativa.</b> Proposta, tramite ANCI e parlamentari, di una norma che consenta un'aliquota proporzionale al prezzo senza tetto assoluto nelle città ad alta intensità turistica, sul modello di Amsterdam.</p>
+        <p><b>Fase 3 (dal 2029), piena attuazione.</b> Funzione tariffaria completa, Dividendo civico a regime, valutazione indipendente dopo due anni.</p>
+      </div>
+    </section>
+
+    <!-- 10 CONFRONTO -->
+    <section class="chap" id="confronto">
+      <header><span class="eyebrow">Capitolo 10</span><h2>Confronto internazionale</h2></header>
+      <figure>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Città</th><th class="l">Struttura</th><th>Livello indicativo</th><th class="l">Fonte</th></tr></thead>
+          <tbody>
+            <tr><td>Amsterdam</td><td class="l wrap">12,5% del prezzo della camera, al netto dell'IVA</td><td class="num">media ≈ €18,45 / notte</td><td class="l">[14]</td></tr>
+            <tr><td>Barcellona</td><td class="l wrap">Tassa municipale per persona (dal 2026 €5, fino a €7,50 nei 5★) più tassa regionale</td><td class="num">fino a ≈ €15 / notte</td><td class="l">[15]</td></tr>
+            <tr><td>Roma</td><td class="l wrap">Contributo di soggiorno per categoria</td><td class="num">fino a €10 / notte</td><td class="l">[12]</td></tr>
+            <tr><td>Firenze oggi</td><td class="l wrap">Tariffa fissa per categoria</td><td class="num">€3,50 … €8</td><td class="l">[2]</td></tr>
+            <tr><td>Firenze, proposta</td><td class="l wrap" id="cmp-prop"></td><td class="num" id="cmp-prop-v"></td><td class="l">questo documento</td></tr>
+          </tbody></table></div>
+        <figcaption><b>Tabella 9</b> – Imposte di soggiorno in alcune città europee. Le tariffe cambiano spesso: verificare i valori prima dell'uso.</figcaption>
+      </figure>
+      <p class="lead">Amsterdam dimostra che un'imposta proporzionale al prezzo è amministrabile in una grande città turistica europea. L'evidenza empirica italiana sull'introduzione dell'imposta (Biagi, Brandano e Pulina) non trova effetti misurabili sulle presenze a Firenze, Roma e Padova nel 2008–2014 [16]: le elasticità del modello sono quindi volutamente moderate per le fasce alte e più elevate solo dove la sostituzione con la cintura è facile.</p>
+    </section>
+
+    <!-- ALLEGATI -->
+    <section class="chap" id="allegati">
+      <header><span class="eyebrow">Allegato A</span><h2>Parametri dello scenario</h2></header>
+      <div class="tablewrap"><table id="tb-params"></table></div>
+    </section>
+
+    <section class="chap assump" id="ipotesi">
+      <header><span class="eyebrow">Allegato B</span><h2>Ipotesi e fonti</h2>
+        <p class="ui" style="font-size:.85rem;color:var(--ink2)"><span class="tag dato">Dato</span> cifra pubblicata · <span class="tag stima">Stima</span> stima di terzi o derivata · <span class="tag ipotesi">Ipotesi</span> scelta del modello. <span class="screen-only">Le celle sono modificabili; le modifiche restano in questo browser.</span></p>
+      </header>
+      <h3>Tipologie di visitatore</h3>
+      <div class="tablewrap"><table id="tb-seg"></table></div>
+      <p class="hint ui">Quote sul totale dei pernottamenti (riscalate al 100%). Prezzi per persona per notte, al netto dell'imposta. Elasticità rispetto al costo complessivo per notte. Cintura: quota delle notti perse che si sposta nei comuni vicini.</p>
+      <div id="assump-groups" style="display:grid;gap:14px"></div>
+    </section>
+
+    <section class="chap" id="verifiche">
+      <header><span class="eyebrow">Allegato C</span><h2>Verifiche numeriche</h2>
+        <p class="lead">Controlli automatici di coerenza, ricalcolati a ogni modifica. Servono a garantire che i risultati non dipendano da errori di calcolo o da ipotesi tra loro incompatibili.</p></header>
+      <div class="checks" id="sanity"></div>
+    </section>
+
+    <section class="chap" id="metodo">
+      <header><span class="eyebrow">Allegato D</span><h2>Metodologia</h2></header>
+      <div class="eq">Imposta nuova       t(p) = min( Tetto , max( T_min , α·p ) ),  t = 0 per gli esenti
+Prezzo netto gestore p' = p − (1 − θ)·(t_nuova − t_attuale)              θ = traslazione sull'ospite
+Pernottamenti       q₁ = q₀ · [ (p' + t_nuova) / (p + t_attuale) ]^(ε·m)  m = moltiplicatore elasticità
+Calibrazione        k  = G₀ / Σ q₀·(1 − s_minori)·t_attuale              G₀ = gettito attuale
+Gettito lordo       G  = k · Σ q₁·(1 − s_minori)·t_nuova
+Gettito netto       N  = G − e·max(0, G − G₀) − λ·max(0, G − e·max(0,G−G₀) − G₀)
+Affitti brevi       ΔNOI = Δricavi · (1 − c_var) / margine
+Conversione         R·(1 − ΔNOI) &lt; 1 − δ·(1 − g)          R ~ lognormale(mediana, σ), stock con R &gt; 1 − δ
+Canoni              Δr = − (U / S) / (ε_domanda + ε_offerta)
+Saldo a regime      S  = (N − G₀) − perdite collaterali + risparmi − Fondo (esclusa la transizione una tantum)</div>
+      <div class="prose">
+        <p>Ogni tipologia è rappresentata da 41 quantili della distribuzione dei prezzi, così il passaggio dal pavimento all'aliquota proporzionale avviene all'interno di ciascuna tipologia e non al solo prezzo medio. La calibrazione riscala la base imponibile in modo che, con le tariffe attuali, il modello riproduca esattamente il gettito 2025; il coefficiente assorbe il limite delle sette notti, le altre esenzioni e il grado di adempimento.</p>
+        <p>Intervalli usati nelle 400 simulazioni dell'analisi di incertezza (estrazioni uniformi, seme fisso): moltiplicatore di elasticità 0,7–1,3; traslazione 70–100%; evasione aggiuntiva 5–20%; premio mediano dell'affitto breve 1,3–1,8; notti totali 13–15 milioni; prezzo mediano del lusso ±20%; spesa pubblica legata ai visitatori €35–75 milioni; margine operativo degli affitti brevi 40–60%; sconto per il rischio 10–20%.</p>
+        <p><b>Limiti.</b> Modello di equilibrio parziale, annuale, per una sola città. Non modella la risposta dell'offerta alberghiera, la concorrenza con altre città d'arte, i cambi, né l'effetto moltiplicativo del dividendo sulla spesa locale.</p>
+      </div>
+      <h3>Fonti</h3>
+      <ol class="srcs" id="srcs"></ol>
+    </section>
+  </article>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- fonti ---------- */
+const SRC=[
+  ["irpet","IRPET, Federalismo in Toscana 4/2025: gettito per comune (Firenze 2024 €76,9 mln; 2023 ≈ €72 mln su 9,2 mln di presenze)","https://www.irpet.it/wp-content/uploads/2025/12/Art.-1-Federalismo-in-Toscana-4_2025.pdf"],
+  ["jfc","Chekin su dati Osservatorio JFC: gettito 2025 ≈ €82 mln; tariffe della Delibera DG/2024/00535","https://chekin.com/it/blog/tassa-di-soggiorno-a-firenze/"],
+  ["iommi","IRPET (S. Iommi), Città e turismo, maggio 2025: presenze di Firenze sottostimate per le locazioni brevi","https://www.irpet.it/wp-content/uploads/2025/05/Iommi_Evento-ALI-citta-e-turismo.pdf"],
+  ["airbnb","L'Indipendente, 27 maggio 2026: 12.211 annunci Airbnb, 85% nel centro","https://www.lindipendente.online/2026/05/27/firenze-e-la-prima-citta-a-limitare-gli-affitti-turistici-anche-fuori-dal-centro-storico/"],
+  ["bdi","Banca d'Italia–IRPET, Turismo e mercato immobiliare, marzo 2026","https://www.irpet.it/wp-content/uploads/2026/02/Turismo-e-mercato-immobiliare.pdf"],
+  ["rent","La Nazione, 11 settembre 2026 (Idealista): canoni richiesti ad agosto 2026","https://www.lanazione.it/economia/case-affitto-firenze-prezzi-d8moonhp"],
+  ["price","La Nazione, 27 dicembre 2024 (Immobiliare.it Insights): prezzo medio oltre €4.500/m² nel 2025","https://www.lanazione.it/economia/mercato-immobiliare-2025-b6ymxkmn"],
+  ["tari","La Nazione: piano finanziario TARI, €129,6 mln (2025) → €135,8 mln (2026)","https://www.lanazione.it/firenze/economia/tari-firenze-yfjovybv"],
+  ["pop","Comune di Firenze, bollettino statistico di dicembre 2025","https://www.comune.firenze.it/istruzione/system/files/attachments/bollettino_dicembre2025.pdf"],
+  ["day","La Nazione, 22 luglio 2026: 5,6 milioni di escursionisti secondo Federalberghi","https://www.lanazione.it/firenze/cronaca/estate-gli-affari-tengono-moderata-e6c4fc70"],
+  ["irpef","CISL, nota sulle addizionali comunali IRPEF, luglio 2025","https://www.cisl.it/wp-content/uploads/2025/07/ALL-Nota-addizionale-comunale.pdf"],
+  ["cap","Informazione Fiscale: tetto di €10 per i capoluoghi con presenze superiori a 20 volte i residenti (art. 4, c. 1-bis, D.Lgs. 23/2011)","https://www.informazionefiscale.it/imposta-di-soggiorno-aumento-quali-comuni"],
+  ["levy","Avvenire, ottobre 2025: proroga al 2026 e 30% del maggior gettito allo Stato","https://www.avvenire.it/attualita/cambia-tra-le-proteste-la-tassa-di-soggiorno-cosa-finanziera_98465"],
+  ["ams","TravelMole: Amsterdam, 12,5% del prezzo della camera, media €18,45 a notte (2025)","https://www.travelmole.com/news/amsterdam-highest-tourist-taxes-europe"],
+  ["bcn","Ulysse, Taxes de séjour en Europe 2026","https://ulysse.com/news/taxes-sejour-europe-2026-guide-ville-par-ville"],
+  ["biagi","Biagi, Brandano, Pulina, Tourism taxation: a synthetic control method for policy evaluation (CRENoS)","https://crenos.unica.it/crenos/publications/tourism-taxation-synthetic-control-method-policy-evaluation"],
+  ["elast","Banca d'Italia, QEF n. 482 (2019): elasticità della domanda turistica estera ai prezzi −0,5 / −0,7","https://www.bancaditalia.it/pubblicazioni/qef/2019-0482/index.html"],
+  ["budget","La Nazione: bilancio 2025, €861 mln di spesa corrente","https://www.lanazione.it/firenze/cronaca/firenze-futuro-prossima-bilancio-2025-tra-68ee9aa1"],
+  ["imu","Legge 208/2015, art. 1, c. 53: IMU ridotta del 25% per le abitazioni a canone concordato","https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2015-12-28;208"],
+  ["kayak","Kayak: tariffa media di una camera doppia a Firenze ≈ €253 (indicativa)","https://www.kayak.it/Hotel-a-Firenze.25345.hotel.ksp"]
+];
+const SRCI=Object.fromEntries(SRC.map((s,i)=>[s[0],i+1]));
+
+/* ---------- tipologie ---------- */
+const SEG0=[
+  {id:"young", name:"Giovani UE under 30, studenti, ricercatori", short:"Giovani U30 UE", share:.12, price:45, sigma:.35, eps:-1.0, tOld:5.0, belt:.20, apt:.40, spend:45, exempt:true},
+  {id:"budget",name:"Backpacker ed extra-UE a budget ridotto",    short:"Budget",         share:.08, price:38, sigma:.35, eps:-1.4, tOld:4.0, belt:.60, apt:.20, spend:40},
+  {id:"mass",  name:"Mass-market in appartamento e hotel di fascia media", short:"Mass-market", share:.46, price:70, sigma:.35, eps:-1.0, tOld:6.0, belt:.50, apt:.60, spend:80},
+  {id:"upper", name:"Culturale medio-alto (4★, boutique B&B)",     short:"Medio-alto",     share:.27, price:150,sigma:.30, eps:-0.6, tOld:7.0, belt:.30, apt:.25, spend:130},
+  {id:"lux",   name:"Lusso e Ultra-HNWI (5★, suite, ville)",       short:"Lusso",          share:.07, price:520,sigma:.45, eps:-0.2, tOld:8.0, belt:.05, apt:.10, spend:380}
+];
+const SEGCOL=["var(--s1)","var(--s2)","var(--s3)","var(--s4)","var(--s5)"];
+
+/* ---------- parametri ---------- */
+const PARAMS=[
+  {id:"tmin",g:"leve",sub:"Disegno dell'imposta",label:"Pavimento T_min",v:12,min:3,max:30,step:.5,unit:"€/notte",hint:"Pagato da ogni ospite tassabile con camera economica."},
+  {id:"alpha",g:"leve",sub:"Disegno dell'imposta",label:"Aliquota sul lusso α",v:.08,min:0,max:.2,step:.005,pct:1,unit:"% del prezzo",hint:"Si applica quando α × prezzo supera il pavimento."},
+  {id:"cap",g:"leve",sub:"Disegno dell'imposta",label:"Tetto per notte",v:0,min:0,max:60,step:1,unit:"€/notte",hint:"0 = nessun tetto. La legge attuale consente al massimo €10 (più €2 nel 2026)."},
+  {id:"youthExempt",g:"leve",sub:"Disegno dell'imposta",label:"Esenzione cittadini UE under 30",v:true,bool:1},
+  {id:"passThrough",g:"leve",sub:"Reazione del mercato",label:"Traslazione sull'ospite",v:.85,min:.4,max:1,step:.05,pct:1,unit:"",hint:"Quota della variazione d'imposta che arriva nel conto dell'ospite; il resto lo assorbe il gestore."},
+  {id:"epsMult",g:"leve",sub:"Reazione del mercato",label:"Moltiplicatore elasticità",v:1,min:.5,max:1.6,step:.05,unit:"×",hint:"Scala insieme le elasticità di tutte le tipologie."},
+  {id:"evasion",g:"leve",sub:"Reazione del mercato",label:"Evasione aggiuntiva",v:.10,min:0,max:.4,step:.01,pct:1,unit:"",hint:"Quota del maggior gettito persa per dichiarazioni infedeli e abusivismo."},
+  {id:"stateLevy",g:"leve",sub:"Reazione del mercato",label:"Quota del maggior gettito allo Stato",v:.30,min:0,max:.5,step:.05,pct:1,unit:"",hint:"Legge di bilancio 2026: 30% del maggior gettito."},
+  {id:"guaranteeOn",g:"leve",sub:"Fondo Armonizzatore",label:"Fondo di garanzia per gli affitti",v:true,bool:1},
+  {id:"fundCommercial",g:"leve",sub:"Fondo Armonizzatore",label:"Riconversione commerciale",v:6,min:0,max:25,step:.5,unit:"€ mln/anno",hint:"Botteghe, librerie, servizi di vicinato al posto del commercio solo turistico."},
+  {id:"fundTalent",g:"leve",sub:"Fondo Armonizzatore",label:"Imprese e talenti",v:8,min:0,max:25,step:.5,unit:"€ mln/anno",hint:"Ricerca, tecnologia, manifattura avanzata."},
+  {id:"reserve",g:"leve",sub:"Dividendo civico",label:"Riserva prudenziale",v:.15,min:0,max:.5,step:.05,pct:1,unit:"del saldo",hint:"Accantonata contro un cattivo anno turistico."},
+  {id:"order",g:"leve",sub:"Dividendo civico",label:"Priorità del dividendo",v:"irpef,tari,tpl",select:[["irpef,tari,tpl","Addizionale IRPEF → TARI → trasporti"],["tari,irpef,tpl","TARI → addizionale IRPEF → trasporti"],["tpl,tari,irpef","Trasporti → TARI → addizionale IRPEF"],["tari,tpl,irpef","TARI → trasporti → addizionale IRPEF"]]},
+
+  {id:"baseRevenue",g:"Turismo",label:"Gettito attuale dell'imposta",v:82,step:.5,unit:"€ mln",kind:"stima",src:"jfc",note:"Stima 2025; consuntivo 2024 €76,9 mln (IRPET)."},
+  {id:"totalNights",g:"Turismo",label:"Notti tassate all'anno",v:14,step:.1,unit:"mln",kind:"stima",src:"iommi",note:"9,2 mln registrate più le locazioni brevi non rilevate; coerente con gettito ÷ tariffa media."},
+  {id:"recordedNights",g:"Turismo",label:"Presenze registrate (ISTAT)",v:9.2,step:.1,unit:"mln",kind:"dato",src:"irpet",note:"Usate per il requisito di legge delle 20 volte i residenti."},
+  {id:"minorShare",g:"Turismo",label:"Notti di minori esenti",v:.08,step:.01,pct:1,unit:"%",kind:"ipotesi"},
+  {id:"dayVisitors",g:"Turismo",label:"Escursionisti all'anno",v:5.6,step:.1,unit:"mln",kind:"stima",src:"day",note:"Studi su celle telefoniche indicano fino a 8 mln."},
+  {id:"epsConvex",g:"Turismo",label:"Aumento dell'elasticità per rincari forti",v:3,step:.25,unit:"κ",kind:"ipotesi",note:"Con rincari ampi i visitatori valutano altre destinazioni: elasticità = ε·(1 + κ·|Δ log prezzo|). Senza questo termine il gettito crescerebbe senza limite."},
+  {id:"beltReturn",g:"Turismo",label:"Ospiti della cintura che tornano in centro",v:.85,step:.05,pct:1,unit:"%",kind:"ipotesi"},
+  {id:"jobsPerM",g:"Turismo",label:"Occupati per €1 mln di spesa turistica",v:12,step:1,unit:"addetti",kind:"ipotesi"},
+  {id:"vaRatio",g:"Turismo",label:"Valore aggiunto / spesa turistica",v:.45,step:.05,pct:1,unit:"%",kind:"ipotesi"},
+
+  {id:"strUnits",g:"Casa",label:"Appartamenti interi in affitto breve",v:9800,step:100,unit:"unità",kind:"stima",src:"airbnb",note:"12.211 annunci × circa 80% di abitazioni intere."},
+  {id:"strPremium",g:"Casa",label:"Premio mediano dell'affitto breve R",v:1.5,step:.05,unit:"×",kind:"ipotesi",note:"Reddito netto da affitto breve ÷ reddito netto da locazione per lo stesso appartamento."},
+  {id:"premSigma",g:"Casa",label:"Dispersione di R",v:.35,step:.05,unit:"σ",kind:"ipotesi"},
+  {id:"riskDiscount",g:"Casa",label:"Sconto per il rischio sulla locazione",v:.15,step:.01,pct:1,unit:"%",kind:"ipotesi",note:"Morosità, tempi di sfratto, perdita di flessibilità."},
+  {id:"guaranteeCut",g:"Casa",label:"Sconto eliminato dalla garanzia",v:.5,step:.05,pct:1,unit:"%",kind:"ipotesi"},
+  {id:"noiMargin",g:"Casa",label:"Margine operativo dell'affitto breve",v:.5,step:.05,pct:1,unit:"%",kind:"ipotesi",note:"Reddito netto ÷ ricavi lordi."},
+  {id:"varCost",g:"Casa",label:"Costi variabili sui ricavi",v:.3,step:.05,pct:1,unit:"%",kind:"ipotesi",note:"Commissioni di piattaforma, pulizie, utenze: scendono con i ricavi."},
+  {id:"toResidential",g:"Casa",label:"Appartamenti riconvertiti che vanno a residenti",v:.85,step:.05,pct:1,unit:"%",kind:"ipotesi"},
+  {id:"rentalStock",g:"Casa",label:"Stock in locazione a lungo termine",v:56000,step:1000,unit:"unità",kind:"ipotesi",note:"Circa 30% di 186.000 famiglie."},
+  {id:"elD",g:"Casa",label:"Elasticità della domanda di locazione",v:.6,step:.05,unit:"",kind:"ipotesi"},
+  {id:"elS",g:"Casa",label:"Elasticità dell'altra offerta",v:.3,step:.05,unit:"",kind:"ipotesi"},
+  {id:"strCapShare",g:"Casa",label:"Quota del prezzo che capitalizza l'affitto breve",v:.12,step:.01,pct:1,unit:"%",kind:"ipotesi",note:"Media cittadina; molto più alta nel nucleo UNESCO."},
+  {id:"rent",g:"Casa",label:"Canone richiesto",v:21.7,step:.1,unit:"€/m² mese",kind:"dato",src:"rent"},
+  {id:"price",g:"Casa",label:"Prezzo di compravendita",v:4500,step:50,unit:"€/m²",kind:"stima",src:"price"},
+  {id:"unitSize",g:"Casa",label:"Superficie tipo",v:70,step:5,unit:"m²",kind:"ipotesi"},
+  {id:"hhSize",g:"Casa",label:"Persone per appartamento riconvertito",v:2,step:.1,unit:"persone",kind:"ipotesi"},
+  {id:"netNewShare",g:"Casa",label:"Occupanti nuovi per la città",v:.6,step:.05,pct:1,unit:"%",kind:"ipotesi",note:"Gli altri sono residenti che si spostano in città."},
+  {id:"defaultRate",g:"Casa",label:"Morosità attesa sui contratti garantiti",v:.04,step:.005,pct:1,unit:"% del canone",kind:"ipotesi"},
+
+  {id:"residents",g:"Finanza comunale",label:"Residenti",v:363737,step:100,unit:"persone",kind:"dato",src:"pop"},
+  {id:"households",g:"Finanza comunale",label:"Famiglie",v:186000,step:1000,unit:"",kind:"ipotesi"},
+  {id:"tariCost",g:"Finanza comunale",label:"Costo del servizio rifiuti",v:135.8,step:.1,unit:"€ mln",kind:"dato",src:"tari"},
+  {id:"tariTouristShare",g:"Finanza comunale",label:"Rifiuti attribuibili ai visitatori",v:.18,step:.01,pct:1,unit:"%",kind:"ipotesi"},
+  {id:"tariVariable",g:"Finanza comunale",label:"Quota variabile del costo rifiuti",v:.6,step:.05,pct:1,unit:"%",kind:"ipotesi"},
+  {id:"tariGap",g:"Finanza comunale",label:"Differenza TARI non domestica / domestica",v:450,step:10,unit:"€/unità",kind:"ipotesi"},
+  {id:"tariNonDomShare",g:"Finanza comunale",label:"Affitti brevi con TARI non domestica",v:.5,step:.05,pct:1,unit:"%",kind:"ipotesi",note:"Gestori professionali; gli altri pagano già la tariffa domestica."},
+  {id:"imuPerUnit",g:"Finanza comunale",label:"IMU su un appartamento locato",v:1500,step:50,unit:"€/anno",kind:"ipotesi"},
+  {id:"concordatoShare",g:"Finanza comunale",label:"Riconversioni a canone concordato",v:.6,step:.05,pct:1,unit:"%",kind:"ipotesi"},
+  {id:"concordatoCut",g:"Finanza comunale",label:"Riduzione IMU per canone concordato",v:.25,step:.05,pct:1,unit:"%",kind:"dato",src:"imu"},
+  {id:"irpefRate",g:"Finanza comunale",label:"Aliquota addizionale IRPEF",v:.002,step:.0005,pct:1,unit:"%",kind:"dato",src:"irpef",note:"Esenti i redditi fino a €25.000."},
+  {id:"irpefBase",g:"Finanza comunale",label:"Gettito addizionale IRPEF",v:12,step:.5,unit:"€ mln",kind:"stima",note:"≈ 120.000 contribuenti sopra €25.000 × €48.000 × 0,2%."},
+  {id:"tariDomBase",g:"Finanza comunale",label:"TARI pagata dalle famiglie",v:70,step:1,unit:"€ mln",kind:"ipotesi",note:"≈ 52% del piano finanziario."},
+  {id:"tplBase",g:"Finanza comunale",label:"Costo del trasporto gratuito per i residenti",v:30,step:1,unit:"€ mln",kind:"ipotesi",note:"≈ 95.000 abbonati × €310, rimborsati al gestore."},
+  {id:"passPrice",g:"Finanza comunale",label:"Abbonamento annuale",v:310,step:10,unit:"€",kind:"ipotesi"},
+  {id:"incomeNew",g:"Finanza comunale",label:"Reddito dei nuovi residenti",v:40000,step:1000,unit:"€",kind:"ipotesi"},
+  {id:"adultTaxpayerShare",g:"Finanza comunale",label:"Nuovi residenti contribuenti",v:.6,step:.05,pct:1,unit:"%",kind:"ipotesi"},
+  {id:"above25Share",g:"Finanza comunale",label:"…di cui sopra €25.000",v:.55,step:.05,pct:1,unit:"%",kind:"ipotesi"},
+  {id:"workerResShare",g:"Finanza comunale",label:"Posti persi occupati da residenti",v:.4,step:.05,pct:1,unit:"%",kind:"ipotesi"},
+  {id:"above25Tourism",g:"Finanza comunale",label:"…di cui sopra €25.000",v:.15,step:.05,pct:1,unit:"%",kind:"ipotesi"},
+  {id:"wageTourism",g:"Finanza comunale",label:"Retribuzione di quei lavoratori",v:27000,step:500,unit:"€",kind:"ipotesi"},
+  {id:"feesBase",g:"Finanza comunale",label:"Canoni legati ai flussi",v:28,step:1,unit:"€ mln",kind:"ipotesi",note:"Dehors, ZTL bus turistici, sosta a pagamento."},
+  {id:"feesElast",g:"Finanza comunale",label:"Sensibilità dei canoni ai visitatori",v:.7,step:.05,unit:"",kind:"ipotesi"},
+  {id:"touristCost",g:"Finanza comunale",label:"Spesa corrente legata al carico turistico",v:55,step:1,unit:"€ mln",kind:"ipotesi",src:"budget",note:"Spazzamento straordinario, manutenzione, sicurezza: ≈ 6% di €861 mln."},
+  {id:"costVariable",g:"Finanza comunale",label:"…quota che varia con i visitatori",v:.5,step:.05,pct:1,unit:"%",kind:"ipotesi"},
+  {id:"marginalCost",g:"Finanza comunale",label:"Costo marginale dei servizi per nuovo residente",v:350,step:25,unit:"€/anno",kind:"ipotesi"},
+
+  {id:"trainCost",g:"Fondo Armonizzatore",label:"Riqualificazione per lavoratore",v:4000,step:250,unit:"€",kind:"ipotesi"},
+  {id:"trainCoverage",g:"Fondo Armonizzatore",label:"Lavoratori coinvolti",v:.6,step:.05,pct:1,unit:"%",kind:"ipotesi"}
+];
+const PMAP=Object.fromEntries(PARAMS.map(p=>[p.id,p]));
+const SCEN={
+  prudente: {name:"Prudente",tmin:9, alpha:.05,cap:0, passThrough:.9, epsMult:1.25,evasion:.15,fundCommercial:6, fundTalent:6, reserve:.2},
+  centrale: {name:"Centrale",tmin:12,alpha:.08,cap:0, passThrough:.85,epsMult:1,   evasion:.10,fundCommercial:6, fundTalent:8, reserve:.15},
+  ambizioso:{name:"Ambizioso",tmin:18,alpha:.12,cap:0,passThrough:.85,epsMult:1,   evasion:.12,fundCommercial:10,fundTalent:12,reserve:.15},
+  vigente:  {name:"A legislazione vigente",tmin:8,alpha:.05,cap:10,passThrough:.85,epsMult:1,evasion:.08,fundCommercial:3,fundTalent:3,reserve:.15}
+};
+const SCEN_KEYS=["tmin","alpha","cap","passThrough","epsMult","evasion","fundCommercial","fundTalent","reserve"];
+
+/* ---------- stato ---------- */
+const KEY="dividendo-firenze-it-v1";
+function defaults(){ const P={}; PARAMS.forEach(p=>P[p.id]=p.v); P.segs=SEG0.map(s=>({...s})); return P; }
+const SEGNUM=["share","price","sigma","eps","tOld","belt","apt","spend"];
+function merge(base,o){ const P=base; if(!o||typeof o!=="object") return P;
+  PARAMS.forEach(p=>{ if(o[p.id]!==undefined && typeof o[p.id]===typeof p.v && (typeof p.v!=="number"||isFinite(o[p.id]))) P[p.id]=o[p.id]; });
+  if(Array.isArray(o.segs)&&o.segs.length===SEG0.length) P.segs=P.segs.map((s,i)=>{ const r={...s}; SEGNUM.forEach(k=>{ const v=o.segs[i]&&o.segs[i][k]; if(typeof v==="number"&&isFinite(v)) r[k]=v; }); return r; });
+  return P; }
+let P=defaults();
+try{ P=merge(P,JSON.parse(localStorage.getItem(KEY)||"null")); }catch(e){}
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(P)); }catch(e){} }
+
+/* ---------- matematica ---------- */
+function invNorm(p){const a=[-39.69683028665376,220.9460984245205,-275.9285104469687,138.357751867269,-30.66479806614716,2.506628277459239],b=[-54.47609879822406,161.5858368580409,-155.6989798598866,66.80131188771972,-13.28068155288572],c=[-.007784894002430293,-.3223964580411365,-2.400758277161838,-2.549732539343734,4.374664141464968,2.938163982698783],d=[.007784695709041462,.3224671290700398,2.445134137142996,3.754408661907416],pl=.02425;let q,r;
+  if(p<pl){q=Math.sqrt(-2*Math.log(p));return(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+  if(p>1-pl){q=Math.sqrt(-2*Math.log(1-p));return-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+  q=p-.5;r=q*q;return(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);}
+function normCdf(x){const z=Math.abs(x)/Math.SQRT2,t=1/(1+.3275911*z);const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-z*z);return x>=0?(1+y)/2:(1-y)/2;}
+const NQ=41, Z=Array.from({length:NQ},(_,i)=>invNorm((i+.5)/NQ));
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function taxNew(P,p){ let t=Math.max(P.tmin,P.alpha*p); if(P.cap>0) t=Math.min(t,P.cap); return t; }
+
+/* ---------- modello ---------- */
+// opt.sq: status quo (tariffe attuali, per la verifica di calibrazione)
+function run(P,ph,opt){
+  ph=ph||{demand:1,conv:1}; opt=opt||{};
+  const segs=P.segs, tot=segs.reduce((a,s)=>a+s.share,0)||1;
+  const NB=P.totalNights*1e6, minor=P.minorShare, base=P.baseRevenue*1e6;
+  let theo=0; segs.forEach(s=>theo+=NB*s.share/tot*(1-minor)*s.tOld);
+  const k=theo>0?base/theo:1;
+  const R={k,segs:[]};
+  let G=0,nNew=0,accO=0,accN=0,aptO=0,aptN=0,othO=0,othN=0,belt=0,beltSpend=0,gained=0,lostTot=0;
+  segs.forEach((s,i)=>{
+    const nB=NB*s.share/tot, ex=!opt.sq&&P.youthExempt&&s.exempt;
+    let n=0,rev=0,tW=0,aO=0,aN=0;
+    for(const z of Z){
+      const p=s.price*Math.exp(s.sigma*z);
+      const tN=opt.sq?s.tOld:(ex?0:taxNew(P,p));
+      const dT=tN-s.tOld;
+      const pNet=Math.max(p*.5,p-(1-P.passThrough)*dT);
+      const lr=Math.log((pNet+tN)/(p+s.tOld));
+      let d=Math.exp(s.eps*P.epsMult*(1+P.epsConvex*Math.abs(lr))*lr); d=1+(d-1)*ph.demand;
+      const w=nB/NQ, ni=w*d;
+      n+=ni; rev+=ni*(1-minor)*tN*k; tW+=tN*ni; aO+=w*p; aN+=ni*pNet;
+    }
+    const lost=Math.max(0,nB-n), bl=lost*s.belt; gained+=Math.max(0,n-nB); lostTot+=lost;
+    R.segs.push({...s,i,nB,nN:n,chg:n/nB-1,tAvg:n>0?tW/n:0,
+      tMed:ex?0:(opt.sq?s.tOld:taxNew(P,s.price)), tP90:ex?0:(opt.sq?s.tOld:taxNew(P,s.price*Math.exp(s.sigma*1.2816))),
+      rev,revOld:nB*(1-minor)*s.tOld*k,lost,belt:bl,exempt:ex});
+    G+=rev; nNew+=n; accO+=aO; accN+=aN; aptO+=aO*s.apt; aptN+=aN*s.apt; othO+=nB*s.spend; othN+=n*s.spend; belt+=bl; beltSpend+=bl*P.beltReturn*s.spend*.6;
+  });
+  const incr=G-base, evasionLoss=P.evasion*Math.max(0,incr), Gn=G-evasionLoss;
+  const levy=P.stateLevy*Math.max(0,Gn-base), net=Gn-levy, dTax=net-base;
+  const vdB=NB+P.dayVisitors*1e6, vdN=nNew+P.dayVisitors*1e6+belt*P.beltReturn, vdChg=vdN/vdB-1;
+  const spendO=accO+othO, spendN=accN+othN+beltSpend, dSpend=spendN-spendO;
+  const jobsLost=Math.max(0,-dSpend/1e6*P.jobsPerM), vaChg=dSpend*P.vaRatio;
+  // casa
+  const aptDrop=aptO>0?1-aptN/aptO:0;
+  const noiDrop=clamp(aptDrop*(1-P.varCost)/P.noiMargin,-.5,.95);
+  const lnM=Math.log(P.strPremium), F=x=>x<=0?0:normCdf((Math.log(x)-lnM)/P.premSigma);
+  const c0=1-P.riskDiscount, c1=1-P.riskDiscount*(1-(P.guaranteeOn&&!opt.sq?P.guaranteeCut:0));
+  const thr=c1/(1-noiDrop);
+  const share=Math.max(0,(F(thr)-F(c0))/(1-F(c0)));
+  const units=P.strUnits*share*ph.conv, toRes=units*P.toResidential;
+  const newResGross=toRes*.95*P.hhSize, newRes=newResGross*P.netNewShare;
+  const rentChg=-(toRes/P.rentalStock)/(P.elD+P.elS);
+  const priceChg=rentChg-P.strCapShare*Math.max(0,noiDrop)*ph.conv;
+  const annualRent=P.rent*P.unitSize*12;
+  // voci collaterali
+  const tariLoss=units*P.tariNonDomShare*P.tariGap;
+  const tariSaving=P.tariCost*1e6*P.tariTouristShare*P.tariVariable*(-vdChg);
+  const imuLoss=toRes*P.imuPerUnit*P.concordatoShare*P.concordatoCut;
+  const irpefJobs=jobsLost*P.workerResShare*P.above25Tourism*P.wageTourism*P.irpefRate;
+  const irpefNew=newRes*P.adultTaxpayerShare*P.above25Share*P.incomeNew*P.irpefRate;
+  const feesLoss=P.feesBase*1e6*P.feesElast*(-vdChg);
+  const opSaving=P.touristCost*1e6*P.costVariable*(-vdChg);
+  const newResCost=newRes*P.marginalCost;
+  // fondo (la transizione dei lavoratori è una tantum e non entra nel saldo a regime)
+  const fComm=opt.sq?0:P.fundCommercial*1e6, fTalent=opt.sq?0:P.fundTalent*1e6;
+  const fTrainTotal=jobsLost*P.trainCost*P.trainCoverage;
+  const fGuar=P.guaranteeOn&&!opt.sq?toRes*annualRent*P.defaultRate:0;
+  const fund=fComm+fTalent+fGuar;
+  const collateral=tariLoss+imuLoss+irpefJobs+feesLoss;
+  const savings=opSaving+tariSaving+irpefNew-newResCost;
+  const saldo=dTax-collateral+savings-fund;
+  const reserve=Math.max(0,saldo)*P.reserve, pool=Math.max(0,saldo-reserve);
+  const costs={irpef:P.irpefBase*1e6,tari:P.tariDomBase*1e6,tpl:P.tplBase*1e6};
+  let left=pool; const alloc={};
+  String(P.order).split(",").forEach(key=>{ const a=Math.min(left,costs[key]); alloc[key]={cost:costs[key],paid:a,cov:costs[key]>0?a/costs[key]:0}; left-=a; });
+  Object.assign(R,{G,base,incr,evasionLoss,Gn,levy,net,dTax,nB:NB,nNew,nChg:nNew/NB-1,gained,lostTot,belt,vdB,vdN,vdChg,spendO,spendN,dSpend,jobsLost,vaChg,accO,
+    aptDrop,noiDrop,c0,c1,thr,share,units,toRes,newResGross,newRes,rentChg,priceChg,annualRent,
+    tariLoss,tariSaving,imuLoss,irpefJobs,irpefNew,feesLoss,opSaving,newResCost,fComm,fTalent,fTrainTotal,fGuar,fund,collateral,savings,saldo,reserve,pool,alloc,surplus:left,
+    perHH:pool/P.households});
+  return R;
+}
+const PHASES=[{demand:.7,conv:.3},{demand:1,conv:.6},{demand:1,conv:.85},{demand:1,conv:1},{demand:1,conv:1}];
+const TRAIN=[.4,.4,.2,0,0];
+function path(P,R0){ return PHASES.map((ph,y)=>{ const r=run(P,ph); return r.saldo-R0.fTrainTotal*TRAIN[y]; }); }
+const cloneP=P=>({...P,segs:P.segs.map(s=>({...s}))});
+
+/* Monte Carlo con seme fisso */
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function monteCarlo(P,n){
+  const rnd=mulberry(20261016), U=(a,b)=>a+(b-a)*rnd(), out={saldo:[],dTax:[],nChg:[],toRes:[],rentChg:[],perHH:[]};
+  for(let i=0;i<n;i++){ const Q=cloneP(P);
+    Q.epsMult=P.epsMult*U(.7,1.3); Q.passThrough=U(.7,1); Q.evasion=U(.05,.2); Q.strPremium=U(1.3,1.8); Q.totalNights=U(13,15);
+    Q.segs[4].price=P.segs[4].price*U(.8,1.2); Q.touristCost=U(35,75); Q.noiMargin=U(.4,.6); Q.riskDiscount=U(.1,.2);
+    const r=run(Q); Object.keys(out).forEach(k=>out[k].push(r[k])); }
+  const q=(arr,p)=>{ const s=[...arr].sort((a,b)=>a-b); return s[Math.min(s.length-1,Math.floor(p*s.length))]; };
+  const res={}; Object.keys(out).forEach(k=>res[k]={p10:q(out[k],.1),p50:q(out[k],.5),p90:q(out[k],.9),neg:out[k].filter(v=>v<0).length/n}); return res;
+}
+
+/* ---------- formattazione (it-IT) ---------- */
+const nf=(d)=>new Intl.NumberFormat("it-IT",{minimumFractionDigits:d,maximumFractionDigits:d});
+const F0=nf(0),F1=nf(1),F2=nf(2);
+const M=x=>{const a=Math.abs(x),s=x<-500?"−":"";return a<95e3&&a>0?s+"€"+F0.format(a/1e3)+" mila":s+"€"+(a>=1e8?F0:F1).format(a/1e6)+" mln";};
+const MS=x=>{const a=Math.abs(x),s=x>=0?"+":"−";return a<95e3?s+"€"+F0.format(a/1e3)+" mila":s+"€"+F1.format(a/1e6)+" mln";};
+const PS=(x,d=1)=>(x>=0?"+":"−")+nf(d).format(Math.abs(x*100))+"%";
+const PC=(x,d=0)=>nf(d).format(x*100)+"%";
+const N0=x=>F0.format(Math.round(x));
+const E0=x=>"€"+F0.format(Math.round(x));
+const E2=x=>"€"+F2.format(x);
+const Mn=x=>F2.format(x/1e6)+" mln";
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cls=x=>x>=0?"pos":"neg";
+function fmtParam(p,v){ if(p.bool) return v?"Sì":"No"; if(p.select) return (p.select.find(o=>o[0]===v)||[,""])[1];
+  if(p.id==="cap") return v>0?"€"+F0.format(v):"nessuno";
+  if(p.pct) return nf(p.step<.01?1:0).format(v*100)+"%"; if(p.unit==="€/notte") return "€"+nf(v%1?1:0).format(v);
+  if(p.unit==="€ mln/anno") return "€"+nf(v%1?1:0).format(v)+" mln"; if(p.unit==="×") return F2.format(v)+"×"; return F2.format(v); }
+
+/* ---------- leve ---------- */
+function buildRail(){
+  const el=document.getElementById("rail"); let html="",cur="";
+  PARAMS.filter(p=>p.g==="leve").forEach(p=>{
+    if(p.sub!==cur){ if(cur) html+="</div>"; cur=p.sub; html+=`<div class="grp"><span class="eyebrow">${esc(cur)}</span>`; }
+    if(p.bool) html+=`<label class="sw" for="in-${p.id}"><input type="checkbox" id="in-${p.id}" data-p="${p.id}"><span><b>${esc(p.label)}</b></span></label>`;
+    else if(p.select) html+=`<div class="ctl"><label for="in-${p.id}">${esc(p.label)}</label><select id="in-${p.id}" data-p="${p.id}">${p.select.map(o=>`<option value="${o[0]}">${esc(o[1])}</option>`).join("")}</select></div>`;
+    else html+=`<div class="ctl"><div class="row"><label for="in-${p.id}">${esc(p.label)}</label><span class="val" id="v-${p.id}"></span></div><input type="range" id="in-${p.id}" data-p="${p.id}" min="${p.min}" max="${p.max}" step="${p.step}">${p.hint?`<span class="hint">${esc(p.hint)}</span>`:""}</div>`;
+  });
+  el.innerHTML=html+"</div>";
+  el.addEventListener("input",e=>{ const id=e.target.dataset.p; if(!id) return; const p=PMAP[id];
+    P[id]=p.bool?e.target.checked:(p.select?e.target.value:parseFloat(e.target.value)); update(); });
+}
+function syncRail(){ PARAMS.filter(p=>p.g==="leve").forEach(p=>{ const i=document.getElementById("in-"+p.id); if(!i) return;
+  if(p.bool) i.checked=!!P[p.id]; else i.value=P[p.id]; const v=document.getElementById("v-"+p.id); if(v) v.textContent=fmtParam(p,P[p.id]); }); }
+function scenName(){ for(const k of Object.keys(SCEN)){ const s=SCEN[k]; if(SCEN_KEYS.every(id=>Math.abs(P[id]-s[id])<1e-9)) return [k,s.name]; } return [null,"Personalizzato"]; }
+function markScen(){ const [k,n]=scenName(); Object.keys(SCEN).forEach(x=>document.getElementById("sc-"+x).setAttribute("aria-pressed",x===k?"true":"false")); document.getElementById("scen-name").textContent=n; return n; }
+
+/* ---------- allegato B (ipotesi modificabili) ---------- */
+function buildAssump(){
+  const groups=[...new Set(PARAMS.filter(p=>p.g!=="leve").map(p=>p.g))];
+  const host=document.getElementById("assump-groups");
+  host.innerHTML=groups.map(g=>`<div><h3>${esc(g)}</h3><div class="tablewrap"><table><thead><tr><th>Ipotesi</th><th>Valore</th><th class="l">Unità</th><th class="l">Tipo</th><th class="l">Fonte</th></tr></thead><tbody>${
+    PARAMS.filter(p=>p.g===g).map(p=>{ const st=p.pct?p.step*100:p.step;
+      return `<tr><td class="desc"><label for="as-${p.id}">${esc(p.label)}</label>${p.note?`<small>${esc(p.note)}</small>`:""}</td><td><input type="number" id="as-${p.id}" data-a="${p.id}" step="${+st.toFixed(4)}"></td><td class="l">${esc(p.unit||"")}</td><td class="l"><span class="tag ${p.kind}">${p.kind}</span></td><td class="l">${p.src?`[${SRCI[p.src]}]`:"—"}</td></tr>`; }).join("")}</tbody></table></div></div>`).join("");
+  host.addEventListener("change",e=>{ const id=e.target.dataset.a; if(!id) return; let v=parseFloat(e.target.value); if(!isFinite(v)) return; if(PMAP[id].pct) v/=100; P[id]=v; update(); });
+  refreshAssump();
+}
+const SEGCOLS=[["share","Quota notti",1,1],["price","Prezzo mediano €",0,5],["sigma","Dispersione σ",0,.05],["eps","Elasticità",0,.05],["tOld","Imposta oggi €",0,.5],["belt","Cintura",1,5],["apt","In affitto breve",1,5],["spend","Altra spesa €/notte",0,5]];
+function buildSegTable(){
+  const t=document.getElementById("tb-seg");
+  t.innerHTML=`<thead><tr><th>Tipologia</th>${SEGCOLS.map(c=>`<th>${c[1]}${c[2]?" %":""}</th>`).join("")}</tr></thead><tbody>${P.segs.map((s,i)=>`<tr><td><span class="dot" style="background:${SEGCOL[i]}"></span>${esc(s.name)}</td>${SEGCOLS.map(c=>`<td><input type="number" aria-label="${esc(s.short)}: ${c[1]}" id="sg-${i}-${c[0]}" data-s="${i}" data-k="${c[0]}" step="${c[3]}" value="${c[2]?+(s[c[0]]*100).toFixed(2):s[c[0]]}"></td>`).join("")}</tr>`).join("")}</tbody>`;
+  t.onchange=e=>{ const i=e.target.dataset.s,k=e.target.dataset.k; if(i===undefined) return; let v=parseFloat(e.target.value); if(!isFinite(v)) return; if(SEGCOLS.find(c=>c[0]===k)[2]) v/=100; P.segs[i][k]=v; update(); };
+}
+function refreshAssump(){ PARAMS.filter(p=>p.g!=="leve").forEach(p=>{ const i=document.getElementById("as-"+p.id); if(i) i.value=p.pct?+(P[p.id]*100).toFixed(3):P[p.id]; }); buildSegTable(); }
+
+/* ---------- grafici ---------- */
+const W=el=>Math.max(300,Math.min(1000,el.clientWidth||640));
+const svg=(w,h,b,l)=>`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(l)}">${b}</svg>`;
+const tw=(s,size)=>String(s).length*size*.55;
+function niceStep(x){ const e=Math.pow(10,Math.floor(Math.log10(Math.max(x,1)))),f=x/e; return (f<1.5?1:f<3?2:f<7?5:10)*e; }
+
+function drawTax(R){
+  const el=document.getElementById("ch-tax"),w=W(el),h=Math.round(Math.min(360,Math.max(260,w*.46)));
+  const m={l:48,r:16,t:16,b:42},x0=Math.log(20),x1=Math.log(1500),y0=Math.log(2);
+  const yMaxV=Math.max(60,(P.cap>0?P.cap:P.alpha*1500)*1.1,P.tmin*1.6),y1=Math.log(yMaxV);
+  const X=v=>m.l+(Math.log(v)-x0)/(x1-x0)*(w-m.l-m.r),Y=v=>h-m.b-(Math.log(Math.max(2,v))-y0)/(y1-y0)*(h-m.t-m.b);
+  let b="";
+  [20,50,100,200,500,1000].forEach(t=>{ b+=`<line class="grid" x1="${X(t)}" x2="${X(t)}" y1="${m.t}" y2="${h-m.b}"/><text x="${X(t)}" y="${h-m.b+16}" text-anchor="middle">€${F0.format(t)}</text>`; });
+  [2,5,10,20,50,100].filter(t=>t<=yMaxV).forEach(t=>{ b+=`<line class="grid" x1="${m.l}" x2="${w-m.r}" y1="${Y(t)}" y2="${Y(t)}"/><text x="${m.l-6}" y="${Y(t)+4}" text-anchor="end">€${t}</text>`; });
+  b+=`<text x="${(m.l+w-m.r)/2}" y="${h-6}" text-anchor="middle">Prezzo per persona per notte (scala logaritmica)</text>`;
+  b+=`<text x="12" y="${(m.t+h-m.b)/2}" text-anchor="middle" transform="rotate(-90 12 ${(m.t+h-m.b)/2})">Imposta per notte</text>`;
+  let d=""; for(let i=0;i<=140;i++){ const p=Math.exp(x0+(x1-x0)*i/140); d+=(i?"L":"M")+X(p).toFixed(1)+","+Y(taxNew(P,p)).toFixed(1); }
+  b+=`<path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`;
+  const pstar=P.alpha>0?P.tmin/P.alpha:Infinity;
+  if(pstar>20&&pstar<1500&&(!(P.cap>0)||P.cap>P.tmin)) b+=`<line x1="${X(pstar)}" x2="${X(pstar)}" y1="${Y(P.tmin)}" y2="${h-m.b}" stroke="var(--accent)" stroke-dasharray="3 3"/><text x="${X(pstar)+5}" y="${Y(P.tmin)+16}" style="fill:var(--accent);font-weight:600">p* = €${F0.format(pstar)}</text>`;
+  R.segs.forEach((s,i)=>{ const cx=X(s.price),yo=Y(s.tOld),yn=s.exempt?Y(2):Y(s.tMed);
+    b+=`<line x1="${cx}" x2="${cx}" y1="${yo}" y2="${yn}" stroke="${SEGCOL[i]}" stroke-width="2" ${s.exempt?'stroke-dasharray="3 3"':""}/>`;
+    b+=`<circle cx="${cx}" cy="${yo}" r="5" fill="var(--paper)" stroke="${SEGCOL[i]}" stroke-width="2" data-tip="${esc(s.short)} oggi: ${E2(s.tOld)} con camera a €${s.price}"/>`;
+    b+=`<circle cx="${cx}" cy="${yn}" r="6" fill="${SEGCOL[i]}" stroke="var(--paper)" stroke-width="2" data-tip="${esc(s.short)} dopo la riforma: ${s.exempt?"esente":E2(s.tMed)+" al prezzo mediano; media pagata "+E2(s.tAvg)}"/>`;
+    if(w>=620) b+=`<text class="lbl" x="${Math.min(cx+9,w-m.r-tw(s.short,12))}" y="${yn-10}">${esc(s.short)}${s.exempt?" · esente":""}</text>`;
+  });
+  el.innerHTML=svg(w,h,b,"Imposta per notte rispetto al prezzo, oggi e dopo la riforma");
+  document.getElementById("lg-tax").innerHTML=`<span><i style="background:var(--accent)"></i>Nuova imposta t(p)</span>`+R.segs.map((s,i)=>`<span><i style="background:${SEGCOL[i]};border-radius:50%"></i>${esc(s.short)}</span>`).join("");
+}
+function drawDemand(R){
+  const el=document.getElementById("ch-demand"),w=W(el),rowH=46,m={l:Math.min(140,w*.3),r:124,t:6,b:24},h=m.t+m.b+rowH*R.segs.length;
+  const max=Math.max(...R.segs.map(s=>Math.max(s.nB,s.nN)))*1.02,X=v=>m.l+v/max*(w-m.l-m.r);
+  let b="";
+  [0,.25,.5,.75,1].forEach(f=>{ const v=max*f; b+=`<line class="grid" x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${h-m.b}"/><text x="${X(v)}" y="${h-6}" text-anchor="middle">${F1.format(v/1e6)} mln</text>`; });
+  R.segs.forEach((s,i)=>{ const y=m.t+i*rowH;
+    b+=`<text class="lbl" x="${m.l-8}" y="${y+22}" text-anchor="end">${esc(s.short)}</text>`;
+    b+=`<rect x="${m.l}" y="${y+6}" width="${Math.max(1,X(s.nB)-m.l)}" height="12" rx="3" fill="var(--sunk)" stroke="var(--line)" data-tip="${esc(s.short)} oggi: ${Mn(s.nB)} notti"/>`;
+    b+=`<rect x="${m.l}" y="${y+21}" width="${Math.max(1,X(s.nN)-m.l)}" height="14" rx="3" fill="${SEGCOL[i]}" data-tip="${esc(s.short)} dopo: ${Mn(s.nN)} notti (${PS(s.chg)})"/>`;
+    b+=`<text class="val" x="${X(Math.max(s.nB,s.nN))+6}" y="${y+32}">${Mn(s.nN)} · <tspan style="fill:${s.chg>=0?"var(--good)":"var(--bad)"}">${PS(s.chg)}</tspan></text>`;
+  });
+  el.innerHTML=svg(w,h,b,"Pernottamenti per tipologia, oggi e dopo la riforma");
+}
+function wfRows(R){ return [
+  ["Maggior gettito lordo",R.G-R.base],["Evasione aggiuntiva",-R.evasionLoss],["Quota allo Stato",-R.levy],["Incremento netto dell'imposta",null,"sub"],
+  ["TARI: uscita dalla tariffa non domestica",-R.tariLoss],["IMU: locazioni a canone concordato",-R.imuLoss],["Addizionale IRPEF: posti persi",-R.irpefJobs],["Dehors, ZTL bus e sosta",-R.feesLoss],
+  ["Risparmi di spesa in centro",R.opSaving],["Risparmio sul servizio rifiuti",R.tariSaving],["Nuovi residenti: addizionale IRPEF",R.irpefNew],["Nuovi residenti: costo dei servizi",-R.newResCost],
+  ["Prima del Fondo",null,"sub"],["Fondo: riconversione commerciale",-R.fComm],["Fondo: garanzia affitti",-R.fGuar],["Fondo: imprese e talenti",-R.fTalent],["Saldo strutturale a regime",null,"sub"]]; }
+function drawWaterfall(R){
+  let cum=0; const pts=wfRows(R).map(r=>{ if(r[1]===null) return {label:r[0],sum:1,a:0,b:cum,v:cum}; const a=cum; cum+=r[1]; return {label:r[0],a,b:cum,v:r[1]}; });
+  const el=document.getElementById("ch-wf"),w=W(el),rowH=26,lw=Math.min(260,w*.47),m={l:lw,r:86,t:4,b:22},h=m.t+m.b+rowH*pts.length;
+  const lo=Math.min(0,...pts.map(p=>Math.min(p.a,p.b))),hi=Math.max(0,...pts.map(p=>Math.max(p.a,p.b)));
+  const X=v=>m.l+(v-lo)/((hi-lo)||1)*(w-m.l-m.r);
+  let b=""; const step=niceStep((hi-lo)/4);
+  for(let v=Math.ceil(lo/step)*step;v<=hi+1;v+=step) b+=`<line class="grid" x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${h-m.b}"/><text x="${X(v)}" y="${h-6}" text-anchor="middle">${F0.format(v/1e6)}</text>`;
+  b+=`<line x1="${X(0)}" x2="${X(0)}" y1="${m.t}" y2="${h-m.b}" stroke="var(--ink3)"/>`;
+  pts.forEach((p,i)=>{ const y=m.t+i*rowH,x1=X(Math.min(p.a,p.b)),x2=X(Math.max(p.a,p.b)),col=p.sum?"var(--total)":(p.v>=0?"var(--gain)":"var(--loss)");
+    const label=lw<210&&p.label.length>30?p.label.slice(0,28)+"…":p.label;
+    b+=`<text x="${m.l-8}" y="${y+17}" text-anchor="end" class="${p.sum?"lbl":""}">${esc(label)}</text>`;
+    b+=`<rect x="${x1}" y="${y+5}" width="${Math.max(1.5,x2-x1)}" height="16" rx="2" fill="${col}" data-tip="${esc(p.label)}: ${p.sum?M(p.v):MS(p.v)}"/>`;
+    if(i<pts.length-1) b+=`<line x1="${X(p.b)}" x2="${X(p.b)}" y1="${y+21}" y2="${y+rowH+5}" stroke="var(--ink3)" opacity=".5"/>`;
+    b+=`<text class="val" x="${x2+5}" y="${y+17}" ${p.sum?'style="font-weight:600;fill:var(--ink)"':""}>${p.sum?M(p.v):MS(p.v)}</text>`;
+  });
+  el.innerHTML=svg(w,h,b,"Dal maggior gettito al saldo strutturale");
+  return cum;
+}
+function drawPrem(R){
+  const el=document.getElementById("ch-prem"),w=W(el),h=Math.round(Math.min(280,Math.max(220,w*.52))),m={l:12,r:12,t:40,b:40};
+  const lo=.4,hi=3.6,X=v=>m.l+(v-lo)/(hi-lo)*(w-m.l-m.r);
+  const pdf=x=>{const z=(Math.log(x)-Math.log(P.strPremium))/P.premSigma;return Math.exp(-z*z/2)/(x*P.premSigma*Math.sqrt(2*Math.PI));};
+  let ymax=0; for(let i=0;i<=200;i++) ymax=Math.max(ymax,pdf(lo+(hi-lo)*i/200));
+  const Y=v=>h-m.b-v/ymax*(h-m.t-m.b);
+  const area=(a,bb)=>{ a=Math.max(lo,a); bb=Math.min(hi,bb); if(bb<=a) return ""; let d=`M${X(a)},${Y(0)}`; for(let i=0;i<=80;i++){ const x=a+(bb-a)*i/80; d+=`L${X(x).toFixed(1)},${Y(pdf(x)).toFixed(1)}`; } return d+`L${X(bb)},${Y(0)}Z`; };
+  let b="";
+  [.5,1,1.5,2,2.5,3,3.5].forEach(t=>{ b+=`<text x="${X(t)}" y="${h-m.b+16}" text-anchor="middle">${F1.format(t)}×</text>`; });
+  b+=`<text x="${(m.l+w-m.r)/2}" y="${h-6}" text-anchor="middle">R = reddito netto affitto breve ÷ locazione</text>`;
+  b+=`<path d="${area(R.c0,hi)}" fill="var(--ink3)" opacity=".28"/>`;
+  b+=`<path d="${area(R.c0,R.thr)}" fill="var(--accent)" opacity=".85" data-tip="${N0(R.units)} appartamenti passano al lungo termine (${PC(R.share,1)} dello stock)"/>`;
+  let line=""; for(let i=0;i<=160;i++){ const x=lo+(hi-lo)*i/160; line+=(i?"L":"M")+X(x).toFixed(1)+","+Y(pdf(x)).toFixed(1); }
+  b+=`<path d="${line}" fill="none" stroke="var(--ink2)" stroke-width="1.5"/><line class="axis" x1="${m.l}" x2="${w-m.r}" y1="${Y(0)}" y2="${Y(0)}"/>`;
+  b+=`<line x1="${X(R.c0)}" x2="${X(R.c0)}" y1="8" y2="${Y(0)}" stroke="var(--ink)" stroke-dasharray="3 3"/><text x="${X(R.c0)+4}" y="14">soglia attuale ${F2.format(R.c0)}×</text>`;
+  if(R.thr>R.c0+.005){ const xt=X(Math.min(hi,R.thr)); b+=`<line x1="${xt}" x2="${xt}" y1="22" y2="${Y(0)}" stroke="var(--accent)" stroke-width="1.5"/><text x="${xt+4}" y="32" style="fill:var(--accent);font-weight:600">dopo la riforma ${F2.format(R.thr)}×</text>`; }
+  el.innerHTML=svg(w,h,b,"Distribuzione del premio dell'affitto breve");
+}
+function drawPath(vals){
+  const el=document.getElementById("ch-path"),w=W(el),h=220,m={l:64,r:12,t:22,b:30};
+  const lo=Math.min(0,...vals),hi=Math.max(0,...vals)*1.15||1,Y=v=>m.t+(hi-v)/((hi-lo)||1)*(h-m.t-m.b),bw=(w-m.l-m.r)/vals.length;
+  let b=""; const step=niceStep((hi-lo)/4);
+  for(let v=Math.ceil(lo/step)*step;v<=hi;v+=step) b+=`<line class="grid" x1="${m.l}" x2="${w-m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${m.l-6}" y="${Y(v)+4}" text-anchor="end">${F0.format(v/1e6)} mln</text>`;
+  b+=`<line x1="${m.l}" x2="${w-m.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--ink3)"/>`;
+  vals.forEach((v,i)=>{ const x=m.l+i*bw+bw*.22,bwid=bw*.56,y=Math.min(Y(v),Y(0)),hh=Math.abs(Y(v)-Y(0));
+    b+=`<rect x="${x}" y="${y}" width="${bwid}" height="${Math.max(1,hh)}" rx="3" fill="${v>=0?"var(--gain)":"var(--loss)"}" data-tip="Anno ${i+1}: ${M(v)}"/>`;
+    b+=`<text class="val" x="${x+bwid/2}" y="${v>=0?y-6:y+hh+14}" text-anchor="middle" style="fill:var(--ink)">${M(v)}</text><text x="${x+bwid/2}" y="${h-8}" text-anchor="middle">Anno ${i+1}</text>`; });
+  el.innerHTML=svg(w,h,b,"Saldo nei primi cinque anni");
+}
+function tornadoData(R){
+  const base=R.saldo;
+  return [
+    ["Moltiplicatore elasticità","epsMult",P.epsMult*.7,P.epsMult*1.3,v=>F2.format(v)+"×"],
+    ["Traslazione sull'ospite","passThrough",.6,1,v=>PC(v)],
+    ["Pavimento T_min","tmin",P.tmin*.8,P.tmin*1.2,v=>"€"+F1.format(v)],
+    ["Aliquota sul lusso α","alpha",P.alpha*.75,P.alpha*1.25,v=>PC(v,1)],
+    ["Prezzo mediano del lusso","lux",P.segs[4].price*.75,P.segs[4].price*1.25,v=>"€"+F0.format(v)],
+    ["Notti tassate","totalNights",P.totalNights*.85,P.totalNights*1.15,v=>F1.format(v)+" mln"],
+    ["Evasione aggiuntiva","evasion",0,.25,v=>PC(v)],
+    ["Quota allo Stato","stateLevy",0,.5,v=>PC(v)],
+    ["Spesa legata ai visitatori","touristCost",P.touristCost*.6,P.touristCost*1.4,v=>"€"+F0.format(v)+" mln"],
+    ["Premio mediano affitto breve","strPremium",1.25,1.8,v=>F2.format(v)+"×"]
+  ].map(d=>{ const at=v=>{ const Q=cloneP(P); if(d[1]==="lux") Q.segs[4].price=v; else Q[d[1]]=v; return run(Q).saldo; };
+    const a=at(d[2]),c=at(d[3]); return {label:d[0],lo:a,hi:c,loL:d[4](d[2]),hiL:d[4](d[3]),range:Math.abs(c-a)}; }).sort((x,y)=>y.range-x.range);
+}
+function drawTornado(R,drivers){
+  const base=R.saldo,el=document.getElementById("ch-tornado"),w=W(el),rowH=30,lw=Math.min(200,w*.38),m={l:lw,r:16,t:24,b:24},h=m.t+m.b+rowH*drivers.length;
+  const lo=Math.min(base,...drivers.map(d=>Math.min(d.lo,d.hi))),hi=Math.max(base,...drivers.map(d=>Math.max(d.lo,d.hi)));
+  const pad=(hi-lo)*.2||1e6,X=v=>m.l+(v-lo+pad)/((hi-lo)+2*pad)*(w-m.l-m.r);
+  let b=`<line x1="${X(base)}" x2="${X(base)}" y1="${m.t-8}" y2="${h-m.b}" stroke="var(--ink)" stroke-width="1.5"/><text x="${X(base)}" y="${m.t-12}" text-anchor="middle" class="lbl">Scenario: ${M(base)}</text>`;
+  const step=niceStep(((hi-lo)+2*pad)/4);
+  for(let v=Math.ceil((lo-pad)/step)*step;v<=hi+pad;v+=step) b+=`<text x="${X(v)}" y="${h-6}" text-anchor="middle">${F0.format(v/1e6)} mln</text>`;
+  drivers.forEach((d,i)=>{ const y=m.t+i*rowH;
+    b+=`<text x="${m.l-8}" y="${y+18}" text-anchor="end" class="lbl">${esc(d.label)}</text>`;
+    [[d.lo,d.loL],[d.hi,d.hiL]].forEach(([v,l])=>{ const x1=X(Math.min(v,base)),x2=X(Math.max(v,base));
+      b+=`<rect x="${x1}" y="${y+6}" width="${Math.max(1,x2-x1)}" height="16" rx="2" fill="${v>=base?"var(--gain)":"var(--loss)"}" data-tip="${esc(d.label)} a ${l}: saldo ${M(v)}"/>`;
+      b+=`<text class="val" x="${v>=base?x2+4:x1-4}" y="${y+18}" text-anchor="${v>=base?"start":"end"}">${l}</text>`; }); });
+  el.innerHTML=svg(w,h,b,"Sensibilità del saldo");
+}
+function drawDiagram(){
+  const bx=(x,y,t,k)=>`<rect x="${x}" y="${y}" width="250" height="44" rx="6" class="${k?"k":""}"/><text x="${x+125}" y="${y+27}" text-anchor="middle">${t}</text>`;
+  const A=[[20,30,"Imposta per notte t(p)",1],[20,100,"Costo per l'ospite"],[20,170,"Pernottamenti per tipologia"],[20,240,"Gettito netto",1]];
+  const B=[[325,30,"Redditività affitti brevi"],[325,100,"Riconversione a lungo termine"],[325,170,"Spesa turistica e lavoro"],[325,240,"Fondo Armonizzatore",1]];
+  const C=[[630,30,"Canoni e prezzi delle case"],[630,100,"Nuovi residenti"],[630,170,"Tessuto commerciale di vicinato"],[630,240,"Dividendo civico",1]];
+  const L=(x1,y1,x2,y2)=>`<path d="M${x1},${y1} L${x2},${y2}" marker-end="url(#ar)"/>`;
+  let b=`<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink3);stroke:none"/></marker></defs>`;
+  b+=`<text class="h" x="145" y="16" text-anchor="middle">PRIMO ORDINE</text><text class="h" x="450" y="16" text-anchor="middle">SECONDO ORDINE</text><text class="h" x="755" y="16" text-anchor="middle">TERZO ORDINE</text>`;
+  [...A,...B,...C].forEach(r=>b+=bx(...r));
+  b+=L(145,74,145,99)+L(145,144,145,169)+L(145,214,145,239)+L(270,185,324,60)+L(270,192,324,192)+L(450,74,450,99)+L(575,115,629,60)+L(575,122,629,122)+L(755,74,755,99)
+    +L(270,262,324,262)+L(450,214,450,239)+L(575,262,629,262)+L(575,250,629,200)+L(755,144,755,169);
+  document.getElementById("diagram").innerHTML=`<svg viewBox="0 0 900 300" role="img" aria-label="Catena causale della riforma">${b}</svg>`;
+}
+
+/* ---------- testi e tabelle ---------- */
+function renderKpis(R,MC){
+  const k=[["Gettito netto al Comune",M(R.net),`${MS(R.dTax)} rispetto a ${M(R.base)}`,1],
+    ["Saldo strutturale a regime",M(R.saldo),`80% dei casi: ${M(MC.saldo.p10)} – ${M(MC.saldo.p90)}`,1],
+    ["Dividendo civico per famiglia, all'anno",E0(R.perHH),`dopo una riserva del ${PC(P.reserve)}`],
+    ["Pernottamenti",PS(R.nChg),`${F1.format(R.nNew/1e6)} mln di notti`],
+    ["Abitazioni restituite ai residenti",N0(R.toRes),`${N0(R.newRes)} nuovi residenti`],
+    ["Canoni di locazione",PS(R.rentChg),`€${F1.format(P.rent*(1+R.rentChg))}/m² al mese`]];
+  document.getElementById("kpis").innerHTML=k.map(x=>`<div class="kpi${x[3]?" lead":""}"><span class="lab">${x[0]}</span><span class="big">${x[1]}</span><span class="sub">${x[2]}</span></div>`).join("");
+}
+function execPoints(R,MC,path5){
+  const lux=R.segs[4],mass=R.segs[2];
+  return [
+    `Il gettito lordo passa da <b>${M(R.base)}</b> a <b>${M(R.G)}</b>. Dopo l'evasione aggiuntiva e la quota allo Stato (${M(R.levy)}), al Comune restano <b>${M(R.net)}</b>, cioè <b>${MS(R.dTax)}</b> all'anno.`,
+    `Il segmento del lusso, il ${PC(lux.share/P.segs.reduce((a,s)=>a+s.share,0))} delle notti, genera <b>${M(lux.rev)}</b> (${PC(lux.rev/Math.max(1,R.G))} del gettito) con un calo delle presenze di appena <b>${PS(lux.chg)}</b>.`,
+    `Il saldo strutturale a regime è <b>${M(R.saldo)}</b> (nell'80% delle simulazioni tra ${M(MC.saldo.p10)} e ${M(MC.saldo.p90)}); il primo anno vale ${M(path5[0])} per i costi una tantum di transizione.`,
+    `Il dividendo civico vale <b>${E0(R.perHH)}</b> per famiglia all'anno: ${Object.entries(R.alloc).filter(([,a])=>a.cov>.005).map(([k,a])=>({irpef:"addizionale IRPEF",tari:"TARI domestica",tpl:"trasporto gratuito"}[k]+" coperta al "+PC(a.cov))).join(", ")||"nessuna voce coperta"}.`,
+    `I pernottamenti calano del <b>${PS(R.nChg)}</b> (mass-market ${PS(mass.chg)}), ma i visitatori presenti in un giorno medio solo del <b>${PS(R.vdChg)}</b>: gli escursionisti non pagano l'imposta di soggiorno.`,
+    `<b>${N0(R.toRes)}</b> appartamenti tornano ai residenti e i canoni scendono del <b>${PS(R.rentChg)}</b>. L'effetto abitativo dell'imposta da sola è limitato: va affiancata dal Fondo di garanzia e dalle regole urbanistiche sugli affitti brevi.`,
+    `Lo scenario richiede una modifica di legge se il pavimento supera €10 o se l'aliquota proporzionale supera il tetto per notte (Capitolo 9).`
+  ];
+}
+function renderTax(R){
+  const pstar=P.alpha>0?P.tmin/P.alpha:Infinity;
+  document.getElementById("tax-intro").innerHTML=`Nello scenario <b>${esc(scenName()[1])}</b>, sotto <b>€${isFinite(pstar)?F0.format(pstar):"∞"}</b> per persona per notte ogni ospite tassabile paga il pavimento di €${nf(P.tmin%1?1:0).format(P.tmin)}; sopra, l'imposta è il ${nf(1).format(P.alpha*100)}% del prezzo${P.cap>0?`, fino a un massimo di €${F0.format(P.cap)}`:""}. Oggi le tariffe vanno da €3,50 a €8.`;
+  document.getElementById("tb-tax").innerHTML=`<thead><tr><th>Tipologia</th><th>Oggi</th><th>Mediana dopo</th><th>1 su 10 paga almeno</th><th>Gettito oggi</th><th>Gettito dopo</th></tr></thead><tbody>${R.segs.map((s,i)=>`<tr><td><span class="dot" style="background:${SEGCOL[i]}"></span>${esc(s.short)}</td><td class="num">${E2(s.tOld)}</td><td class="num">${s.exempt?"esente":E2(s.tMed)}</td><td class="num">${s.exempt?"—":E2(s.tP90)}</td><td class="num">${M(s.revOld)}</td><td class="num">${M(s.rev)}</td></tr>`).join("")}</tbody><tfoot><tr><td>Totale lordo</td><td></td><td></td><td></td><td class="num">${M(R.base)}</td><td class="num">${M(R.G)}</td></tr></tfoot>`;
+  document.getElementById("cmp-prop").textContent=`max(€${nf(P.tmin%1?1:0).format(P.tmin)}; ${nf(1).format(P.alpha*100)}% del prezzo)${P.cap>0?", tetto €"+P.cap:""}; esenti under 30 UE`;
+  document.getElementById("cmp-prop-v").textContent=`€${F0.format(P.tmin)} … ≈ €${F0.format(R.segs[4].tAvg)} (media lusso)`;
+}
+function renderDemand(R){
+  document.getElementById("tb-demand").innerHTML=`<thead><tr><th>Tipologia</th><th>Notti oggi</th><th>Dopo</th><th>Variazione</th><th>Imposta media</th><th>Verso la cintura</th></tr></thead><tbody>${R.segs.map((s,i)=>`<tr><td><span class="dot" style="background:${SEGCOL[i]}"></span>${esc(s.name)}</td><td class="num">${Mn(s.nB)}</td><td class="num">${Mn(s.nN)}</td><td class="num ${cls(s.chg)}">${PS(s.chg)}</td><td class="num">${E2(s.tAvg)}</td><td class="num">${Mn(s.belt)}</td></tr>`).join("")}</tbody><tfoot><tr><td>Totale pernottamenti</td><td class="num">${Mn(R.nB)}</td><td class="num">${Mn(R.nNew)}</td><td class="num ${cls(R.nChg)}">${PS(R.nChg)}</td><td></td><td class="num">${Mn(R.belt)}</td></tr></tfoot>`;
+  const dB=R.vdB/365,dN=R.vdN/365;
+  document.getElementById("crowd-note").innerHTML=`<b>Carico sulla città.</b> Contando escursionisti e ospiti della cintura che entrano di giorno, i visitatori presenti in un giorno medio passano da circa <b>${N0(dB)}</b> a <b>${N0(dN)}</b> (${PS(R.vdChg)}), cioè da ${F1.format(dB/P.residents*100)} a ${F1.format(dN/P.residents*100)} ogni 100 residenti. ${Math.abs(R.vdChg)<.08?"Un'imposta sul pernottamento non tocca gli escursionisti: per ridurre davvero la pressione servono un contributo d'accesso o limiti agli arrivi dei bus turistici.":"La riduzione si concentra nei segmenti a bassa spesa."}`;
+}
+function renderHousing(R){
+  const rows=[["Reddito netto degli affitti brevi",PS(-R.noiDrop),`ricavi ${PS(-R.aptDrop)}; costi variabili ${PC(P.varCost)}, margine ${PC(P.noiMargin)}`],
+    ["Appartamenti riconvertiti",N0(R.units),`${PC(R.share,1)} di ${N0(P.strUnits)}`],["…che vanno a residenti",N0(R.toRes),""],
+    ["Nuovi residenti netti",N0(R.newRes),`${N0(R.newResGross)} occupanti in tutto`],
+    ["Canone di locazione",`€${F2.format(P.rent*(1+R.rentChg))}/m²`,`${PS(R.rentChg)} da €${F2.format(P.rent)}`],
+    ["Risparmio su 70 m², al rinnovo",E0(-R.rentChg*R.annualRent)+"/anno",""],
+    ["Prezzo di compravendita",`€${N0(P.price*(1+R.priceChg))}/m²`,`${PS(R.priceChg)} da €${N0(P.price)}`]];
+  document.getElementById("tb-house").innerHTML=`<thead><tr><th>Indicatore</th><th>Valore</th><th class="l">Nota</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td class="l wrap" style="color:var(--ink3)">${r[2]}</td></tr>`).join("")}</tbody>`;
+}
+function renderFund(R){
+  const f=[["Riconversione commerciale","leva",R.fComm],["Garanzia affitti",P.guaranteeOn?`${N0(R.toRes)} contratti × ${E0(R.annualRent)} × ${PC(P.defaultRate,1)}`:"disattivata",R.fGuar],["Imprese e talenti","leva",R.fTalent]];
+  document.getElementById("tb-fund").innerHTML=`<thead><tr><th>Voce</th><th class="l">Dimensionamento</th><th>€ all'anno</th></tr></thead><tbody>${f.map(r=>`<tr><td>${r[0]}</td><td class="l wrap" style="color:var(--ink3)">${r[1]}</td><td class="num">${M(r[2])}</td></tr>`).join("")}<tr><td>Transizione lavoratori (una tantum)</td><td class="l wrap" style="color:var(--ink3)">${N0(R.jobsLost)} posti × ${E0(P.trainCost)} × ${PC(P.trainCoverage)}, anni 1–3</td><td class="num">${M(R.fTrainTotal)} in totale</td></tr></tbody><tfoot><tr><td>Fondo a regime</td><td></td><td class="num">${M(R.fund)}</td></tr><tr><td>Saldo strutturale</td><td></td><td class="num">${M(R.saldo)}</td></tr><tr><td>Riserva prudenziale</td><td></td><td class="num">${M(R.reserve)}</td></tr><tr><td>Disponibile per il dividendo</td><td></td><td class="num" style="color:var(--accent)">${M(R.pool)}</td></tr></tfoot>`;
+  const names={irpef:"Azzeramento addizionale IRPEF",tari:"Riduzione TARI domestica",tpl:"Trasporto gratuito per i residenti"};
+  document.getElementById("alloc").innerHTML=String(P.order).split(",").map(k=>{ const a=R.alloc[k]; return `<div><div class="row"><span>${names[k]}</span><span class="num">${M(a.paid)} su ${M(a.cost)} · ${PC(a.cov)}</span></div><div class="bar" data-tip="${names[k]}: ${PC(a.cov)}"><i style="width:${(a.cov*100).toFixed(1)}%"></i></div></div>`; }).join("")+(R.surplus>1e5?`<p class="hint">Non allocato: ${M(R.surplus)}.</p>`:"");
+  document.getElementById("div-intro").textContent=R.saldo>0?`Un saldo di ${M(R.saldo)}, al netto della riserva, lascia ${M(R.pool)} all'anno: ${E0(R.perHH)} per famiglia, ${E0(R.pool/P.residents)} per residente.`:`Con queste ipotesi la riforma non copre il Fondo e non genera dividendo. Occorre alzare il pavimento o l'aliquota, oppure ridurre il Fondo.`;
+  const tariHH=P.tariDomBase*1e6/P.households,irpefHH=P.incomeNew*P.irpefRate;
+  const tari=tariHH*R.alloc.tari.cov,irpef=irpefHH*R.alloc.irpef.cov,tpl=2*P.passPrice*R.alloc.tpl.cov,rent=-R.rentChg*R.annualRent;
+  document.getElementById("hh").innerHTML=`<h3>Famiglia tipo: due adulti in affitto in 70 m², un reddito da €40.000</h3><dl>
+    <dt>Addizionale IRPEF risparmiata</dt><dd>${E0(irpef)}</dd><dt>TARI risparmiata (bolletta media ${E0(tariHH)})</dt><dd>${E0(tari)}</dd>
+    <dt>Due abbonamenti al trasporto pubblico</dt><dd>${E0(tpl)}</dd><dt>Canone più basso, al rinnovo del contratto</dt><dd>${E0(rent)}</dd>
+    <dt class="t">Totale annuo</dt><dd class="t">${E0(irpef+tari+tpl+rent)}</dd></dl>`;
+}
+function renderCascade(R){
+  const lux=R.segs[4],mass=R.segs[2],young=R.segs[0],budget=R.segs[1],pstar=P.alpha>0?F0.format(P.tmin/P.alpha):"∞";
+  const first=[`Gli ospiti del lusso pagano in media <b>€${F0.format(lux.tAvg)}</b> a notte invece di €${F0.format(lux.tOld)}; le loro presenze variano di <b>${PS(lux.chg)}</b> ma portano <b>${M(lux.rev)}</b>.`,
+    `Mass-market <b>${PS(mass.chg)}</b>, budget <b>${PS(budget.chg)}</b>; ${young.exempt?`giovani UE under 30 esenti <b>${PS(young.chg)}</b>`:`giovani UE under 30 <b>${PS(young.chg)}</b>`}.`,
+    `Il gettito lordo sale a <b>${M(R.G)}</b>; dopo evasione (${M(R.evasionLoss)}) e quota allo Stato (${M(R.levy)}) restano al Comune <b>${M(R.net)}</b>.`,
+    `Le camere sopra <b>€${pstar}</b> a persona passano dal pavimento all'aliquota proporzionale.`];
+  const second=[`I ricavi degli affitti brevi scendono del <b>${PS(-R.aptDrop)}</b>, il reddito netto del <b>${PS(-R.noiDrop)}</b>: <b>${N0(R.units)}</b> appartamenti passano al lungo termine${P.guaranteeOn?", anche grazie alla garanzia":""}.`,
+    `Canoni <b>${PS(R.rentChg)}</b>, prezzi di compravendita <b>${PS(R.priceChg)}</b>, a parità di altre condizioni.`,
+    `La spesa turistica varia di <b>${MS(R.dSpend)}</b> (valore aggiunto ${MS(R.vaChg)}): circa <b>${N0(R.jobsLost)}</b> posti a rischio, in gran parte a bassa retribuzione. Con l'esenzione fino a €25.000, l'addizionale IRPEF perde solo ${M(R.irpefJobs)}.`,
+    `<b>${Mn(R.belt)}</b> notti si spostano nella cintura; il ${PC(P.beltReturn)} di quegli ospiti torna in centro di giorno.`,
+    `I visitatori-giorno calano del <b>${PS(R.vdChg)}</b>: risparmi per ${M(R.opSaving)} su pulizia e sicurezza e ${M(R.tariSaving)} sui rifiuti.`];
+  const third=[`Circa <b>${N0(R.newRes)}</b> persone si stabiliscono in città, contro un calo recente di circa 2.000 residenti all'anno.`,
+    `I comuni della cintura (Sesto Fiorentino, Scandicci, Bagno a Ripoli, Prato) assorbono ospiti e possono vedere salire i propri canoni: serve una regia metropolitana.`,
+    `Un'aliquota alta sul lusso riduce la convenienza delle conversioni di palazzi in alberghi, mentre il pavimento penalizza i piccoli affitti brevi: possibile concentrazione verso operatori professionali.`,
+    `Il Fondo per il commercio (${M(R.fComm)}) e per imprese e talenti (${M(R.fTalent)}) produce effetti solo se nuovi residenti e imprese creano domanda di vicinato: è l'anello più lento e incerto.`,
+    `Il dividendo di ${E0(R.perHH)} per famiglia crea consenso per la riforma, ma lega i servizi all'andamento del turismo: da qui la riserva del ${PC(P.reserve)}.`,
+    `Il dividendo rimesso in circolo nell'economia locale (${M(R.pool)}) compensa in parte la minore spesa turistica, con un'occupazione più residenziale.`];
+  const col=(t,s,items)=>`<div class="order"><h3>${t}<small>${s}</small></h3><ul>${items.map(i=>`<li>${i}</li>`).join("")}</ul></div>`;
+  document.getElementById("cascade").innerHTML=col("Primo ordine","Prezzi e gettito, entro pochi mesi",first)+col("Secondo ordine","Aggiustamento dei mercati, 1–3 anni",second)+col("Terzo ordine","Struttura della città, 3–10 anni",third);
+}
+function renderMC(R,MC){
+  document.getElementById("mc-intro").innerHTML=`Nello scenario in esame il saldo è negativo in <b>${N0(MC.saldo.neg*400)}</b> simulazioni su 400. Le grandezze più incerte sono l'elasticità della domanda, il grado di traslazione dell'imposta e il premio degli affitti brevi: sono i primi dati da chiedere a uffici e piattaforme.`;
+  const rows=[["Saldo strutturale","saldo",M],["Incremento netto dell'imposta","dTax",M],["Variazione dei pernottamenti","nChg",PS],["Abitazioni ai residenti","toRes",N0],["Variazione dei canoni","rentChg",PS],["Dividendo per famiglia","perHH",E0]];
+  document.getElementById("tb-mc").innerHTML=`<thead><tr><th>Grandezza</th><th>Scenario</th><th>P10</th><th>Mediana</th><th>P90</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td class="num">${r[2](R[r[1]])}</td><td class="num">${r[2](MC[r[1]].p10)}</td><td class="num">${r[2](MC[r[1]].p50)}</td><td class="num">${r[2](MC[r[1]].p90)}</td></tr>`).join("")}</tbody>`;
+}
+function renderChecks(R){
+  const maxT=Math.max(...R.segs.map(s=>s.tP90)),ratio=P.recordedNights*1e6/P.residents,c=[];
+  c.push(P.tmin<=10?["ok","Pavimento entro il tetto di legge",`€${F1.format(P.tmin)} è consentito ai capoluoghi con presenze oltre 20 volte i residenti (Firenze: ${F0.format(ratio)} volte sulle presenze registrate) [12].`]
+    :P.tmin<=12?["warn","Pavimento che usa la maggiorazione di €2",`€${F1.format(P.tmin)} si regge sulla maggiorazione temporanea prevista per il 2026; senza proroga decade, e il 30% del maggior gettito va allo Stato [13].`]
+    :["bad","Pavimento oltre il tetto di legge",`€${F1.format(P.tmin)} supera €10 (+€2): serve una norma nazionale, come avvenuto per il contributo d'accesso di Venezia.`]);
+  c.push(maxT<=10.0001?["ok","Aliquota proporzionale entro il tetto","La legge consente già tariffe graduate in proporzione al prezzo, entro il massimo per notte."]
+    :maxT<=12.0001?["warn","Aliquota proporzionale entro la maggiorazione","Rispetta il tetto solo con la maggiorazione temporanea di €2."]
+    :["bad","Aliquota proporzionale oltre il tetto per notte",`Un ospite del lusso su dieci pagherebbe almeno ${E2(maxT)} a notte. L'art. 4 del D.Lgs. 23/2011 fissa un massimo per notte: un'aliquota senza tetto richiede una norma nazionale.`]);
+  if(P.youthExempt) c.push(["warn","Esenzione legata alla cittadinanza UE","Le esenzioni per età sono ammesse dal regolamento comunale. Legarle alla cittadinanza UE è una scelta non sperimentata e potenzialmente contestabile per disparità di trattamento: più sicura un'esenzione per sola età o per tessera studente."]);
+  c.push(R.saldo>0?["ok","Saldo positivo",`${M(R.saldo)} all'anno coprono il Fondo e finanziano il dividendo.`]:["bad","Saldo negativo","Con queste ipotesi la riforma non copre il Fondo."]);
+  c.push(P.stateLevy>0?["warn","Quota del maggior gettito allo Stato",`Il ${PC(P.stateLevy)} dell'incremento (${M(R.levy)}) esce dal bilancio comunale. Va chiarito se la norma si applica a una struttura tariffaria del tutto nuova o solo alla maggiorazione.`]:["ok","Nessuna quota statale ipotizzata",""]);
+  if(Math.abs(R.vdChg)<.08) c.push(["warn","Obiettivo di decongestione raggiunto solo in parte",`I visitatori-giorno calano del ${PS(R.vdChg)}: gli escursionisti non sono toccati dall'imposta.`]);
+  if(R.noiDrop>.6) c.push(["warn","Forte colpo ai gestori","Il reddito netto degli affitti brevi cala di oltre il 60%: probabili ricorsi e aumento dell'abusivismo."]);
+  const lab={ok:"OK",warn:"Verifica",bad:"Ostacolo"};
+  document.getElementById("checks").innerHTML=c.map(x=>`<div class="check"><span class="chip ${x[0]}">${lab[x[0]]}</span><div><b>${x[1]}.</b> ${x[2]}</div></div>`).join("");
+}
+function renderPhases(R){
+  const V=cloneP(P); Object.assign(V,SCEN.vigente); const Rv=run(V);
+  const cur=scenName()[1];
+  const rows=[["Gettito netto al Comune",M(Rv.net),M(R.net)],["Saldo strutturale",M(Rv.saldo),M(R.saldo)],["Dividendo per famiglia",E0(Rv.perHH),E0(R.perHH)],["Pernottamenti",PS(Rv.nChg),PS(R.nChg)],["Abitazioni ai residenti",N0(Rv.toRes),N0(R.toRes)],["Canoni",PS(Rv.rentChg),PS(R.rentChg)]];
+  document.getElementById("tb-phases").innerHTML=`<thead><tr><th>A regime</th><th>Fase 1: legislazione vigente</th><th>Scenario: ${esc(cur)}</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td></tr>`).join("")}</tbody>`;
+}
+function renderParams(){
+  const rows=PARAMS.filter(p=>p.g==="leve").map(p=>`<tr><td>${esc(p.sub)}</td><td>${esc(p.label)}</td><td class="num">${esc(fmtParam(p,P[p.id]))}</td></tr>`).join("");
+  document.getElementById("tb-params").innerHTML=`<thead><tr><th>Area</th><th class="l">Leva</th><th>Valore</th></tr></thead><tbody>${rows}</tbody>`;
+}
+
+/* ---------- verifiche numeriche ---------- */
+function renderSanity(R,wfTotal,pathVals){
+  const out=[]; const add=(ok,t,d)=>out.push([ok===true?"ok":ok===false?"bad":"warn",t,d]);
+  const S=run(P,null,{sq:true});
+  add(Math.abs(S.G-S.base)/S.base<.001&&Math.abs(S.nChg)<1e-9,"Calibrazione",`Con le tariffe attuali il modello restituisce ${M(S.G)} contro ${M(S.base)} di gettito osservato e nessuna variazione dei pernottamenti.`);
+  const sh=P.segs.reduce((a,s)=>a+s.share,0);
+  add(Math.abs(sh-1)<.005?true:null,"Quote delle tipologie",`Somma delle quote: ${PC(sh,1)}${Math.abs(sh-1)<.005?"":" (il modello le riscala al 100%)"}.`);
+  const avgT=P.baseRevenue*1e6/(P.totalNights*1e6*(1-P.minorShare));
+  add(avgT>=3.5&&avgT<=8?true:false,"Imposta media implicita",`${E2(avgT)} per notte tassabile, dentro l'intervallo delle tariffe attuali (€3,50–€8).`);
+  add(R.k>.85&&R.k<1.15?true:null,"Coefficiente di calibrazione",`k = ${F2.format(R.k)}: notti, quote e tariffe sono coerenti con il gettito osservato (atteso tra 0,85 e 1,15).`);
+  const pp=R.accO/R.nB;
+  add(pp*1.8>150&&pp*1.8<350?true:null,"Prezzo medio implicito",`${E0(pp)} per persona, cioè circa ${E0(pp*1.8)} per camera doppia; i comparatori indicano circa €253 a Firenze [20].`);
+  const spendDay=R.spendO/R.nB;
+  add(spendDay>120&&spendDay<350?true:null,"Spesa turistica implicita",`${M(R.spendO)} all'anno, ${E0(spendDay)} per persona per notte; circa ${N0(R.spendO/1e6*P.jobsPerM)} addetti equivalenti.`);
+  add(Math.abs(wfTotal-R.saldo)<1,"Identità del conto economico",`La somma delle voci della Figura 3 coincide con il saldo (${M(R.saldo)}).`);
+  add(Math.abs((R.nB-R.nNew)-(R.lostTot-R.gained))<1,"Conservazione dei pernottamenti",`Notti perse ${Mn(R.lostTot)} meno notti guadagnate ${Mn(R.gained)} = variazione totale ${Mn(R.nB-R.nNew)}.`);
+  const dirOk=R.segs.every(s=>{ const up=(s.exempt?0:s.tMed)>s.tOld+1e-9, dn=(s.exempt?0:s.tMed)<s.tOld-1e-9; return (up&&s.chg<=1e-9)||(dn&&s.chg>=-1e-9)||(!up&&!dn); });
+  add(dirOk,"Direzione degli effetti","Ogni tipologia con imposta più alta riduce i pernottamenti; ogni tipologia esentata li aumenta.");
+  add(Math.abs(pathVals[4]-R.saldo)<Math.max(1e4,Math.abs(R.saldo)*.005),"Convergenza del percorso",`Il quinto anno (${M(pathVals[4])}) coincide con il saldo a regime.`);
+  // Laffer
+  let best=[P.tmin,-Infinity]; for(let t=4;t<=60;t+=1){ const Q=cloneP(P); Q.tmin=t; const r=run(Q); if(r.net>best[1]) best=[t,r.net]; }
+  let bestA=[P.alpha,-Infinity]; for(let a=0;a<=.5001;a+=.01){ const Q=cloneP(P); Q.alpha=a; const r=run(Q); if(r.net>bestA[1]) bestA=[a,r.net]; }
+  add(P.tmin<best[0]?true:null,"Curva di Laffer: pavimento",best[0]>=60?`Tra €4 e €60 il gettito netto continua a crescere con il pavimento: lo scenario (€${F1.format(P.tmin)}) è lontano dal punto in cui un rincaro riduce il gettito. Oltre €20–25 il modello è un'estrapolazione: il vero limite è politico e di decongestione, non di gettito.`:`A parità di aliquota, il gettito netto è massimo con un pavimento di circa €${best[0]} (${M(best[1])}); lo scenario usa €${F1.format(P.tmin)}${P.tmin<best[0]?", sul ramo crescente":", oltre il massimo"}.`);
+  add(P.alpha<bestA[0]-1e-9?true:null,"Curva di Laffer: aliquota",bestA[0]>=.49?`Tra 0% e 50% il gettito netto continua a crescere con l'aliquota, perché la domanda di lusso è poco elastica; lo scenario usa ${PC(P.alpha,1)}.`:`A parità di pavimento, il gettito netto è massimo con un'aliquota di circa ${PC(bestA[0])}; lo scenario usa ${PC(P.alpha,1)}.`);
+  const avgPriceChg=R.segs.reduce((a,s)=>a+s.nB*((s.exempt?0:s.tAvg)*P.passThrough-s.tOld*P.passThrough),0)/R.segs.reduce((a,s)=>a+s.nB*(s.price+s.tOld),0);
+  const impl=avgPriceChg!==0?R.nChg/avgPriceChg:0;
+  add(impl<0&&impl>-1.5?true:null,"Elasticità complessiva implicita",`${F2.format(impl)}: variazione dei pernottamenti ÷ variazione media del costo per notte. Riferimento: −0,5/−0,7 per la spesa turistica complessiva [17]; per Firenze, nessun effetto misurabile dell'introduzione dell'imposta [16].`);
+  add(Math.abs(R.rentChg)<=.1?true:null,"Campo di validità del modello abitativo",`Variazione dei canoni ${PS(R.rentChg)}: l'approssimazione lineare è affidabile entro ±10%.`);
+  add(R.share<=.5?true:null,"Quota di stock riconvertita",`${PC(R.share,1)} degli affitti brevi: entro il limite di plausibilità del 50%.`);
+  const lab={ok:"OK",warn:"Verifica",bad:"Errore"};
+  document.getElementById("sanity").innerHTML=out.map(x=>`<div class="check"><span class="chip ${x[0]}">${lab[x[0]]}</span><div><b>${x[1]}.</b> ${x[2]}</div></div>`).join("");
+  return out;
+}
+function renderSources(){ document.getElementById("srcs").innerHTML=SRC.map(s=>`<li><a href="${s[2]}" target="_blank" rel="noopener">${esc(s[1])}</a></li>`).join(""); }
+
+/* ---------- sintesi testuale ---------- */
+let LAST=null;
+function summaryText(){
+  const {R,MC,pathVals}=LAST, strip=s=>s.replace(/<[^>]+>/g,"");
+  return [`IL DIVIDENDO DI FIRENZE · scenario ${scenName()[1]}`,
+    `Imposta: max(€${F1.format(P.tmin)}; ${PC(P.alpha,1)} del prezzo)${P.cap>0?", tetto €"+P.cap:""}${P.youthExempt?"; esenti cittadini UE under 30":""}.`,"",
+    ...execPoints(R,MC,pathVals).map(p=>"• "+strip(p)),"",
+    "Documento indipendente di proposta; stime di modello da validare con i dati del Comune."].join("\n");
+}
+
+/* ---------- aggiornamento ---------- */
+let R=null,TOR=null,PATHV=null;
+function update(){
+  syncRail(); markScen(); save();
+  R=run(P); const MC=monteCarlo(P,400); PATHV=path(P,R); TOR=tornadoData(R);
+  LAST={R,MC,pathVals:PATHV};
+  renderKpis(R,MC); document.getElementById("exec-points").innerHTML=execPoints(R,MC,PATHV).map(p=>`<li>${p}</li>`).join("");
+  renderTax(R); drawTax(R); drawDemand(R); renderDemand(R); const wfT=drawWaterfall(R);
+  drawPrem(R); renderHousing(R); renderFund(R); drawPath(PATHV); renderCascade(R); renderMC(R,MC); drawTornado(R,TOR);
+  renderChecks(R); renderPhases(R); renderParams(); renderSanity(R,wfT,PATHV);
+  window.__sanity=document.querySelectorAll("#sanity .chip.bad").length;
+}
+function redraw(){ if(!R) return; drawTax(R); drawDemand(R); drawWaterfall(R); drawPrem(R); drawPath(PATHV); drawTornado(R,TOR); }
+
+/* ---------- eventi ---------- */
+const msg=t=>{ const m=document.getElementById("msg"); m.textContent=t; setTimeout(()=>{ if(m.textContent===t) m.textContent=""; },3000); };
+const copy=(txt,ok)=>{ try{ navigator.clipboard.writeText(txt).then(()=>msg(ok),()=>msg("Il browser ha bloccato la copia")); }catch(e){ msg("Il browser ha bloccato la copia"); } };
+document.querySelectorAll("[data-scen]").forEach(b=>b.addEventListener("click",()=>{ const s=SCEN[b.dataset.scen]; SCEN_KEYS.forEach(k=>P[k]=s[k]); update(); }));
+document.getElementById("bt-reset").addEventListener("click",()=>{ P=defaults(); refreshAssump(); update(); msg("Ipotesi ripristinate"); });
+document.getElementById("bt-copy").addEventListener("click",()=>copy(JSON.stringify(P),"Scenario copiato"));
+document.getElementById("bt-summary").addEventListener("click",()=>copy(summaryText(),"Sintesi copiata"));
+document.getElementById("bt-paste").addEventListener("click",e=>{ const box=document.getElementById("pastebox"); box.hidden=!box.hidden; e.currentTarget.setAttribute("aria-expanded",String(!box.hidden)); if(!box.hidden) document.getElementById("pastearea").focus(); });
+document.getElementById("bt-apply").addEventListener("click",()=>{ try{ const o=JSON.parse(document.getElementById("pastearea").value); P=merge(defaults(),o); refreshAssump(); update(); document.getElementById("pastebox").hidden=true; document.getElementById("bt-paste").setAttribute("aria-expanded","false"); msg("Scenario caricato"); }catch(e){ msg("Il testo incollato non è un JSON valido"); } });
+const tip=document.getElementById("tip");
+document.addEventListener("pointermove",e=>{ const t=e.target.closest&&e.target.closest("[data-tip]"); if(!t){ tip.classList.remove("on"); return; }
+  tip.textContent=t.getAttribute("data-tip"); tip.classList.add("on");
+  const x=Math.min(e.clientX+14,window.innerWidth-tip.offsetWidth-8),y=e.clientY+16+tip.offsetHeight>window.innerHeight?e.clientY-tip.offsetHeight-10:e.clientY+16; tip.style.left=x+"px"; tip.style.top=y+"px"; });
+let rt=null; const ro=new ResizeObserver(()=>{ clearTimeout(rt); rt=setTimeout(redraw,80); });
+["ch-tax","ch-demand","ch-wf","ch-prem","ch-path","ch-tornado"].forEach(id=>ro.observe(document.getElementById(id)));
+window.addEventListener("beforeprint",redraw);
+
+buildRail(); buildAssump(); renderSources(); drawDiagram(); update();
+window.__model={run,monteCarlo,get P(){return P;},set P(v){P=v;},update,defaults,merge,SCEN};
+})();
+</script>

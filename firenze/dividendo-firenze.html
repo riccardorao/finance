@@ -244,7 +244,7 @@ footer{color:var(--ink3);font-size:.8rem;margin-top:28px}
         <header>
           <span class="eyebrow">6 · Transition</span>
           <h2>Five-year path of the structural balance</h2>
-          <p>Demand adjusts within about a year; short-let conversions take three to four years; worker-transition spending tapers as people are re-employed.</p>
+          <p>Demand adjusts within about a year; short-let conversions take three to four years; worker-transition spending is a one-off cost over years 1–3 and is left out of the steady-state balance.</p>
         </header>
         <div class="chart" id="ch-path"></div>
       </section>
@@ -332,11 +332,11 @@ const SRC_ORDER = Object.keys(SRC);
 
 /* ---------- personas ---------- */
 const SEG0 = [
-  {id:"young", name:"Under-30 EU youth, students, researchers", short:"Youth U30 EU", share:.12, price:45, sigma:.35, eps:-1.2, tOld:5.0, belt:.10, apt:.40, spend:55, exempt:true},
-  {id:"budget",name:"Backpackers and non-EU budget",           short:"Budget",       share:.08, price:38, sigma:.35, eps:-1.5, tOld:4.0, belt:.50, apt:.20, spend:50},
-  {id:"mass",  name:"Mass-market flats and mid-range hotels",  short:"Mass-market",  share:.46, price:70, sigma:.35, eps:-1.3, tOld:6.0, belt:.30, apt:.60, spend:95},
-  {id:"upper", name:"Upper-mid cultural (4★, boutique B&B)",   short:"Upper-mid",    share:.27, price:150,sigma:.30, eps:-0.7, tOld:7.0, belt:.15, apt:.25, spend:160},
-  {id:"lux",   name:"Luxury and UHNWI (5★, suites, villas)",   short:"Luxury",       share:.07, price:520,sigma:.45, eps:-0.25,tOld:8.0, belt:0,   apt:.10, spend:480}
+  {id:"young", name:"Under-30 EU youth, students, researchers", short:"Youth U30 EU", share:.12, price:45, sigma:.35, eps:-1.0, tOld:5.0, belt:.20, apt:.40, spend:45, exempt:true},
+  {id:"budget",name:"Backpackers and non-EU budget",           short:"Budget",       share:.08, price:38, sigma:.35, eps:-1.4, tOld:4.0, belt:.60, apt:.20, spend:40},
+  {id:"mass",  name:"Mass-market flats and mid-range hotels",  short:"Mass-market",  share:.46, price:70, sigma:.35, eps:-1.0, tOld:6.0, belt:.50, apt:.60, spend:80},
+  {id:"upper", name:"Upper-mid cultural (4★, boutique B&B)",   short:"Upper-mid",    share:.27, price:150,sigma:.30, eps:-0.6, tOld:7.0, belt:.30, apt:.25, spend:130},
+  {id:"lux",   name:"Luxury and UHNWI (5★, suites, villas)",   short:"Luxury",       share:.07, price:520,sigma:.45, eps:-0.2, tOld:8.0, belt:.05, apt:.10, spend:380}
 ];
 const SEGCOL = ["var(--s1)","var(--s2)","var(--s3)","var(--s4)","var(--s5)"];
 
@@ -362,6 +362,7 @@ const PARAMS = [
   {id:"totalNights",g:"Tourism baseline",label:"Overnight stays per year",v:14,step:.1,unit:"m",kind:"estimate",src:"iommi",note:"9.2m recorded plus short lets missing from official counts; consistent with revenue ÷ average tariff."},
   {id:"minorShare",g:"Tourism baseline",label:"Stays by exempt minors",v:.08,step:.01,pct:1,unit:"%",kind:"assumption"},
   {id:"dayVisitors",g:"Tourism baseline",label:"Day-trippers per year",v:5.6,step:.1,unit:"m",kind:"estimate",src:"day",note:"Phone-cell studies have put it near 8m; untouched by an overnight tax."},
+  {id:"epsConvex",g:"Tourism baseline",label:"Elasticity rise for large increases",v:3,step:.25,unit:"κ",kind:"assumption",note:"Elasticity = ε·(1 + κ·|Δ log price|): big increases make other destinations worth considering."},
   {id:"beltReturn",g:"Tourism baseline",label:"Displaced stays that return by day",v:.85,step:.05,pct:1,unit:"%",kind:"assumption",note:"Guests sleeping in Sesto, Scandicci or Prato still visit the centre."},
   {id:"jobsPerM",g:"Tourism baseline",label:"Jobs per €1m of tourist spending",v:12,step:1,unit:"jobs",kind:"assumption",note:"Accommodation and food service are labour-intensive."},
   {id:"vaRatio",g:"Tourism baseline",label:"Value added / tourist spending",v:.45,step:.05,pct:1,unit:"%",kind:"assumption"},
@@ -373,6 +374,7 @@ const PARAMS = [
   {id:"riskDiscount",g:"Housing",label:"Risk discount on long lets",v:.15,step:.01,pct:1,unit:"%",kind:"assumption",note:"Arrears, eviction delays, loss of flexibility."},
   {id:"guaranteeCut",g:"Housing",label:"Discount removed by the guarantee",v:.5,step:.05,pct:1,unit:"%",kind:"assumption"},
   {id:"noiMargin",g:"Housing",label:"Short-let operating margin",v:.5,step:.05,pct:1,unit:"%",kind:"assumption",note:"Net income ÷ gross after platform, cleaning, management."},
+  {id:"varCost",g:"Housing",label:"Variable costs as share of takings",v:.3,step:.05,pct:1,unit:"%",kind:"assumption",note:"Platform fees, cleaning, utilities fall with takings."},
   {id:"toResidential",g:"Housing",label:"Converted flats reaching residents",v:.85,step:.05,pct:1,unit:"%",kind:"assumption",note:"The rest are sold as second homes or left empty."},
   {id:"rentalStock",g:"Housing",label:"Long-let rental stock",v:56000,step:1000,unit:"units",kind:"assumption",note:"About 30% of 186,000 households rent."},
   {id:"elD",g:"Housing",label:"Rental demand elasticity",v:.6,step:.05,unit:"",kind:"assumption"},
@@ -426,7 +428,7 @@ const SCEN = {
 };
 
 /* ---------- state ---------- */
-const KEY = "dividendo-firenze-v1";
+const KEY = "dividendo-firenze-v2";
 function defaults(){ const P={}; PARAMS.forEach(p=>P[p.id]=p.v); P.segs=SEG0.map(s=>({...s})); return P; }
 let P = defaults();
 try{ const saved = JSON.parse(localStorage.getItem(KEY)||"null");
@@ -462,7 +464,8 @@ function run(P, ph){
       const dT=tN-s.tOld;
       const pNet=Math.max(p*.5,p-(1-P.passThrough)*dT);
       const gO=p+s.tOld, gN=pNet+tN;
-      let d=Math.pow(gN/gO, s.eps*P.epsMult); d=1+(d-1)*ph.demand;
+      const lr=Math.log(gN/gO);
+      let d=Math.exp(s.eps*P.epsMult*(1+P.epsConvex*Math.abs(lr))*lr); d=1+(d-1)*ph.demand;
       const w=nB/NQ, ni=w*d;
       n+=ni; rev+=ni*(1-minor)*tN*k; tN_w+=tN*ni; aO+=w*p; aN+=ni*pNet; if(tN>maxT) maxT=tN;
     }
@@ -481,7 +484,7 @@ function run(P, ph){
   const jobsLost=Math.max(0,-dSpend/1e6*P.jobsPerM), vaChg=dSpend*P.vaRatio;
   // housing
   const aptDrop=aptO>0?1-aptN/aptO:0;
-  const noiDrop=clamp(aptDrop/P.noiMargin,-.5,.95);
+  const noiDrop=clamp(aptDrop*(1-P.varCost)/P.noiMargin,-.5,.95);
   const lnM=Math.log(P.strPremium), F=x=>x<=0?0:normCdf((Math.log(x)-lnM)/P.premSigma);
   const c0=1-P.riskDiscount, c1=1-P.riskDiscount*(1-(P.guaranteeOn?P.guaranteeCut:0));
   const thr=c1/(1-noiDrop);
@@ -502,7 +505,7 @@ function run(P, ph){
   const newResCost=newRes*P.marginalCost;
   // fund
   const fComm=P.fundCommercial*1e6, fTalent=P.fundTalent*1e6;
-  const fTrain=jobsLost*P.trainCost*P.trainCoverage*ph.train;
+  const fTrainTotal=jobsLost*P.trainCost*P.trainCoverage, fTrain=0;
   const fGuar=P.guaranteeOn?toRes*annualRent*P.defaultRate:0;
   const fund=fComm+fTalent+fTrain+fGuar;
   const collateral=tariLoss+imuLoss+irpefJobs+feesLoss;
@@ -515,11 +518,12 @@ function run(P, ph){
   String(P.order).split(",").forEach(key=>{ const a=Math.min(left,costs[key]); alloc[key]={cost:costs[key],paid:a,cov:costs[key]>0?a/costs[key]:0}; left-=a; });
   Object.assign(R,{G,base,incr,evasionLoss,Gn,levy,net,dTax,nB:NB,nNew,nChg:nNew/NB-1,belt,vdB,vdN,vdChg,spendO,spendN,dSpend,jobsLost,vaChg,
     aptDrop,noiDrop,c0,c1,thr,share,units,toRes,newResGross,newRes,rentChg,priceChg,annualRent,
-    tariLoss,tariSaving,imuLoss,irpefJobs,irpefNew,feesLoss,opSaving,newResCost,fComm,fTalent,fTrain,fGuar,fund,collateral,savings,saldo,reserve,pool,alloc,surplus:left,
+    tariLoss,tariSaving,imuLoss,irpefJobs,irpefNew,feesLoss,opSaving,newResCost,fComm,fTalent,fTrain,fTrainTotal,fGuar,fund,collateral,savings,saldo,reserve,pool,alloc,surplus:left,
     perHH:pool/P.households});
   return R;
 }
-const PHASES=[{demand:.7,conv:.3,train:1},{demand:1,conv:.6,train:1},{demand:1,conv:.85,train:.6},{demand:1,conv:1,train:.3},{demand:1,conv:1,train:.1}];
+const PHASES=[{demand:.7,conv:.3},{demand:1,conv:.6},{demand:1,conv:.85},{demand:1,conv:1},{demand:1,conv:1}];
+const TRAIN=[.4,.4,.2,0,0];
 
 /* ---------- formatting ---------- */
 const M=x=>{const a=Math.abs(x);return (x<-5e2?"−":"")+"€"+(a<95e3&&a>0?Math.round(a/1e3)+"k":(a>=1e8?(a/1e6).toFixed(0):(a/1e6).toFixed(1))+"m");};
@@ -629,8 +633,8 @@ function drawWaterfall(R){
     ["TARI: flats leave non-domestic tariff",-R.tariLoss],["IMU: long lets at canone concordato",-R.imuLoss],["IRPEF surcharge: tourism jobs lost",-R.irpefJobs],["Terrace, coach ZTL and parking fees",-R.feesLoss],
     ["Operating savings in the centre",R.opSaving],["Waste-service cost saving",R.tariSaving],["New residents: IRPEF surcharge",R.irpefNew],["New residents: service cost",-R.newResCost],
     ["Before the Fondo",null,"sub"],
-    ["Fondo: commercial conversion",-R.fComm],["Fondo: worker transition",-R.fTrain],["Fondo: rent guarantee",-R.fGuar],["Fondo: firms and talent",-R.fTalent],
-    ["Structural balance",null,"total"]
+    ["Fondo: commercial conversion",-R.fComm],["Fondo: rent guarantee",-R.fGuar],["Fondo: firms and talent",-R.fTalent],
+    ["Structural balance (steady state)",null,"total"]
   ];
   let cum=0; const pts=rows.map(r=>{ if(r[1]===null) return {label:r[0],type:r[2],a:0,b:cum,v:cum}; const a=cum; cum+=r[1]; return {label:r[0],a,b:cum,v:r[1]}; });
   const el=document.getElementById("ch-wf"), w=W(el), rowH=26, lw=Math.min(250,w*.46), m={l:lw,r:70,t:4,b:22}, h=m.t+m.b+rowH*pts.length;
@@ -675,7 +679,7 @@ function drawPrem(R){
 
 /* 6. five-year path */
 function drawPath(){
-  const vals=PHASES.map(ph=>run(P,ph).saldo); const el=document.getElementById("ch-path"), w=W(el), h=220, m={l:56,r:12,t:22,b:30};
+  const R0=run(P); const vals=PHASES.map((ph,y)=>run(P,ph).saldo-R0.fTrainTotal*TRAIN[y]); const el=document.getElementById("ch-path"), w=W(el), h=220, m={l:56,r:12,t:22,b:30};
   const lo=Math.min(0,...vals), hi=Math.max(0,...vals)*1.12||1, Y=v=>m.t+(hi-v)/((hi-lo)||1)*(h-m.t-m.b);
   const bw=(w-m.l-m.r)/vals.length; let b="";
   const step=niceStep((hi-lo)/4);
@@ -754,8 +758,8 @@ function renderHousing(R){
   document.getElementById("tb-house").innerHTML=`<thead><tr><th>Housing</th><th>Value</th><th style="text-align:left">Note</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td style="text-align:left;color:var(--ink3);white-space:normal">${r[2]}</td></tr>`).join("")}</tbody>`;
 }
 function renderFund(R){
-  const f=[["Commercial conversion","Set by lever",R.fComm],["Worker transition",`${N0(R.jobsLost)} jobs × €${N0(P.trainCost)} × ${Math.round(P.trainCoverage*100)}%`,R.fTrain],["Rent guarantee",P.guaranteeOn?`${N0(R.toRes)} lets × ${E0(R.annualRent)} × ${(P.defaultRate*100).toFixed(1)}%`:"Off",R.fGuar],["Firms and talent","Set by lever",R.fTalent]];
-  document.getElementById("tb-fund").innerHTML=`<thead><tr><th>Fondo Armonizzatore</th><th style="text-align:left">Sizing</th><th>€ per year</th></tr></thead><tbody>${f.map(r=>`<tr><td>${r[0]}</td><td style="text-align:left;color:var(--ink3);white-space:normal">${r[1]}</td><td class="num">${M(r[2])}</td></tr>`).join("")}</tbody><tfoot><tr><td>Total</td><td></td><td class="num">${M(R.fund)}</td></tr><tr><td>Structural balance</td><td></td><td class="num">${M(R.saldo)}</td></tr><tr><td>Prudential reserve</td><td></td><td class="num">${M(R.reserve)}</td></tr><tr><td>Available for the dividend</td><td></td><td class="num" style="color:var(--accent)">${M(R.pool)}</td></tr></tfoot>`;
+  const f=[["Commercial conversion","Set by lever",R.fComm],["Rent guarantee",P.guaranteeOn?`${N0(R.toRes)} lets × ${E0(R.annualRent)} × ${(P.defaultRate*100).toFixed(1)}%`:"Off",R.fGuar],["Firms and talent","Set by lever",R.fTalent]];
+  document.getElementById("tb-fund").innerHTML=`<thead><tr><th>Fondo Armonizzatore</th><th style="text-align:left">Sizing</th><th>€ per year</th></tr></thead><tbody>${f.map(r=>`<tr><td>${r[0]}</td><td style="text-align:left;color:var(--ink3);white-space:normal">${r[1]}</td><td class="num">${M(r[2])}</td></tr>`).join("")}<tr><td>Worker transition (one-off)</td><td style="text-align:left;color:var(--ink3);white-space:normal">${N0(R.jobsLost)} jobs × €${N0(P.trainCost)} × ${Math.round(P.trainCoverage*100)}%, spread over years 1–3</td><td class="num">${M(R.fTrainTotal)} in total</td></tr></tbody><tfoot><tr><td>Recurring total</td><td></td><td class="num">${M(R.fund)}</td></tr><tr><td>Structural balance</td><td></td><td class="num">${M(R.saldo)}</td></tr><tr><td>Prudential reserve</td><td></td><td class="num">${M(R.reserve)}</td></tr><tr><td>Available for the dividend</td><td></td><td class="num" style="color:var(--accent)">${M(R.pool)}</td></tr></tfoot>`;
   const names={irpef:"Abolish the IRPEF surcharge",tari:"Cut household TARI",tpl:"Free transit for residents"};
   document.getElementById("alloc").innerHTML=`<h3>Civic dividend, in priority order</h3>`+String(P.order).split(",").map(k=>{ const a=R.alloc[k]; return `<div class="item"><div class="row"><span>${names[k]}</span><span class="num">${M(a.paid)} of ${M(a.cost)} · ${Math.round(a.cov*100)}%</span></div><div class="bar" data-tip="${names[k]}: ${Math.round(a.cov*100)}% funded"><i style="width:${(a.cov*100).toFixed(1)}%"></i></div></div>`; }).join("")+(R.surplus>1e5?`<p class="notes">Unallocated after all three: ${M(R.surplus)}.</p>`:"");
   document.getElementById("div-intro").textContent=R.saldo>0?`A ${M(R.saldo)} balance, less the reserve, leaves ${M(R.pool)} a year: ${E0(R.perHH)} per household, or ${E0(R.pool/P.residents)} per resident.`:`With these settings the reform does not pay for the Fondo, so there is no dividend. Raise the floor or α, or trim the Fondo.`;

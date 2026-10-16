@@ -1,5 +1,11 @@
 # Il Dividendo di Firenze
 
+| File | What it is |
+|---|---|
+| `dividendo-firenze-it.html` | Italian white-paper edition: interactive on screen, A4 layout when printed (Stampa → Salva come PDF) |
+| `white-paper-dividendo-firenze.pdf` | A4 PDF of the Italian white paper, central scenario (17 pages) |
+| `dividendo-firenze.html` | English simulator, same model and numbers |
+
 `dividendo-firenze.html` is a single-page, offline simulator of a proposed reform of Florence's tourist tax
 (*imposta di soggiorno*): a progressive tariff `t = max(T_min, α · p_night)`, an exemption for EU citizens under 30,
 and a "civic dividend" that returns the net surplus to residents through lower local taxes and free transit.
@@ -19,5 +25,13 @@ What the model covers:
    income after a risk discount; rent and price effects from the supply shock.
 5. **Civic dividend**, five-year transition path, first/second/third-order effects, sensitivity tornado and
    legal-feasibility checks.
+
+Annex C of the Italian edition runs automatic numerical checks on every change: calibration to 2025 revenue,
+the accounting identity of the waterfall, conservation of overnight stays, direction of effects, convergence
+of the five-year path, the Laffer scan and the implied elasticity. The uncertainty table uses 400 seeded
+Monte Carlo draws.
+
+To regenerate the PDF for another scenario, open the Italian HTML in a browser and print to PDF; the print
+stylesheet lays it out on A4.
 
 All figures are estimates under stated assumptions, for discussion.
