@@ -1,7 +1,7 @@
 /* ===== page part 3: live refresh from the Scalable Capital connector, boot ===== */
 const SERVER = 'Scalable Capital';
 const TFMAP = { INTRADAY: '1D', ONE_WEEK: '1W', ONE_MONTH: '1M', THREE_MONTHS: '3M', SIX_MONTHS: '6M', YEAR_TO_DATE: 'YTD', ONE_YEAR: '1Y', MAX: 'MAX', SINCE_BUY: 'SB' };
-let MCP = null, DATA_SNAP = null;
+let MCP = null, DATA_SNAP = null, DB = null, HIST_READY = Promise.resolve(null);
 
 function prepare(D) {
   if (!D.ser) { D.ser = {}; Object.keys(D.series.p).forEach((id) => { D.ser[id] = { d: D.series.dates, p: D.series.p[id] }; }); }
@@ -90,8 +90,24 @@ async function pool(items, n, fn) {
   await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; try { out[k] = await fn(items[k]); } catch (e) { out[k] = null; } } }));
   return out;
 }
+const HIST_DOC = 'history/stocks', HIST_MARGIN = 14 * 864e5; // rebuild a fortnight back, to catch late-booked transactions
+async function loadStoredHistory() {
+  try {
+    const db = window.claude && window.claude.use ? await window.claude.use('db') : null;
+    if (!db) return null;
+    DB = db;
+    const snap = await db.doc(HIST_DOC).get();
+    const d = snap && snap.exists ? snap.data() : null;
+    const h = d && d.json ? JSON.parse(d.json) : null;
+    return h && Array.isArray(h.points) && h.points.length > 1 && Array.isArray(h.external) ? h : null;
+  } catch (e) { return null; }
+}
 async function extendHistory(raw) {
-  const cut = Date.parse(DATA_SNAP.meta.asOf);
+  // base: the history saved by the last refresh when it runs later than the page's own, so the join moves forward each time
+  const stored = await HIST_READY, emb = DATA_ACTIVE.history, last = (h) => h.points[h.points.length - 1][0];
+  const base = stored && last(stored) > last(emb) ? stored : emb;
+  DATA_ACTIVE.history = base; // shows even if the rebuild below fails
+  const cut = last(base) - HIST_MARGIN;
   try {
     const tx = []; let cursor = null, pages = 0;
     do {
@@ -111,15 +127,28 @@ async function extendHistory(raw) {
     });
     Object.values(charts).forEach((c) => { c.daily = Feed.mergeDaily(c.one, c.six); });
     const T = Feed.build({ holdings: raw.holdings, overview: raw.overview, cash: raw.cash, quotes: raw.secs, news: {}, transactions: tx, charts, static: { types: DATA.types || {}, indices: [], research: {}, comments: {}, profile: {} } });
-    if (!T.history) return false;
-    const emb = DATA_ACTIVE.history, tp = T.history.points, te = T.history.external;
-    const lastStored = emb.points.filter((p) => p[0] <= cut).slice(-1)[0], atCut = tp.filter((p) => p[0] <= cut).slice(-1)[0];
+    if (!T.history) return keepBase(base, asOf);
+    const tp = T.history.points, te = T.history.external;
+    const lastStored = base.points.filter((p) => p[0] <= cut).slice(-1)[0], atCut = tp.filter((p) => p[0] <= cut).slice(-1)[0];
     const off = lastStored && atCut ? lastStored[2] - atCut[2] : 0; // keep the cumulative flows continuous across the join
-    DATA_ACTIVE.history = { ...emb,
-      points: emb.points.filter((p) => p[0] <= cut).concat(tp.filter((p) => p[0] > cut).map((p) => [p[0], p[1], +(p[2] + off).toFixed(2)])),
-      external: emb.external.filter((f) => f[0] <= cut).concat(te.filter((f) => f[0] > cut)) };
+    DATA_ACTIVE.history = { ...base,
+      points: base.points.filter((p) => p[0] <= cut).concat(tp.filter((p) => p[0] > cut).map((p) => [p[0], p[1], +(p[2] + off).toFixed(2)])),
+      external: base.external.filter((f) => f[0] <= cut).concat(te.filter((f) => f[0] > cut)) };
+    saveHistory(DATA_ACTIVE.history);
     return true;
-  } catch (e) { return false; }
+  } catch (e) { return keepBase(base, Date.now()); }
+}
+function keepBase(base, asOf) { // a saved history must never run past the live valuation
+  DATA_ACTIVE.history = { ...base, points: base.points.filter((p) => p[0] <= asOf), external: base.external.filter((f) => f[0] <= asOf) };
+  return false;
+}
+async function saveHistory(h) { // owner-only write; viewers without the right simply skip it
+  try {
+    if (!DB) return;
+    const json = JSON.stringify(h);
+    if (json.length > 800000) return;
+    await DB.doc(HIST_DOC).set({ json, lastT: h.points[h.points.length - 1][0], updatedAt: new Date().toISOString() });
+  } catch (e) { /* the page still works from what it just built */ }
 }
 
 /* ---------- boot ---------- */
@@ -146,6 +175,7 @@ async function boot() {
   try { if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* hash is a convenience */ }
   render();
   window.addEventListener('hashchange', () => setTab(location.hash.slice(1), false));
+  HIST_READY = loadStoredHistory();
   watchResearch();
   $('#btn-refresh').addEventListener('click', liveRefresh);
   try {

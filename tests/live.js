@@ -65,6 +65,9 @@ function chart(isin) {
   page.on('pageerror', (e) => errs.push('PAGEERROR ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/ERR_FAILED/.test(m.text())) errs.push(m.text()); });
   await page.route('**/*', (r) => (r.request().url().startsWith('file:') ? r.continue() : r.abort()));
+  let store = null, saves = 0;
+  await page.exposeFunction('__dbget', async () => store);
+  await page.exposeFunction('__dbset', async (d) => { store = d; saves++; });
   await page.exposeFunction('__call', async (server, tool, input) => {
     if (scenario === 'denied') throw { code: 'not_in_manifest' };
     if (server !== 'Scalable Capital') throw { code: 'server_not_connected' };
@@ -76,10 +79,17 @@ function chart(isin) {
   });
   await page.addInitScript((first) => {
     const docs = [{ id: first, exists: true, data: () => ({ updatedAt: new Date().toISOString(), headline: 'Test headline <b>x</b>', items: [{ date: '2026-10-01', text: 'Item one <script>', source: 'Src', url: 'https://example.com/a' }, { date: '2026-09-30', text: 'Bad link', source: 'Evil', url: 'javascript:alert(1)' }] }) }];
-    window.claude = { use: async (n) => (n === 'mcp' ? { callTool: (s, t, i) => window.__call(s, t, i) } : n === 'db' ? { collection: () => ({ onSnapshot: (next) => { setTimeout(() => next({ docs }), 50); return () => {}; } }) } : null) };
+    window.claude = { use: async (n) => (n === 'mcp' ? { callTool: (s, t, i) => window.__call(s, t, i) } : n === 'db' ? { doc: () => ({ get: async () => { const d = await window.__dbget(); return { exists: !!d, data: () => d }; }, set: (d) => window.__dbset(d) }), collection: () => ({ onSnapshot: (next) => { setTimeout(() => next({ docs }), 50); return () => {}; } }) } : null) };
   }, FIRST);
   await page.goto('file://' + path.resolve(process.argv[4] || path.join(root, 'test-output', '_wrapped.html')));
   await page.waitForTimeout(1500);
+  const lastOf = (d) => { const pts = JSON.parse(d.json).points; return new Date(pts[pts.length - 1][0]).toISOString().slice(0, 10); };
+  const firstSave = store ? lastOf(store) : null;
+  let reload = null;
+  if (scenario === 'ok') { // a second open must start from the saved history and still reach today
+    await page.reload(); await page.waitForTimeout(1500);
+    reload = { saves, saved: store ? lastOf(store) : null, historyTo: await page.evaluate(() => { const p = M.perf.pts; return new Date(p[p.length - 1].t).toISOString().slice(0, 10); }) };
+  }
   await page.click('#tab-book');
   await page.click(`#t-book .posn[data-i="${FIRST}"] .pos-row`);
   await page.waitForTimeout(200);
@@ -94,8 +104,8 @@ function chart(isin) {
     book: document.getElementById('mh-value').textContent,
     rows: [...document.querySelectorAll('#t-book .pos-row')].map((r) => r.querySelector('.nm b').textContent + ' ' + r.querySelector('.n b').textContent + ' ' + r.querySelector('.cons').textContent.trim()),
   }));
-  console.log(scenario, JSON.stringify(out, null, 1), errs.length ? '\nERRORS ' + errs.join('\n') : '\nno errors');
-  const bad = errs.length || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && out.historyTo !== '2026-10-02');
+  console.log(scenario, 'saved', firstSave, JSON.stringify(reload), JSON.stringify(out, null, 1), errs.length ? '\nERRORS ' + errs.join('\n') : '\nno errors');
+  const bad = errs.length || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && (out.historyTo !== '2026-10-02' || firstSave !== '2026-10-02' || reload.saves < 2 || reload.historyTo !== '2026-10-02')) || (scenario !== 'ok' && saves > 0 && scenario === 'denied');
   await browser.close();
   process.exit(bad ? 1 : 0);
 })();

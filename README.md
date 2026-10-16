@@ -88,6 +88,9 @@ How it works, in `src/client/feed.js` (also run by `tests/feed.js` in Node):
    ends beyond about a year back, so the portfolio line before then is an estimate and is drawn dashed on the
    Performance chart. The S&P 500 benchmark is daily throughout: its own daily history (public, euro, from
    `pipeline/fetch_index_history.js`) is built into the page and scaled to meet Scalable's chart.
+   On the personal edition each successful refresh also saves the rebuilt history to the artifact's database
+   (`history/stocks`, owner only). The next open starts from that saved history and rebuilds only from a fortnight
+   before its last point, so the history keeps advancing and is no longer pinned to the build date.
 4. **Share splits** are found, not configured: a trade priced at a clean multiple of the market price that day
    (2, 3, 4, 5, 10, 20 ... or the inverse) was made before a split. It is applied when every such trade comes
    before every trade at the market price, and the share count then adds up to what the broker says the viewer holds.
