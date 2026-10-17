@@ -3,14 +3,14 @@
 "use strict";
 const K=root.FMK, FM=root.FM, B=root.FMDeckB, {C,ML,MR,CW,n0,n1,n2,fM,fMs,fE,fE2,fP,fPs,fN,fNs,fMn,fMn1,fMc,MIN}=K;
 const {W,H}=root.FMD;
-const seg=B.seg, legal=B.legal, cum5=B.cum5;
+const seg=B.seg, legal=B.legal;
 const num=(x,d=1)=>(d===0?n0:d===1?n1:n2)(x);
 const pv=(x,d)=>num(x,d===undefined?1:d).replace(/,0$/,"");
 
 function s_labor(c,S,n){
   const R=S.R,P=S.P;
   const payback=R.saldo>0?((R.naspiCost+R.fTrainTotal)/(R.saldo/12)):NaN;
-  K.frame(c,S,n,{tag:"Lavoro e economia locale",title:`${fN(R.jobsLost)} posti a rischio, ${fN(R.jobsGained)} ricreati dalla domanda locale: il Fondo accompagna i lavoratori nei primi tre anni`,source:"modello Il Dividendo di Firenze; occupati per € di spesa: ipotesi del modello (accommodation e ristorazione ≈ 12–15 per € mln)",notes:"Posti persi = riduzione della spesa turistica × occupati per milione. Posti creati = dividendo speso in città, spesa dei nuovi residenti e spesa del Fondo × occupati per milione di domanda locale."});
+  K.frame(c,S,n,{tag:"Lavoro e economia locale",title:`${fN(R.jobsLost)} posti a rischio, ${fN(R.jobsGained)} ricreati dalla domanda locale: il Fondo accompagna i lavoratori negli anni in cui i posti si perdono`,source:"modello Il Dividendo di Firenze; occupati per € di spesa: ipotesi del modello (accommodation e ristorazione ≈ 12–15 per € mln)",notes:"Posti persi = riduzione della spesa turistica × occupati per milione. Posti creati = dividendo speso in città, spesa dei nuovi residenti e spesa del Fondo × occupati per milione di domanda locale."});
   K.chartTitle(c,ML,166,660,"Occupazione a regime","posti di lavoro");
   K.columns(c,ML+38,180,622,450,[
     {label:"Posti persi nel turismo",v:-R.jobsLost},
@@ -18,7 +18,7 @@ function s_labor(c,S,n){
     {label:"Nuovi residenti",v:R.newRes*P.newResSpend/1e6*P.jobsPerMRes},
     {label:"Spesa del Fondo",v:(R.fComm+R.fTalent)/1e6*P.jobsPerMRes},
     {label:"Saldo netto",v:R.jobsNet,c:C.navy}],{fmt:v=>(v>=0?"+":MIN)+n0(Math.abs(v)),axisFmt:v=>n0(v),labH:62,maxBw:76});
-  K.chartTitle(c,760,166,460,"Costi di transizione una tantum","anni 1–3, € milioni");
+  K.chartTitle(c,760,166,460,"Costi di transizione una tantum","€ milioni, negli anni delle perdite");
   K.table(c,760,176,[{h:"Voce",w:310},{h:"€ mln",w:100,a:"r"}],[
     {cells:["Salari persi durante la disoccupazione",n1(R.wagesLostGross/1e6)]},
     {cells:["…coperti dall'indennità (NASpI, Stato)",n1(R.naspiCost/1e6)]},
@@ -64,54 +64,77 @@ function s_dividend(c,S,n){
   const body=`Il dividendo è la contropartita visibile della riforma: ${fE(R.perHH)} a famiglia in media, ${fE(R.pool/P.residents)} per residente. Lega i servizi al turismo, quindi anche ai suoi cicli: la riserva del ${fP(P.reserve,0)} serve ad assorbire un cattivo anno senza tagliare gli sgravi.`;
   K.callout(c,760,420,460,Math.min(K.calloutH(c,460,body,{size:13.2,lh:18.5}),220),"Implicazione",body,{size:13.2,lh:18.5});
 }
-function s_path(c,S,n){
-  const R=S.R,P=S.P,pr=S.pathRes;
-  K.frame(c,S,n,{tag:"Transizione",title:(pr.yearly[0]>0&&R.saldo>0)?`Il saldo è positivo fin dal primo anno e cumula ${fM(cum5(S))} in cinque anni; a regime vale ${fM(R.saldo)} all'anno`:`Con questi parametri il saldo non è positivo in tutti gli anni: cumula ${fM(cum5(S))} in cinque anni e vale ${fM(R.saldo)} a regime`,source:"modello Il Dividendo di Firenze",notes:"La domanda si adegua in circa un anno; le riconversioni di appartamenti in tre o quattro. I costi una tantum di riqualificazione gravano sui primi tre anni (40% + 40% + 20%)."});
-  K.chartTitle(c,ML,166,700,"Saldo strutturale annuo","€ milioni");
-  K.columns(c,ML+36,180,664,330,pr.yearly.map((v,i)=>({label:"Anno "+(i+1),v:v/1e6})),{fmt:v=>n1(v),axisFmt:v=>n0(v),labH:36,maxBw:84});
-  K.table(c,ML,530,[{h:"",w:190},...pr.yearly.map((_,i)=>({h:"Anno "+(i+1),w:102,a:"r"}))],[
-    {cells:["Saldo annuo",...pr.yearly.map(v=>n1(v/1e6))]},
-    {cells:[{t:"Saldo cumulato",b:true},...pr.cum.map(v=>({t:n1(v/1e6),b:true}))],fill:C.pblue}],{rh:30,hh:28,size:12.4});
-  const body=`Nel primo anno la domanda reagisce solo in parte e le conversioni sono appena iniziate: il saldo è già positivo perché il maggior gettito è immediato. Dal terzo anno il percorso converge al regime. Il dividendo può partire dal secondo anno, quando il gettito effettivo è noto.`;
-  K.callout(c,820,176,400,Math.min(K.calloutH(c,400,body,{size:13.4,lh:19}),240),"Implicazione",body,{size:13.4,lh:19});
-  K.kpi(c,820,430,194,120,fM(cum5(S)),"Saldo cumulato a 5 anni",null,{size:28,color:C.blue});
-  K.kpi(c,1026,430,194,120,fM(R.reserve*5),"Riserva accantonata in 5 anni",null,{size:28});
+function s_plan(c,S,n){
+  const P=S.P,R=S.R,TL=S.TL,N=TL.n,st=TL.start, y1=TL.years[0].R;
+  const title=N>1?`Un transitorio di ${N-1} ${N-1===1?"anno":"anni"} porta la riforma a regime nel ${st+N-1}: il primo anno i pernottamenti variano del ${fPs(y1.nChg)}, a regime del ${fPs(R.nChg)}`
+    :`La riforma entra in vigore a regime dal ${st}, senza transitorio: il primo anno i pernottamenti variano del ${fPs(y1.nChg)}`;
+  K.frame(c,S,n,{tag:"La politica nel tempo",title,source:"modello Il Dividendo di Firenze",notes:"Valori in vigore in ciascun anno. Dall'anno dell'obiettivo in poi valgono i valori obiettivo. Rampa lineare: si parte dalla tariffa media di oggi come pavimento, senza aliquota né contributo; il Fondo cresce con il gettito."});
+  const lab={tmin:"Pavimento",alpha:"Aliquota sul prezzo",cap:"Tetto per notte",u30:"Under 30 UE",dayFee:"Contributo escursionisti",fundCommercial:"Fondo: commercio",fundTalent:"Fondo: imprese e talenti",guaranteeOn:"Garanzia sugli affitti"};
+  const today={tmin:"€3,50–8",alpha:"—",cap:"—",u30:"€5",dayFee:"—",fundCommercial:"—",fundTalent:"—",guaranteeOn:"no"};
+  const fmtv=(k,v)=>k==="guaranteeOn"?(v?"sì":"no"):k==="alpha"?pv(v*100)+"%":k==="cap"?(v>0?"€"+pv(v):"nessuno"):(k==="dayFee"||k==="u30")&&v<=0?(k==="u30"?"esenti":"—"):k.startsWith("fund")?"€"+pv(v)+" mln":"€"+pv(v);
+  const cw=Math.min(170,(CW-330)/N);
+  const cols=[{h:"Leva",w:210},{h:"Oggi",w:120,a:"r"}];
+  for(let y=1;y<=N;y++) cols.push({h:y<N?String(st+y-1):"Obiettivo "+(st+N-1),w:cw,a:"r"});
+  const rows=FM.PLAN_KEYS.map(k=>({cells:[lab[k],today[k],...Array.from({length:N},(_,i)=>{ const v=FM.levers(P,i+1)[k]; return i===N-1?{t:fmtv(k,v),b:true}:fmtv(k,v); })]}));
+  const yEnd=K.table(c,ML,160,cols,rows,{rh:26,hh:28,size:12.4});
+  c.rect(ML+330+cw*(N-1),160,cw,yEnd-160,{stroke:C.blue,sw:1.6});
+  const y0=yEnd+34;
+  K.chartTitle(c,ML,y0,560,"Saldo e gettito anno per anno","€ milioni");
+  K.trend(c,ML,y0+12,560,Math.max(170,650-y0-12),{labels:TL.years.map(y=>y.year),shade:N-1,series:[{type:"bar",v:TL.years.map(y=>y.R.saldo/1e6),color:C.blue,name:"Saldo dopo il Fondo"},{v:TL.years.map(y=>(y.R.net+y.R.dayFeeNet)/1e6),color:C.navy,name:"Gettito netto al Comune"}],base:P.baseRevenue,legend:true,fmt:v=>n1(v)});
+  const last=TL.years[TL.years.length-1];
+  K.kpi(c,660,y0,180,96,fM(y1.saldo),"Saldo nel primo anno",String(st),{size:25});
+  K.kpi(c,850,y0,180,96,fM(R.saldo),"Saldo a regime","dal "+(st+N-1),{size:25,color:C.blue});
+  K.kpi(c,1040,y0,180,96,fM(last.saldoCum),"Saldo cumulato",TL.H+" anni",{size:25});
+  const body=N>1?`Il transitorio dà tempo a operatori e tour operator di adeguare listini e contratti, e al Comune di verificare il gettito effettivo prima di erogare il dividendo pieno. Il costo è un minor saldo nei primi anni.`:`Senza transitorio il gettito arriva subito, ma l'impatto su presenze e lavoro si concentra nel primo anno e non c'è tempo per correggere la tariffa con i dati reali.`;
+  K.callout(c,660,y0+106,560,Math.max(K.calloutH(c,560,body,{size:12.6,lh:17}),40),"Implicazione",body,{size:12.6,lh:17});
 }
-function s_scen(c,S,n){
-  const ks=FM.SCEN_ORDER, sv=ks.map(k=>S.SC[k].R.saldo);
-  K.frame(c,S,n,{tag:"Scenari",title:`Cinque scenari, da ${fM(Math.min(...sv))} a ${fM(Math.max(...sv))} di saldo strutturale: la scelta è tra gettito, presenze e fattibilità giuridica`,source:"modello Il Dividendo di Firenze",notes:"Tutti gli scenari usano le stesse ipotesi di mercato; cambiano solo le leve di politica indicate nelle prime righe. In evidenza lo scenario in esame."});
-  const cols=[{h:"",w:250},...ks.map(k=>({h:FM.SCEN[k].name,w:182,a:"r"}))];
-  const f=(fn)=>ks.map(k=>fn(S.SC[k].R,S.SC[k].P));
-  const lg=(P,R)=>{ const L=legal(P,R); return L.needsLaw?"Norma nazionale":(P.tmin>10||L.maxT>10.0001?"Maggiorazione €2":"Vigente"); };
-  const row=(label,vals,b)=>({cells:[label,...vals],b});
-  const rows=[
-    row("Pavimento / aliquota",f((R,P)=>"€"+pv(P.tmin)+" / "+pv(P.alpha*100)+"%"+(P.cap>0?" (tetto €"+P.cap+")":""))),
-    row("Contributo d'accesso",f((R,P)=>P.dayFee>0?"€"+pv(P.dayFee)+" a visita":"—")),
-    row("Gettito netto al Comune",f(R=>fM(R.net)),true),
-    row("Saldo strutturale",f(R=>fM(R.saldo)),true),
-    row("Dividendo per famiglia",f(R=>fE(R.perHH))),
-    row("Pernottamenti",f(R=>fPs(R.nChg))),
-    row("Visitatori-giorno",f(R=>fPs(R.vdChg))),
-    row("Abitazioni ai residenti",f(R=>fN(R.toRes))),
-    row("Canoni di locazione",f(R=>fPs(R.rentChg))),
-    row("Occupazione netta",f(R=>fNs(R.jobsNet))),
-    row("Costo su non residenti",f(R=>fP(R.nonResShare,0))),
-    row("Perdita di efficienza",f(R=>fM(R.dwl))),
-    row("Base giuridica",f((R,P)=>lg(P,R)))
-  ];
-  const y=K.table(c,ML,164,cols,rows,{rh:31,hh:42,size:12.6});
-  if(S.key){ const i=ks.indexOf(S.key); const x=ML+250+182*i; c.rect(x,164,182,y-164,{stroke:C.orange,sw:2.2}); }
-  c.text("**Lettura.** Il Prudente rinuncia a gettito per ridurre l'impatto su presenze e lavoro; l'Ambizioso massimizza il gettito ma colpisce di più il mass-market. Il contributo d'accesso è l'unica leva che agisce sugli escursionisti. Solo lo scenario a legislazione vigente è attuabile senza una nuova norma.",ML,y+22,{size:13.4,color:C.ink,maxWidth:1100,lh:19,boldColor:C.navy});
+function evoTable(c,S,y,rows){
+  const TL=S.TL, ys=TL.years, w=(CW-230)/ys.length;
+  return K.table(c,ML,y,[{h:"",w:230},...ys.map(yy=>({h:String(yy.year),w,a:"r"}))],rows.map(r=>({cells:[r[0],...ys.map(r[1])],b:r[2]})),{rh:25,hh:26,size:11.4});
+}
+function s_evoFin(c,S,n){
+  const R=S.R,TL=S.TL,last=TL.years[TL.years.length-1], d=K.evoDefs(S), D_=k=>d.find(x=>x.key===k);
+  const neg=TL.years.filter(y=>y.R.saldo<0).map(y=>y.year);
+  K.frame(c,S,n,{tag:"Evoluzione nel tempo",title:`Il saldo cumula ${fM(last.saldoCum)} in ${TL.H} anni e a regime vale ${fM(R.saldo)} all'anno, ${fE(R.perHH)} di dividendo per famiglia`+(neg.length?`; negativo nel ${neg.join(", ")}`:""),source:"modello Il Dividendo di Firenze",notes:`Anni ${TL.start}–${TL.start+TL.H-1}; in grigio il transitorio. La domanda si adegua per il ${fP(S.P.demandAdj,0)} nell'anno della variazione; la riqualificazione dei lavoratori è spesa quando i posti si perdono. Linea tratteggiata: valore di oggi.`});
+  [["rev",ML],["saldo",ML+392],["div",ML+784]].forEach(([k,x])=>{ const e=D_(k); K.chartTitle(c,x,166,376,e.title,e.unit); K.trend(c,x,180,376,250,Object.assign({},e.o,{ml:40,mr:54})); });
+  evoTable(c,S,452,[["Gettito netto al Comune",y=>fM(y.R.net+y.R.dayFeeNet),true],["Spesa del Fondo Armonizzatore",y=>fM(y.R.fund)],["Saldo dopo il Fondo",y=>fM(y.R.saldo),true],["Dividendo per famiglia",y=>fE(y.R.perHH)],["Riserva cumulata",y=>fM(y.reserveCum)],["Saldo cumulato",y=>fM(y.saldoCum)]]);
+}
+function s_evoCity(c,S,n){
+  const R=S.R,TL=S.TL, d=K.evoDefs(S), D_=k=>d.find(x=>x.key===k);
+  const y90=TL.years.find(y=>R.units>1&&y.R.units>=.9*R.units);
+  K.frame(c,S,n,{tag:"Evoluzione nel tempo",title:`A regime pernottamenti ${fPs(R.nChg)}, canoni ${fPs(R.rentChg)} e ${fN(R.toRes)} case ai residenti`+(y90?`: il mercato abitativo arriva al 90% dell'effetto nel ${y90.year}`:""),source:"modello Il Dividendo di Firenze",notes:`Ogni anno si chiude il ${fP(S.P.convSpeed,0)} della distanza tra appartamenti riconvertiti e livello di equilibrio. Valori rispetto a oggi, a parità di altre condizioni. In grigio gli anni di transitorio; linea tratteggiata: oggi.`});
+  const g=[["nights",ML,166],["vd",ML+392,166],["rent",ML+784,166],["homes",ML,418],["jobs",ML+392,418]];
+  g.forEach(([k,x,y])=>{ const e=D_(k); K.chartTitle(c,x,y,376,e.title,e.unit); K.trend(c,x,y+12,376,226,Object.assign({},e.o,{ml:40,mr:54})); });
+  const body=`I flussi reagiscono subito; case e canoni seguono più lentamente, perché le riconversioni richiedono la scadenza delle prenotazioni e lavori di adeguamento. Il dividendo arriva prima dei benefici sul mercato della casa: è la contropartita visibile nei primi anni.`;
+  K.callout(c,ML+784,418,376,Math.min(K.calloutH(c,376,body,{size:12.8,lh:17.5}),238),"Implicazione",body,{size:12.8,lh:17.5});
+}
+function s_daypass(c,S,n){
+  const R=S.R,P=S.P;
+  K.frame(c,S,n,{tag:"Contributo d'accesso",title:`Come funzionerebbe il contributo d'accesso: €${pv(P.dayFee)} per visita a chi entra in città senza pernottare, ${fM(R.dayFeeNet)} netti all'anno`,source:"modello Il Dividendo di Firenze; escursionisti: Comune di Firenze e Centro Studi Turistici (dati di telefonia mobile); precedente: Comune di Venezia",notes:`Escursionisti soggetti: ${fP(P.dayLiable,0)} del totale; mancata riscossione: ${fP(P.dayEvasion,0)}; elasticità delle visite al costo della gita (€${n0(P.dayCost)}): ${n2(P.dayElast).replace("-",MIN)}.`});
+  K.numbered(c,ML,180,680,[
+    "**Chi paga.** Chi entra in città per una visita in giornata senza dormire a Firenze, una volta per visita.",
+    "**Esenzioni.** Residenti della Città metropolitana, pendolari per lavoro e studio, minori di 14 anni, persone con disabilità, chi pernotta a Firenze o nei comuni della cintura aderenti all'accordo metropolitano.",
+    "**Pagamento.** Prenotazione online con codice QR, oppure insieme al biglietto del treno o del bus turistico, con il vettore che versa al Comune; i tour operator pagano per i gruppi.",
+    "**Controlli.** Verifiche a campione agli arrivi (Santa Maria Novella, terminal dei bus turistici, parcheggi scambiatori) e nel centro UNESCO, con sanzioni.",
+    "**Calendario.** Tutto l'anno nel modello; in alternativa solo nei giorni di picco, come a Venezia, con gettito ed effetto ridotti in proporzione.",
+    "**Base giuridica e precedente.** Serve una norma nazionale: oggi il contributo è consentito solo a Venezia (art. 1, c. 1129, L. 145/2018). Nel 2025 Venezia lo ha applicato in 54 giorni: 723.497 paganti, €5,4 mln."],{size:13.2,gap:12});
+  K.kpi(c,800,166,200,124,n2(R.L0/1e6)+" mln","Escursionisti soggetti","su "+n1(R.dayV0/1e6)+" mln all'anno",{size:28});
+  K.kpi(c,1020,166,200,124,n2(R.L1/1e6)+" mln","Visite pagate",fPs(R.L1/R.L0-1)+" rispetto a oggi",{size:28});
+  K.kpi(c,800,302,200,124,fM(R.dayFeeNet),"Gettito netto","dopo la mancata riscossione",{size:28,color:C.blue});
+  K.kpi(c,1020,302,200,124,fPs(R.vdChg),"Visitatori al giorno","insieme all'imposta di soggiorno",{size:28});
+  const body=`Il contributo è l'unica leva che agisce sugli escursionisti, circa un terzo delle presenze giornaliere. Il gettito è modesto rispetto all'imposta di soggiorno e la riscossione ha un costo: a Venezia, nel 2024, ha superato gli incassi. La valutazione di Ca' Foscari indica che il valore sta soprattutto nella prenotazione, che produce dati giornalieri sugli arrivi e permette di governare i giorni di picco.`;
+  K.callout(c,800,442,420,Math.min(K.calloutH(c,420,body,{size:13,lh:18}),210),"Implicazione",body,{size:13,lh:18});
 }
 function s_frontier(c,S,n){
   const mp=S.MAP, tL=mp.tList, aL=mp.aList;
-  K.frame(c,S,n,{tag:"Scenari",title:"Più gettito significa meno presenze, con rendimenti decrescenti: la mappa mostra dove si colloca ogni scelta",source:"modello Il Dividendo di Firenze",notes:`Ogni punto è una coppia (pavimento, aliquota) con pavimento da €${tL[0]} a €${tL[tL.length-1]} e aliquota da ${n0(aL[0]*100)}% a ${n0(aL[aL.length-1]*100)}%, senza tetto. Le linee uniscono i punti con la stessa aliquota.`});
+  K.frame(c,S,n,{tag:"Le scelte",title:"Più gettito significa meno presenze, con rendimenti decrescenti: la mappa mostra dove si colloca la proposta e il suo percorso",source:"modello Il Dividendo di Firenze",notes:`Ogni punto è una coppia (pavimento, aliquota) con pavimento da €${tL[0]} a €${tL[tL.length-1]} e aliquota da ${n0(aL[0]*100)}% a ${n0(aL[aL.length-1]*100)}%, senza tetto. Le linee uniscono i punti con la stessa aliquota.`});
   K.chartTitle(c,ML,166,760,"Saldo strutturale e riduzione dei pernottamenti",`${mp.pts.length} combinazioni di pavimento e aliquota`);
   K.frontier(c,ML,180,760,470,S);
   const body=`A parità di riduzione delle presenze, alzare l'aliquota sul lusso rende di più che alzare il pavimento: la domanda di fascia alta reagisce meno. Oltre un certo livello del pavimento le presenze calano molto più del gettito cresce. La scelta politica è quanto spingere sulla decongestione e quanto sul gettito.`;
   K.callout(c,860,176,360,Math.min(K.calloutH(c,360,body,{size:13.2,lh:18.5}),300),"Come leggere la mappa",body,{size:13.2,lh:18.5});
-  c.t1("Scenari a confronto",860,520,{font:"sansB",size:13,color:C.navy});
-  let y=542; ["prudente","centrale","ambizioso","vigente"].forEach(k=>{ const r=S.SC[k].R; c.t1(FM.SCEN[k].name,860,y,{size:12.5,color:C.ink}); c.t1(fM(r.saldo)+"  ·  "+fPs(r.nChg),1220,y,{size:12.5,color:C.gray,anchor:"end"}); y+=22; });
+  const pp=mp.plan||[];
+  c.t1(pp.length>1?"Il percorso, valutato a regime":"La proposta",860,500,{font:"sansB",size:13,color:C.navy});
+  let y=522; pp.slice(-6).forEach((p,i,a)=>{ c.t1(String(p.year)+(i===a.length-1?" (obiettivo)":""),860,y,{size:12.5,color:C.ink,font:i===a.length-1?"sansB":"sans"}); c.t1(fM(p.saldo)+"  ·  "+fPs(p.nChg),1220,y,{size:12.5,color:C.gray,anchor:"end"}); y+=22; });
 }
 function s_risk(c,S,n){
   const R=S.R,MC=S.MC,T=S.TOR;
@@ -135,21 +158,21 @@ function s_matrix(c,S,n){
 }
 function s_legal(c,S,n){
   const R=S.R,P=S.P,L=legal(P,R);
-  const title=L.needsLaw?"Per i parametri scelti serve una norma nazionale: la Fase 1 parte comunque a legislazione vigente":"Lo scenario è realizzabile a legislazione vigente, con un percorso in tre fasi";
+  const title=L.needsLaw?"Per i parametri scelti serve una norma nazionale: la Fase 1 parte comunque a legislazione vigente":"La proposta è realizzabile a legislazione vigente, con un percorso in tre fasi";
   K.frame(c,S,n,{tag:"Fattibilità e percorso",title,source:"D.Lgs. 23/2011, art. 4, c. 1-bis (Informazione Fiscale); legge di bilancio 2026 (Avvenire); Banca d'Italia–IRPET",notes:"Le valutazioni giuridiche sono preliminari e vanno confermate da un parere dell'Avvocatura comunale."});
   const items=[
     [L.tmin,"Pavimento",L.tmin==="ok"?`€${pv(P.tmin)} è entro il tetto di €10 consentito ai capoluoghi con presenze oltre 20 volte i residenti.`:L.tmin==="warn"?`€${pv(P.tmin)} usa la maggiorazione di €2, prevista per il 2026 e da confermare; il 30% del maggior gettito va allo Stato.`:`€${pv(P.tmin)} supera il tetto (€10, più €2 di maggiorazione): serve una norma nazionale.`],
     [L.prop,"Aliquota proporzionale",L.prop==="ok"?"Rispetta il tetto per notte.":L.prop==="warn"?"Rispetta il tetto solo con la maggiorazione di €2.":`Un ospite del lusso su dieci pagherebbe almeno ${fE2(L.maxT)} a notte: oltre il tetto, serve una norma.`],
-    [P.youthExempt?"warn":"ok","Esenzione per cittadinanza UE",P.youthExempt?"Non sperimentata: va coperta da un parere. Un'esenzione per sola età o per tessera studente è più sicura.":"Nessuna esenzione legata alla cittadinanza."],
+    [P.u30<P.tmin?"warn":"ok","Tariffa per cittadini UE under 30",P.u30<P.tmin?(P.u30<=0?"Esenzione":"Tariffa ridotta di €"+pv(P.u30))+" legata alla cittadinanza: non sperimentata, va coperta da un parere. Un'agevolazione per sola età o per tessera studente è più sicura.":"Nessuna agevolazione legata alla cittadinanza."],
     [P.stateLevy>0?"warn":"ok","Quota allo Stato",P.stateLevy>0?`Il ${fP(P.stateLevy,0)} del maggior gettito (${fM(R.levy)}) esce dal bilancio: va chiarito se si applica anche a una struttura tariffaria nuova.`:"Nessuna quota allo Stato."],
     [P.dayFee>0?"bad":"ok","Contributo d'accesso",P.dayFee>0?"Richiede una norma nazionale, come il contributo di Venezia.":"Non previsto."]
   ];
   const lab={ok:"OK",warn:"Verificare",bad:"Norma"};
   let y=176; items.forEach(it=>{ K.chip(c,ML,y+2,lab[it[0]],it[0]); c.t1(it[1],ML+92,y+2,{font:"sansB",size:13.5,color:C.navy}); const r=c.text(it[2],ML+92,y+22,{size:12.6,color:C.ink,maxWidth:420,lh:17}); y+=r.h+32; });
   K.chartTitle(c,640,166,580,"Percorso in tre fasi","");
-  const vg=S.SC.vigente.R, ce=S.SC.centrale.R;
-  K.kpi(c,ML,486,274,124,fM(vg.saldo),"Saldo a legislazione vigente","tetto di €10 per notte; dividendo "+fE(vg.perHH),{size:30});
-  K.kpi(c,344,486,274,124,fM(ce.saldo),"Saldo con la norma nazionale","scenario Centrale; dividendo "+fE(ce.perHH),{size:30,color:C.blue});
+  const vg=S.V.phase1;
+  K.kpi(c,ML,486,274,124,fM(vg.saldo),"Fase 1 a legislazione vigente","tetto di €10 per notte, senza contributo; dividendo "+fE(vg.perHH),{size:30});
+  K.kpi(c,344,486,274,124,fM(R.saldo),L.needsLaw?"Proposta completa, con norma":"Proposta completa","a regime; dividendo "+fE(R.perHH),{size:30,color:C.blue});
   K.gantt(c,640,176,580,[
     {label:"Mandato tecnico e dati",b:true,bars:[{from:0,to:2,color:C.navy,text:"Validazione"}]},
     {label:"Fase 1: delibera a legislazione vigente",b:true,bars:[{from:1,to:2,color:C.blue,text:"Atto"},{from:2,to:7,color:C.lblue,text:"In vigore"}]},
@@ -162,7 +185,7 @@ function s_legal(c,S,n){
 }
 function s_kpi(c,S,n){
   const R=S.R,P=S.P;
-  K.frame(c,S,n,{tag:"Governance",title:"Dodici indicatori per governare la riforma e correggerla in corsa",source:"modello Il Dividendo di Firenze; fonti dei dati: Comune di Firenze, ISTAT, Regione Toscana, piattaforme (DAC7), Agenzia delle Entrate, INPS",notes:"Gli obiettivi sono i valori a regime dello scenario in esame; la verifica trimestrale confronta l'andamento con il percorso a cinque anni e attiva le correzioni."});
+  K.frame(c,S,n,{tag:"Governance",title:"Dodici indicatori per governare la riforma e correggerla in corsa",source:"modello Il Dividendo di Firenze; fonti dei dati: Comune di Firenze, ISTAT, Regione Toscana, piattaforme (DAC7), Agenzia delle Entrate, INPS",notes:"Gli obiettivi sono i valori a regime della proposta; la verifica trimestrale confronta l'andamento con il percorso anno per anno e attiva le correzioni."});
   const avgT=R.G/R.nNew;
   const rows=[
     ["Gettito dell'imposta riscosso",fM(P.baseRevenue*1e6),fM(R.Gn),"Tesoreria comunale; piattaforme","Mensile"],
@@ -190,9 +213,9 @@ function s_decisions(c,S,n){
     "**Accordo metropolitano** con i comuni della cintura su tariffe e regole per gli affitti brevi, per evitare lo spostamento dei flussi.",
     "**Vincolo di destinazione**: Fondo Armonizzatore e dividendo civico con bilancio separato e rendicontazione pubblica annuale."],{size:15.2,gap:22});
   function numbered(c,x,y,w,items,o){ K.numbered(c,x,y,w,items,o); }
-  const cols=[["Entro 30 giorni",["Costituzione del gruppo tecnico","Richiesta dei dati a piattaforme e uffici","Parere dell'Avvocatura sull'esenzione per età"]],["Entro 60 giorni",["Validazione del modello e delle ipotesi","Bozza di delibera di Fase 1","Primo confronto con ANCI e gruppi parlamentari"]],["Entro 90 giorni",["Presentazione dello scenario definitivo","Avvio dell'accordo con i comuni della cintura","Calendario della consultazione con le categorie"]]];
+  const cols=[["Entro 30 giorni",["Costituzione del gruppo tecnico","Richiesta dei dati a piattaforme e uffici","Parere dell'Avvocatura sull'esenzione per età"]],["Entro 60 giorni",["Validazione del modello e delle ipotesi","Bozza di delibera di Fase 1","Primo confronto con ANCI e gruppi parlamentari"]],["Entro 90 giorni",["Presentazione della proposta definitiva","Avvio dell'accordo con i comuni della cintura","Calendario della consultazione con le categorie"]]];
   cols.forEach((k,i)=>{ const x=760+i*154; c.rect(x,176,146,34,{fill:C.navy}); c.t1(k[0],x+10,198,{font:"sansB",size:12.5,color:C.white}); let y=232; k[1].forEach(t=>{ const r=c.text(t,x+2,y,{size:12.4,color:C.ink,maxWidth:140,lh:16.5}); y+=r.h+16; }); });
-  K.kpi(c,760,470,226,130,fM(R.saldo),"Saldo strutturale a regime","scenario "+S.name,{size:30,color:C.blue});
+  K.kpi(c,760,470,226,130,fM(R.saldo),"Saldo strutturale a regime","dal "+B.tgtYear(S),{size:30,color:C.blue});
   K.kpi(c,994,470,226,130,fE(R.perHH),"Dividendo per famiglia","all'anno, dopo la riserva",{size:30});
 }
 
@@ -202,7 +225,7 @@ function s_divider(c,S,n){
   c.rect(0,0,W,H,{fill:C.navy}); c.rect(0,0,14,H,{fill:C.blue});
   c.t1("ALLEGATI",80,300,{font:"sansB",size:14,color:"#9DBCE3"});
   c.text("Ipotesi, metodo,\nverifiche e fonti",80,370,{font:"serifSB",size:54,color:C.white,lh:62});
-  c.text("Tutti i numeri della presentazione derivano dalle ipotesi qui elencate. Ciascuna è modificabile nel modello e porta l'indicazione del tipo: dato, stima o ipotesi.",80,520,{size:16,color:"#C9D8EE",maxWidth:640,lh:23});
+  c.text("Tutti i numeri della presentazione derivano dalle ipotesi qui elencate. Sono fisse, ricavate dai dati e calibrate sul gettito osservato; ciascuna porta il tipo (dato, stima, letteratura, regola, ipotesi) e la fonte.",80,520,{size:16,color:"#C9D8EE",maxWidth:640,lh:23});
   c.t1(String(n),W-MR,698,{font:"sansB",size:11,color:"#8FA6C4",anchor:"end"});
 }
 function s_personas(c,S,n){
@@ -213,21 +236,13 @@ function s_personas(c,S,n){
     P.segs.map(s=>({cells:[s.name,fP(s.share/tot,0),"€"+n0(s.price),n2(s.sigma),n2(s.eps).replace("-",MIN),"€"+n2(s.tOld),fP(s.belt,0),fP(s.apt,0)]})),{rh:42,hh:40,size:12.2});
   c.text("**Come si legge.** La tipologia «Lusso» ha una quota piccola delle notti (7%) ma un prezzo mediano di €520 a persona e un'elasticità molto bassa: per questo un'aliquota proporzionale rende molto con pochi effetti sui volumi. Il «Budget» ha un'elasticità alta e una forte propensione a spostarsi nella cintura.",ML,456,{size:13.4,color:C.ink,maxWidth:1100,lh:19,boldColor:C.navy});
 }
-function fmtParam(p,v){
-  if(p.bool) return v?"Sì":"No";
-  if(p.pct) return NFp(v*100,p.step*100);
-  const mag=a=>Math.abs(a)>=100?n0(a):(Math.abs(a)<10&&a%1?n2(a):n1(a).replace(/,0$/,""));
-  const val=(v<0?MIN:"")+mag(Math.abs(v)); const u=p.unit||"";
-  if(u[0]==="€"){ const rest=u.slice(1).trim(); return "€"+val+(rest?(rest[0]==="/"?rest:" "+rest):""); }
-  return val+(u&&u!=="unità"?" "+u:"");
-}
-function NFp(v,step){ const d=step<1?1:0; return (d?n1(v):n0(v)).replace(/,0$/,"")+"%"; }
+const fmtParam=K.fmtParam;
 function s_assump(c,S,n,idx,total,list){
-  K.frame(c,S,n,{tag:"Allegato B · ipotesi e fonti ("+(idx+1)+"/"+total+")",title:idx===0?"Ipotesi del modello: dati, stime e scelte":"Ipotesi del modello (continua)",source:"vedi l'elenco delle fonti; i numeri tra parentesi quadre rimandano a quell'elenco",notes:"Dato: cifra pubblicata. Stima: valore di terzi o derivato. Ipotesi: scelta del modello. Il valore mostrato è quello usato nello scenario."});
+  K.frame(c,S,n,{tag:"Allegato B · ipotesi e fonti ("+(idx+1)+"/"+total+")",title:idx===0?"Ipotesi del modello: dati, stime e scelte":"Ipotesi del modello (continua)",source:"vedi l'elenco delle fonti; i numeri tra parentesi quadre rimandano a quell'elenco",notes:"Dato: cifra pubblicata. Stima: valore derivato da dati. Letteratura: da studi empirici. Regola: scelta di disegno della proposta. Ipotesi: scelta del modello, coperta dall'analisi di incertezza."});
   const half=Math.ceil(list.length/2);
   [list.slice(0,half),list.slice(half)].forEach((rows,ci)=>{
     const x=ML+ci*586;
-    K.table(c,x,160,[{h:"Ipotesi",w:318},{h:"Valore",w:92,a:"r"},{h:"Tipo",w:66,a:"c"},{h:"Fonte",w:100}],rows.map(p=>({cells:[p.label,fmtParam(p,S.P[p.id]),p.kind,p.src?"["+FM.SRCI[p.src]+"]":"—"]})),{rh:21.5,hh:26,size:10.2});
+    K.table(c,x,160,[{h:"Ipotesi",w:300},{h:"Valore",w:110,a:"r"},{h:"Tipo",w:76,a:"c"},{h:"Fonte",w:90}],rows.map(p=>p.head?{cells:[{t:p.head,b:true,c:C.blue}],fill:C.pblue}:{cells:[p.label,fmtParam(p,S.P[p.id]),p.kind,p.src?(Array.isArray(p.src)?p.src:[p.src]).map(k=>"["+FM.SRCI[k]+"]").join(" "):"—"]}),{rh:21.5,hh:26,size:10.2});
   });
 }
 function s_method(c,S,n){
@@ -242,15 +257,16 @@ function s_method(c,S,n){
     ["Perdita di efficienza","DWL = Σ (q₀ − q₁)·[ (g₀ + g₁)/2 − costo variabile ]"],
     ["Conversione degli affitti","R·(1 − ΔNOI) < 1 − δ·(1 − g),  R ~ lognormale(mediana, σ)"],
     ["Canoni","Δr = −(U ÷ S) ÷ (ε_domanda + ε_offerta)"],
-    ["Saldo a regime","S = (N − G₀ + contributo) − perdite collaterali + risparmi − Fondo"]
+    ["Saldo a regime","S = (N − G₀ + contributo) − perdite collaterali + risparmi − Fondo"],
+    ["Percorso anno per anno","q_t = q_(t−1) + λ·(q*_t − q_(t−1));  U_t = U_(t−1) + μ·(U*_t − U_(t−1))"]
   ];
   let y=164; eq.forEach(e=>{ c.t1(e[0],ML,y+4,{font:"sansB",size:12.8,color:C.navy}); c.t1(e[1],ML+210,y+4,{size:13,color:C.ink}); c.line(ML,y+17,ML+700,y+17,{stroke:C.xl,sw:.8}); y+=38; });
-  const notes=["Ogni tipologia è rappresentata da 41 quantili della distribuzione dei prezzi: il passaggio dal pavimento all'aliquota avviene dentro la tipologia.","La calibrazione riproduce esattamente il gettito 2025 con le tariffe attuali; il coefficiente k assorbe tetto delle sette notti, altre esenzioni e adempimento.","L'identità ΔCS + ΔΠ operatori + gettito = −DWL è verificata a ogni calcolo (allegato D).","La simulazione di incertezza estrae 400 volte le ipotesi più incerte con seme fisso."];
+  const notes=["Ogni tipologia è rappresentata da 41 quantili della distribuzione dei prezzi: il passaggio dal pavimento all'aliquota avviene dentro la tipologia.","La calibrazione riproduce esattamente il gettito 2025 con le tariffe attuali; il coefficiente k assorbe tetto delle sette notti, altre esenzioni e adempimento.","L'identità ΔCS + ΔΠ operatori + gettito = −DWL è verificata a ogni calcolo (allegato D).","La simulazione di incertezza estrae 400 volte le ipotesi più incerte con seme fisso.","Nel percorso anno per anno la domanda si adegua con ritardo (λ) e le riconversioni convergono all'equilibrio a velocità μ; la riqualificazione è spesa quando i posti si perdono."];
   bulletsRight(c,810,170,410,notes);
   function bulletsRight(c,x,y,w,items){ K.bullets(c,x,y,w,items,{size:13,gap:14}); }
 }
 function s_checks(c,S,n,idx,total,list){
-  K.frame(c,S,n,{tag:"Allegato D · verifiche numeriche ("+(idx+1)+"/"+total+")",title:idx===0?"Il modello supera tutte le verifiche di coerenza numerica":"Verifiche di coerenza numerica (continua)",source:"modello Il Dividendo di Firenze; le verifiche sono ricalcolate a ogni variazione di scenario",notes:"OK: verifica superata. Verifica: valore da controllare ma non errato. Errore: incoerenza di calcolo."});
+  K.frame(c,S,n,{tag:"Allegato D · verifiche numeriche ("+(idx+1)+"/"+total+")",title:idx===0?"Il modello supera tutte le verifiche di coerenza numerica":"Verifiche di coerenza numerica (continua)",source:"modello Il Dividendo di Firenze; le verifiche sono ricalcolate a ogni variazione della politica",notes:"OK: verifica superata. Verifica: valore da controllare ma non errato. Errore: incoerenza di calcolo."});
   const lab={ok:"OK",warn:"Verifica",bad:"Errore"};
   let y=162; list.forEach(s=>{ const r=c.textH(s.d,{size:11.6,maxWidth:760,lh:15}); const rh=Math.max(32,r.h+22);
     K.chip(c,ML,y+17,lab[s.s],s.s); c.t1(s.t,ML+84,y+17,{font:"sansB",size:12.8,color:C.navy}); c.text(s.d,ML+84,y+34,{size:11.6,color:C.ink,maxWidth:1040,lh:15}); y+=Math.max(rh,Math.max(32,c.textH(s.d,{size:11.6,maxWidth:1040,lh:15}).h+26)); c.line(ML,y-4,W-MR,y-4,{stroke:C.xl,sw:.7}); });
@@ -264,11 +280,11 @@ function s_sources(c,S,n){
 
 /* ---------- composizione ---------- */
 function build(S){
-  const params=FM.PARAMS.filter(p=>p.g!=="leve"&&p.kind);
-  const pHalf=Math.ceil(params.length/2), pChunks=[params.slice(0,Math.ceil(params.length/2)).slice(0,0)];
+  const params=[]; FM.GROUPS.forEach(g=>{ const l=FM.PARAMS.filter(p=>p.g===g.id&&p.kind); if(l.length){ params.push({head:g.title}); params.push(...l); } });
   const per=44; const aChunks=[]; for(let i=0;i<params.length;i+=per) aChunks.push(params.slice(i,i+per));
-  const sanA=S.SAN.slice(0,11), sanB=S.SAN.slice(11);
-  const list=[].concat(B.slides,[s_labor,s_fund,s_dividend,s_path,s_scen,s_frontier,s_risk,s_matrix,s_legal,s_kpi,s_decisions,s_divider,s_personas],
+  const SAN=S.SAN||[], half=Math.ceil(SAN.length/2), sanA=SAN.slice(0,half), sanB=SAN.slice(half);
+  const b=B.slides, fee=S.P&&S.P.dayFee>0;
+  const list=[].concat([b[0],b[1],b[2],b[3],s_plan,b[4],b[5],b[6]],fee?[s_daypass]:[],[b[7],s_evoFin,b[8],b[9],b[10],b[11],s_evoCity,s_labor,s_fund,s_dividend,s_frontier,s_risk,s_matrix,s_legal,s_kpi,s_decisions,s_divider,s_personas],
     aChunks.map((ch,i)=>(c,S2,n)=>s_assump(c,S2,n,i,aChunks.length,ch)),
     [s_method,(c,S2,n)=>s_checks(c,S2,n,0,2,sanA),(c,S2,n)=>s_checks(c,S2,n,1,2,sanB),s_sources]);
   if(S.meta&&S.meta.appendix===false) return list.slice(0,list.indexOf(s_divider));

@@ -6,13 +6,17 @@ const {W,H}=root.FMD;
 
 /* ---------- contesto della storia ---------- */
 function context(P,meta){
-  const R=FM.run(P), pathRes=FM.path(P,R), MC=FM.monteCarlo(P,400), TOR=FM.tornado(P,"saldo"), MAT=FM.impactMatrix(P), MAP=FM.policyMap(P), SAN=FM.sanity(P,R,pathRes);
-  const SC={}; FM.SCEN_ORDER.forEach(k=>{ const Q=FM.cloneP(P); FM.SCEN_KEYS.forEach(id=>Q[id]=FM.SCEN[k][id]); const r=FM.run(Q); SC[k]={P:Q,R:r,path:FM.path(Q,r)}; });
-  const [key,nm]=FM.scenName(P);
+  const R=FM.run(P), TL=FM.timeline(P,R), MC=FM.monteCarlo(P,400), TOR=FM.tornado(P,"saldo"), MAT=FM.impactMatrix(P), MAP=FM.policyMap(P), SAN=FM.sanity(P,R,TL);
+  const vr=o=>FM.run(Object.assign(FM.cloneP(P),o));
+  // varianti di confronto: senza e con contributo d'accesso; Fase 1 a legislazione vigente (tetto di €10, nessun contributo)
+  const V={noFee:P.dayFee>0?vr({dayFee:0}):R,fee:P.dayFee>0?R:vr({dayFee:5}),feeV:P.dayFee>0?P.dayFee:5,
+    phase1:vr({cap:P.cap>0?Math.min(P.cap,10):10,tmin:Math.min(P.tmin,10),u30:Math.min(P.u30,10),dayFee:0})};
   const date=new Date().toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
-  return {P,R,pathRes,MC,TOR,MAT,MAP,SAN,SC,key,name:(meta&&meta.name)||nm,meta:Object.assign({audience:"Commissione consiliare e forze politiche",author:"",date},meta||{})};
+  return {P,R,TL,MC,TOR,MAT,MAP,SAN,V,name:(meta&&meta.name)||"Proposta di riforma",meta:Object.assign({audience:"Commissione consiliare e forze politiche",author:"",date},meta||{})};
 }
-const cum5=S=>S.pathRes.cum[4];
+const tgtYear=S=>S.TL.start+S.TL.n-1;
+const pv=x=>n1(x).replace(/,0$/,"");
+function policyPhrase(P){ return `max(€${pv(P.tmin)}; ${pv(P.alpha*100)}% del prezzo)${P.cap>0?", con tetto di €"+pv(P.cap):""}${P.u30>0?`, €${pv(P.u30)} a notte per i cittadini UE under 30`:", esenti i cittadini UE under 30"}${P.dayFee>0?`, più un contributo d'accesso di €${pv(P.dayFee)} per gli escursionisti`:""}`; }
 const seg=(R,id)=>R.segs.find(s=>s.id===id);
 function divPhrase(R,P){
   const nm={irpef:"l'addizionale IRPEF",tari:"la TARI domestica",tpl:"il trasporto pubblico"}, of={irpef:"dell'addizionale IRPEF",tari:"della TARI domestica",tpl:"del trasporto pubblico"}; const keys=String(P.order).split(",");
@@ -21,7 +25,7 @@ function divPhrase(R,P){
   part.forEach(k=>bits.push("copre il "+n0(R.alloc[k].cov*100)+"% "+of[k]));
   return bits.length?bits.join(" e "):"non basta a finanziare gli sgravi";
 }
-const legal=(P,R)=>{ const maxT=Math.max(...R.segs.map(s=>s.tP90)); return {tmin:P.tmin>12?"bad":P.tmin>10?"warn":"ok",prop:maxT>12.0001?"bad":maxT>10.0001?"warn":"ok",maxT,needsLaw:P.tmin>12||maxT>12.0001||P.dayFee>0}; };
+const legal=(P,R)=>{ const maxT=Math.max(...R.segs.map(s=>s.tP90)); return {tmin:P.tmin>12?"bad":P.tmin>10?"warn":"ok",prop:maxT>12.0001?"bad":maxT>10.0001?"warn":"ok",maxT,needsLaw:P.tmin>12||maxT>12.0001||P.dayFee>0||P.u30>12}; };
 
 /* ---------- slide ---------- */
 function s_cover(c,S,n){
@@ -32,29 +36,29 @@ function s_cover(c,S,n){
   c.text("Il Dividendo\ndi Firenze",80,230,{font:"serifSB",size:70,color:C.white,lh:80});
   c.rect(80,330,90,4,{fill:C.blue});
   c.text("Una riforma progressiva dell'imposta di soggiorno per riportare la città ai suoi residenti",80,384,{font:"serif",size:25,color:"#D3E0F2",maxWidth:560,lh:33});
-  c.text("**Scenario:** "+S.name,80,512,{size:15,color:"#C9D8EE",boldColor:C.white});
+  c.text("**Proposta:** "+S.name+(S.TL.n>1?"  ·  a regime dal "+tgtYear(S):""),80,512,{size:15,color:"#C9D8EE",boldColor:C.white});
   c.text("**Per:** "+S.meta.audience+(S.meta.author?"\n**A cura di:** "+S.meta.author:""),80,538,{size:15,color:"#C9D8EE",boldColor:C.white,lh:22,maxWidth:640});
   c.text("Documento indipendente di proposta, non un atto del Comune di Firenze. I risultati sono stime di un modello con ipotesi dichiarate e modificabili.",80,650,{size:11,color:"#8FA6C4",maxWidth:620,lh:15});
   // pannello dei numeri
   c.rect(790,120,410,480,{fill:"#10325E"});
-  const items=[[fM(R.net),"gettito netto per il Comune",fMs(R.dTax-R.dayFeeNet)+" sull'oggi"],[fM(R.saldo),"saldo strutturale a regime","dopo il Fondo Armonizzatore"],[fE(R.perHH),"dividendo per famiglia","ogni anno, dopo la riserva"]];
+  const items=[[fM(R.net+R.dayFeeNet),"gettito netto per il Comune",fMs(R.dTax)+" sull'oggi, a regime"],[fM(R.saldo),"saldo strutturale a regime","dopo il Fondo Armonizzatore"],[fE(R.perHH),"dividendo per famiglia","ogni anno, dopo la riserva"]];
   items.forEach((it,i)=>{ const y=170+i*150; c.t1(it[0],820,y+52,{font:"serifSB",size:54,color:C.white}); c.t1(it[1],820,y+82,{font:"sansB",size:14,color:"#C9D8EE"}); c.t1(it[2],820,y+102,{size:12.5,color:"#8FA6C4"}); if(i<2) c.line(820,y+126,1170,y+126,{stroke:"#2A4C7C",sw:1}); });
 }
 function s_exec(c,S,n){
   const R=S.R,P=S.P,MC=S.MC, lux=seg(R,"lux"), bud=seg(R,"budget");
-  const title=R.saldo>0?`Un'imposta progressiva a due componenti genera ${fM(R.net)} netti per il Comune e un dividendo di ${fE(R.perHH)} a famiglia, con effetti contenuti su presenze e occupazione`
+  const title=R.saldo>0?`Un'imposta progressiva a due componenti genera ${fM(R.net+R.dayFeeNet)} netti per il Comune e un dividendo di ${fE(R.perHH)} a famiglia, con effetti contenuti su presenze e occupazione`
     :`Con questi parametri la riforma non copre il Fondo Armonizzatore: serve un pavimento o un'aliquota più alti, oppure un Fondo più piccolo`;
-  K.frame(c,S,n,{tag:"Sintesi",title,source:"modello Il Dividendo di Firenze; dati IRPET, Comune di Firenze, Banca d'Italia (elenco nell'allegato)",notes:"Valori annui a regime, euro correnti. Scenario: "+S.name+"."});
+  K.frame(c,S,n,{tag:"Sintesi",title,source:"modello Il Dividendo di Firenze; dati IRPET, Comune di Firenze, Banca d'Italia (elenco nell'allegato)",notes:"Valori annui a regime (dal "+tgtYear(S)+"), euro correnti. Proposta: "+S.name+"."});
   const L=legal(P,R);
   const items=[
     `**Situazione.** Firenze ha ${fN(P.residents)} residenti (circa 2.000 in meno ogni anno), ${n1(P.totalNights)} milioni di notti turistiche tassate e ${n1(P.dayVisitors)} milioni di escursionisti. La tariffa fissa di €3,50–8 pesa il ${fP(bud.effOld,0)} su un posto da €${n0(bud.meanP)} e l'${n1(lux.effOld*100)}% su una suite.`,
-    `**Proposta.** Imposta = max(€${n1(P.tmin).replace(",0","")}; ${n1(P.alpha*100).replace(",0","")}% del prezzo)${P.cap>0?", con tetto di €"+P.cap:""}${P.youthExempt?", esenti i cittadini UE under 30":""}${P.dayFee>0?`, più un contributo d'accesso di €${n1(P.dayFee).replace(",0","")} per gli escursionisti`:""}. Un Fondo Armonizzatore accompagna la transizione e l'avanzo va ai residenti.`,
-    `**Risultato.** Il Comune incassa ${fM(R.net)} netti (${fMs(R.dTax-R.dayFeeNet)}); dopo ${fM(R.fund)} di Fondo restano ${fM(R.saldo)} di saldo. Il dividendo vale ${fE(R.perHH)} a famiglia e ${divPhrase(R,P)}.`,
+    `**Proposta.** Imposta = ${policyPhrase(P)}. ${S.TL.n>1?`Si arriva all'obiettivo in ${S.TL.n} anni (${S.TL.start}–${tgtYear(S)}).`:`In vigore a regime dal ${S.TL.start}.`} Un Fondo Armonizzatore accompagna la transizione e l'avanzo va ai residenti.`,
+    `**Risultato.** A regime il Comune incassa ${fM(R.net+R.dayFeeNet)} netti (${fMs(R.dTax)}); dopo ${fM(R.fund)} di Fondo restano ${fM(R.saldo)} di saldo. Il dividendo vale ${fE(R.perHH)} a famiglia e ${divPhrase(R,P)}.`,
     `**Costo.** Pernottamenti ${fPs(R.nChg)}, ${fN(R.jobsLost)} posti a rischio (${fN(R.jobsGained)} ricreati), perdita di efficienza ${fM(R.dwl)}. Il ${fP(R.nonResShare,0)} del costo ricade su non residenti; il saldo resta positivo in ${n0((1-MC.saldo.neg)*MC.n)} simulazioni su ${MC.n}.`,
-    `**Limiti e decisione.** I visitatori-giorno cambiano solo del ${fPs(R.vdChg)}: per la decongestione servono altre leve. ${L.needsLaw?"Parte dello scenario richiede una norma nazionale; la Fase 1 è realizzabile a legislazione vigente.":"Lo scenario è realizzabile a legislazione vigente."} Si chiede un mandato per validare i dati e avviare la Fase 1.`
+    `**Limiti e decisione.** I visitatori-giorno cambiano solo del ${fPs(R.vdChg)}: per la decongestione servono altre leve. ${L.needsLaw?"Parte della proposta richiede una norma nazionale; la Fase 1 è realizzabile a legislazione vigente.":"La proposta è realizzabile a legislazione vigente."} Si chiede un mandato per validare i dati e avviare la Fase 1.`
   ];
   let y=164; items.forEach((t,i)=>{ const r=c.text(t,ML+36,y,{size:15.4,color:C.ink,maxWidth:690,lh:21.5,boldColor:C.navy,maxH:130}); c.circle(ML+12,y-5,12,{fill:C.navy}); c.t1(String(i+1),ML+12,y-.5,{font:"sansB",size:13,color:C.white,anchor:"middle"}); y+=Math.max(r.h,26)+22; });
-  const tiles=[[fM(R.net),"Gettito netto al Comune",fMs(R.dTax-R.dayFeeNet)+" sull'oggi",1],[fM(R.saldo),"Saldo strutturale","dopo il Fondo",1],[fE(R.perHH),"Dividendo per famiglia","all'anno, dopo la riserva"],[fPs(R.nChg),"Pernottamenti",n1(R.nNew/1e6)+" mln di notti"],[fN(R.toRes),"Abitazioni ai residenti",fPs(R.rentChg)+" sui canoni"],[fP(R.nonResShare,0),"Costo su non residenti","turisti e non fiorentini"]];
+  const tiles=[[fM(R.net+R.dayFeeNet),"Gettito netto al Comune",fMs(R.dTax)+" sull'oggi",1],[fM(R.saldo),"Saldo strutturale","dopo il Fondo",1],[fE(R.perHH),"Dividendo per famiglia","all'anno, dopo la riserva"],[fPs(R.nChg),"Pernottamenti",n1(R.nNew/1e6)+" mln di notti"],[fN(R.toRes),"Abitazioni ai residenti",fPs(R.rentChg)+" sui canoni"],[fP(R.nonResShare,0),"Costo su non residenti","turisti e non fiorentini"]];
   tiles.forEach((t,i)=>{ const cx=830+(i%2)*200, cy=158+Math.floor(i/2)*166; K.kpi(c,cx,cy,190,156,t[0],t[1],t[2],{size:t[3]?33:31,color:t[3]?C.blue:C.navy}); });
 }
 function s_context(c,S,n){
@@ -77,7 +81,7 @@ function s_proposal(c,S,n){
   const blocks=[
     ["Pavimento T_min = €"+n1(P.tmin).replace(",0",""),`Pagato da ogni ospite tassabile fino a €${isFinite(ps)?n0(ps):"∞"} a persona per notte. Rende anti-economico l'affitto breve non professionale e scoraggia il turismo di massa.`],
     ["Aliquota α = "+n1(P.alpha*100).replace(",0","")+"%",`Oltre €${isFinite(ps)?n0(ps):"∞"} l'imposta è proporzionale al prezzo: colpisce alberghi di lusso, suite e ville, dove la domanda reagisce poco.`],
-    [P.youthExempt?"Esenzioni":"Esenzioni limitate",P.youthExempt?"Cittadini UE under 30, minori e notti oltre la settima: turismo culturale, formativo e giovanile.":"Minori e notti oltre la settima."]
+    [P.u30>0?"Under 30 UE: €"+pv(P.u30)+" a notte":"Esenzioni",P.u30>0?"Tariffa fissa per i cittadini UE under 30, al posto di pavimento e aliquota; esenti minori e notti oltre la settima.":"Cittadini UE under 30, minori e notti oltre la settima: turismo culturale, formativo e giovanile."]
   ];
   if(P.cap>0) blocks.push(["Tetto di €"+P.cap+" per notte","Mantiene lo schema entro il limite di legge attuale."]);
   if(P.dayFee>0) blocks.push(["Contributo d'accesso €"+n1(P.dayFee).replace(",0",""),"Per gli escursionisti, con esclusione di residenti dell'area metropolitana, pendolari e studenti."]);
@@ -111,21 +115,21 @@ function s_demand(c,S,n){
   K.callout(c,820,420,400,Math.min(K.calloutH(c,400,body,{size:13,lh:18}),236),"Implicazione",body,{size:13,lh:18});
 }
 function s_load(c,S,n){
-  const R=S.R,P=S.P, acc=S.SC.accesso.R, fee0=P.dayFee<=0;
+  const R=S.R,P=S.P, acc=S.V.fee, base=S.V.noFee, fv=pv(S.V.feeV), fee0=P.dayFee<=0;
   const nights0=R.nB/365, nights1=R.nNew/365, day0=R.dayV0/365, day1=R.dayV1/365, belt1=R.beltReturned/365, tot0=R.vdB/365, tot1=R.vdN/365;
   const title=fee0?`Il carico giornaliero sulla città cambia solo del ${fPs(R.vdChg)}: gli escursionisti, ${fP(R.dayV0/R.vdB,0)} dei visitatori, non pagano l'imposta`
     :`Con il contributo d'accesso di €${n1(P.dayFee).replace(",0","")} i visitatori-giorno calano del ${fP(-R.vdChg)} e il Comune incassa ${fM(R.dayFeeNet)} in più`;
-  K.frame(c,S,n,{tag:"Effetti sulla domanda",title,source:"modello Il Dividendo di Firenze; escursionisti: Federalberghi (La Nazione, 22 luglio 2026)",notes:"Visitatori-giorno = notti ÷ 365 + escursionisti ÷ 365 + ospiti della cintura che rientrano in città di giorno."});
+  K.frame(c,S,n,{tag:"Effetti sulla domanda",title,source:"modello Il Dividendo di Firenze; escursionisti: Comune di Firenze e Centro Studi Turistici (dati di telefonia mobile)",notes:"Visitatori-giorno = notti ÷ 365 + escursionisti ÷ 365 + ospiti della cintura che rientrano in città di giorno."});
   K.chartTitle(c,ML,166,700,"Visitatori presenti in un giorno medio","migliaia di persone");
   K.visitorBars(c,ML,200,700,S);
   K.chartTitle(c,ML,458,700,"Che cosa muove il carico","");
   K.table(c,ML,468,[{h:"Opzione",w:300},{h:"Saldo",w:100,a:"r"},{h:"Pernottamenti",w:120,a:"r"},{h:"Visitatori-giorno",w:140,a:"r"}],[
-    {cells:["Solo imposta di soggiorno (scenario Centrale)",fM(S.SC.centrale.R.saldo),fPs(S.SC.centrale.R.nChg),fPs(S.SC.centrale.R.vdChg)]},
-    {cells:["Con contributo d'accesso di €5 agli escursionisti",fM(acc.saldo),fPs(acc.nChg),fPs(acc.vdChg)],b:true}],{rh:32,size:12.5,hl:[1]});
-  const body=`Un'imposta sul pernottamento non tocca ${fP(R.dayV0/R.vdB,0)} dei visitatori. Un contributo d'accesso, con esenzioni per residenti dell'area metropolitana e pendolari, aggiungerebbe circa ${fM(acc.dayFeeNet)} all'anno e ridurrebbe i visitatori-giorno di ${fP(Math.abs(acc.vdChg-S.SC.centrale.R.vdChg),1)} in più. Richiede una norma nazionale (precedente: Venezia).`;
+    {cells:["Solo imposta di soggiorno",fM(base.saldo),fPs(base.nChg),fPs(base.vdChg)],b:fee0},
+    {cells:[`Con contributo d'accesso di €${fv} agli escursionisti`,fM(acc.saldo),fPs(acc.nChg),fPs(acc.vdChg)],b:!fee0}],{rh:32,size:12.5,hl:[fee0?0:1]});
+  const body=`Un'imposta sul pernottamento non tocca ${fP(R.dayV0/R.vdB,0)} dei visitatori. Un contributo d'accesso di €${fv}, con esenzioni per residenti dell'area metropolitana e pendolari, ${fee0?"aggiungerebbe":"aggiunge"} circa ${fM(acc.dayFeeNet)} all'anno e ${fee0?"ridurrebbe":"riduce"} i visitatori-giorno di ${fP(Math.abs(acc.vdChg-base.vdChg),1)} in più. Richiede una norma nazionale (precedente: Venezia).`;
   K.callout(c,820,176,400,Math.min(K.calloutH(c,400,body,{size:13.4,lh:19}),260),"Implicazione",body,{size:13.4,lh:19});
   K.kpi(c,820,456,194,130,n1(R.dayV0/1e6)+" mln","Escursionisti oggi","non pagano l'imposta di soggiorno",{size:28});
-  K.kpi(c,1026,456,194,130,fM(acc.dayFeeNet),"Contributo di €5","gettito annuo stimato",{size:28,color:C.blue});
+  K.kpi(c,1026,456,194,130,fM(acc.dayFeeNet),"Contributo di €"+fv,"gettito netto annuo stimato",{size:28,color:C.blue});
 }
 function s_pnl(c,S,n){
   const R=S.R,P=S.P;
@@ -152,7 +156,7 @@ function s_who(c,S,n){
 }
 function s_efficiency(c,S,n){
   const R=S.R,P=S.P;
-  K.frame(c,S,n,{tag:"Efficienza",title:isFinite(R.mcpf)?`La perdita di efficienza è ${fM(R.dwl)}: ogni euro raccolto costa ${n2(R.mcpf)} euro alla collettività`:`Con questi parametri il prelievo non aumenta: non c'è una perdita di efficienza per euro raccolto`,source:"modello Il Dividendo di Firenze",notes:"Perdita di efficienza = valore dei pernottamenti persi, al netto del costo evitato dagli operatori. Costo per euro raccolto = (maggior gettito + perdita) ÷ maggior gettito. La perdita è negativa (un guadagno) per i giovani esentati."});
+  K.frame(c,S,n,{tag:"Efficienza",title:isFinite(R.mcpf)?`La perdita di efficienza è ${fM(R.dwl)}: ogni euro raccolto costa ${n2(R.mcpf)} euro alla collettività`:`Con questi parametri il prelievo non aumenta: non c'è una perdita di efficienza per euro raccolto`,source:"modello Il Dividendo di Firenze",notes:"Perdita di efficienza = valore dei pernottamenti persi, al netto del costo evitato dagli operatori. Costo per euro raccolto = (maggior gettito + perdita) ÷ maggior gettito. La perdita è negativa (un guadagno) dove l'imposta scende rispetto a oggi."});
   K.chartTitle(c,ML,166,700,"Perdita di efficienza per tipologia","€ milioni all'anno");
   const rows=R.segs.map(s=>({label:s.short,v:s.dwl/1e6,color:s.dwl>0?C.orange:C.blue})); if(R.dwlDay>1e4) rows.push({label:"Escursionisti",v:R.dwlDay/1e6,color:C.orange});
   K.hBars(c,ML,184,700,rows,{labelW:170,valW:70,rowH:50,bh:24,fmt:v=>(v<0?MIN:"")+n1(Math.abs(v))});
@@ -196,5 +200,5 @@ function s_housing(c,S,n){
   K.callout(c,740,392,480,Math.min(K.calloutH(c,480,body,{size:13.2,lh:18.5}),250),"Rischio politico",body,{size:13.2,lh:18.5});
 }
 
-root.FMDeckB={context,cum5,seg,divPhrase,legal,slides:[s_cover,s_exec,s_context,s_proposal,s_effective,s_demand,s_load,s_pnl,s_who,s_efficiency,s_operators,s_housing]};
+root.FMDeckB={context,tgtYear,policyPhrase,seg,divPhrase,legal,slides:[s_cover,s_exec,s_context,s_proposal,s_effective,s_demand,s_load,s_pnl,s_who,s_efficiency,s_operators,s_housing]};
 })(typeof self!=="undefined"?self:this);

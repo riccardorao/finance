@@ -187,8 +187,13 @@ function taxFunction(c,x,y,w,h,S){
   c.t1("Prezzo della camera per persona e per notte (scala logaritmica)",px+pw/2,py+ph+34,{size:11,color:C.gray,anchor:"middle"});
   c.t1("Imposta per notte",x+10,py+ph/2,{size:11,color:C.gray,anchor:"middle",rot:-90});
   // tariffa attuale: scalini medi per tipologia come linea tratteggiata
-  let d=""; for(let i=0;i<=140;i++){ const p=Math.exp(x0+(x1-x0)*i/140); d+=(i?"L":"M")+X(p).toFixed(1)+","+Y(root.FM.taxNew(P,p)).toFixed(1); }
-  c.path(d,{stroke:C.navy,sw:2.6});
+  const curve=Q=>{ let d=""; for(let i=0;i<=140;i++){ const p=Math.exp(x0+(x1-x0)*i/140); d+=(i?"L":"M")+X(p).toFixed(1)+","+Y(root.FM.taxNew(Q,p)).toFixed(1); } return d; };
+  const n=P.plan?P.plan.n:1;
+  // etichette degli anni all'estremo destro, dove le curve si separano (o al centro se coincidono)
+  const pe=Math.exp(x1-.02*(x1-x0)), lab=[];
+  for(let yy=1;yy<n;yy++){ const L=root.FM.levers(P,yy); c.path(curve(L),{stroke:C.lblue,sw:1.4,dash:[5,4]}); lab.push({t:String(P.plan.start+yy-1),y:Y(root.FM.taxNew(L,pe)),b:0}); }
+  c.path(curve(P),{stroke:C.navy,sw:2.6});
+  if(n>1){ lab.push({t:"Obiettivo",y:Y(root.FM.taxNew(P,pe)),b:1}); let last=1e9; lab.sort((a,b)=>b.y-a.y).forEach(l=>{ const yy=Math.min(l.y+14,last-12); c.t1(l.t,X(pe),yy,{font:l.b?"sansB":"sans",size:10.5,color:l.b?C.navy:C.gray,anchor:"end"}); last=yy; }); }
   const ps=P.alpha>0?P.tmin/P.alpha:Infinity;
   if(ps>20&&ps<1500&&(!(P.cap>0)||P.cap>P.tmin)){ c.line(X(ps),Y(P.tmin),X(ps),py+ph,{stroke:C.navy,sw:1,dash:[4,4]}); c.t1("p* = €"+n0(ps),X(ps)+6,Y(P.tmin)+17,{font:"sansB",size:11.5,color:C.navy}); }
   const off={young:[-10,-12,"end"],budget:[-10,-12,"end"],mass:[-7,-14,"end"],upper:[-8,-14,"end"],lux:[-12,-10,"end"]};
@@ -196,7 +201,7 @@ function taxFunction(c,x,y,w,h,S){
     c.line(cx,yo,cx,yn,{stroke:C.blue,sw:1.6,dash:s.exempt?[3,3]:null});
     c.circle(cx,yo,5,{fill:C.white,stroke:C.gray,sw:1.8});
     c.circle(cx,yn,6,{fill:C.blue,stroke:C.white,sw:1.5});
-    const o=off[s.id]; c.t1(s.short+(s.exempt?" · esente":""),cx+o[0],yn+o[1],{font:"sansB",size:11.5,color:C.blue,anchor:o[2]});
+    const o=off[s.id]; c.t1(s.short+(s.exempt?" · esente":s.youth?" · €"+n1(s.tMed).replace(/,0$/,""):""),cx+o[0],yn+o[1],{font:"sansB",size:11.5,color:C.blue,anchor:o[2]});
   });
 }
 /* distribuzione del premio R */
@@ -249,12 +254,11 @@ function frontier(c,x,y,w,h,S){
     c.path(d,{stroke:C.lblue,sw:1.2,op:.9});
     const last=row[row.length-1]; const ly=Y(last.saldo/1e6); if(ly>lastLy+14){ c.t1("α "+n0(a*100)+"%",X(-last.nChg*100)+6,ly+4,{size:10.5,color:C.gray}); lastLy=ly; } });
   pts.forEach(p=>c.circle(X(-p.nChg*100),Y(p.saldo/1e6),2.6,{fill:C.lblue}));
-  // scenari
-  const lab={prudente:["Prudente",12,-10],centrale:["Centrale",12,-10],ambizioso:["Ambizioso",12,-10],vigente:["Legge vigente",12,22]};
-  Object.keys(lab).forEach(k=>{ const r=S.SC[k].R; const cx=X(-r.nChg*100), cy=Y(r.saldo/1e6);
-    c.circle(cx,cy,7,{fill:k===S.key?C.orange:C.navy,stroke:C.white,sw:1.5});
-    c.t1(lab[k][0],cx+lab[k][1],cy+lab[k][2],{font:"sansB",size:12,color:C.navy}); });
-  if(!S.key){ const cx=X(-S.R.nChg*100), cy=Y(S.R.saldo/1e6); c.circle(cx,cy,8,{fill:C.orange,stroke:C.white,sw:1.5}); c.t1("Scenario attuale",cx+12,cy-10,{font:"sansB",size:12,color:C.orange}); }
+  // percorso del transitorio: ogni anno valutato a regime con le leve di quell'anno
+  const pp=S.MAP.plan||[];
+  if(pp.length>1){ let d=""; pp.forEach((p,i)=>{ d+=(i?"L":"M")+X(-p.nChg*100).toFixed(1)+","+Y(p.saldo/1e6).toFixed(1); }); c.path(d,{stroke:C.navy,sw:1.4,dash:[4,3]});
+    pp.slice(0,-1).forEach(p=>{ const cx=X(-p.nChg*100), cy=Y(p.saldo/1e6); c.circle(cx,cy,5.5,{fill:C.white,stroke:C.navy,sw:1.6}); c.t1(String(p.year),cx-9,cy+4,{size:10.5,color:C.navy,anchor:"end"}); }); }
+  const cx=X(-S.R.nChg*100), cy=Y(S.R.saldo/1e6); c.circle(cx,cy,8,{fill:C.orange,stroke:C.white,sw:1.5}); c.t1("Obiettivo",cx+12,cy-10,{font:"sansB",size:12,color:C.orange});
 }
 /* tabella a mappa di calore (matrice degli effetti) */
 function heat(c,x,y,mat,o){ o=o||{};
@@ -287,11 +291,66 @@ function gantt(c,x,y,w,rows,o){ o=o||{};
   return hh+rows.length*rh;
 }
 
+/* serie annuale: o.labels [anni], o.series [{v:[],color,name,type:'line'|'bar',dash}], o.base (valore di oggi), o.shade (anni di transitorio), o.fmt, o.axisFmt */
+function trend(c,x,y,w,h,o){
+  const labels=o.labels, n=labels.length, m={l:o.ml!==undefined?o.ml:46,r:o.mr!==undefined?o.mr:62,t:o.legend?30:16,b:26};
+  const px=x+m.l, pw=w-m.l-m.r, py=y+m.t, ph=h-m.t-m.b, slot=pw/n, X=i=>px+slot*(i+.5);
+  const vals=o.series.flatMap(s=>s.v).concat(o.base!==undefined?[o.base]:[]).filter(v=>isFinite(v));
+  let lo=Math.min(...vals), hi=Math.max(...vals);
+  if(o.zero!==false){ lo=Math.min(0,lo); hi=Math.max(0,hi); }
+  if(hi-lo<1e-9){ const a=Math.abs(hi)||1; hi+=a*.1; lo-=o.zero!==false&&lo>=0?0:a*.1; }
+  const span=hi-lo; hi+=span*.1; if(!(o.zero!==false&&lo===0)) lo-=span*.1;
+  const tk=root.FMD.ticks(lo,hi,4), Y=v=>py+(hi-v)/(hi-lo)*ph;
+  if(o.shade>0){ c.rect(px,py,slot*o.shade,ph,{fill:C.panel}); c.t1("Transitorio",px+6,py+13,{font:"sansB",size:10,color:C.gray}); }
+  tk.ticks.forEach(t=>{ c.line(px,Y(t),px+pw,Y(t),{stroke:C.xl,sw:.8}); c.t1(o.axisFmt?o.axisFmt(t):n0(t),px-7,Y(t)+4,{size:10,color:C.gray,anchor:"end"}); });
+  if(lo<0&&hi>0) c.line(px,Y(0),px+pw,Y(0),{stroke:C.gray,sw:1});
+  const step=n>12&&pw<520?3:n>8&&pw<420?2:1;
+  labels.forEach((l,i)=>{ if(i%step===0) c.t1(String(l),X(i),py+ph+17,{size:10.5,color:C.gray,anchor:"middle"}); });
+  if(o.base!==undefined){ c.line(px,Y(o.base),px+pw,Y(o.base),{stroke:C.gray,sw:1.1,dash:[4,3]}); c.t1("oggi",px+pw+5,Y(o.base)+4,{size:10,color:C.gray}); }
+  const bars=o.series.filter(s=>s.type==="bar"), nb=bars.length, bw=Math.min(slot*.62/Math.max(1,nb),nb>1?18:30);
+  bars.forEach((s,j)=>{ s.v.forEach((v,i)=>{ if(!isFinite(v)) return; const cx=X(i)-bw*nb/2+bw*j, y0=Y(Math.max(lo,Math.min(hi,0))), y1=Y(v); c.rect(cx+.5,Math.min(y0,y1),bw-1,Math.max(1,Math.abs(y1-y0)),{fill:s.color||C.blue}); }); });
+  const ends=[];
+  o.series.filter(s=>s.type!=="bar").forEach(s=>{ let d=""; s.v.forEach((v,i)=>{ if(isFinite(v)) d+=(d?"L":"M")+X(i).toFixed(1)+","+Y(v).toFixed(1); });
+    c.path(d,{stroke:s.color||C.blue,sw:s.sw||2.2,dash:s.dash});
+    s.v.forEach((v,i)=>{ if(isFinite(v)&&(n<=12||i===n-1)) c.circle(X(i),Y(v),s.dash?2:2.8,{fill:s.color||C.blue}); });
+    const lv=s.v[n-1]; if(isFinite(lv)&&!o.noEnd) ends.push({y:Y(lv),t:o.fmt?o.fmt(lv):n1(lv),c:s.color||C.blue}); });
+  bars.forEach(s=>{ const lv=s.v[n-1]; if(isFinite(lv)&&!o.noEnd&&o.endBars) ends.push({y:Y(lv),t:o.fmt?o.fmt(lv):n1(lv),c:s.color||C.blue}); });
+  ends.sort((a,b)=>a.y-b.y); let last=-1e9; ends.forEach(e=>{ const yy=Math.max(e.y+4,last+13); c.t1(e.t,px+pw+(o.base!==undefined?30:6),yy,{font:"sansB",size:11,color:e.c}); last=yy; });
+  if(o.legend){ let lx=px; o.series.forEach(s=>{ if(!s.name) return; if(s.type==="bar") c.rect(lx,y+6,10,10,{fill:s.color||C.blue}); else c.line(lx,y+11,lx+14,y+11,{stroke:s.color||C.blue,sw:2.4,dash:s.dash}); c.t1(s.name,lx+(s.type==="bar"?14:18),y+15,{size:10.5,color:C.ink}); lx+=(s.type==="bar"?14:18)+c.measure(s.name,"sans",10.5)+16; }); }
+  return h;
+}
+
 /* ---------- costruttori condivisi tra slide e console ---------- */
+/* serie dell'evoluzione nel tempo, condivise tra console e presentazione */
+function evoDefs(S){
+  const TL=S.TL,P=S.P,ys=TL.years,v=f=>ys.map(f),R=S.R;
+  return [
+    {key:"rev",title:"Gettito netto al Comune",unit:"€ mln all'anno",o:{series:[{v:v(y=>(y.R.net+y.R.dayFeeNet)/1e6),color:C.blue}],base:P.baseRevenue,zero:false,fmt:v=>n1(v)}},
+    {key:"saldo",title:"Saldo e Fondo Armonizzatore",unit:"€ mln all'anno",o:{series:[{type:"bar",v:v(y=>y.R.saldo/1e6),color:C.blue,name:"Saldo"},{v:v(y=>y.R.fund/1e6),color:C.orange,name:"Spesa del Fondo"}],legend:true,fmt:v=>n1(v)}},
+    {key:"div",title:"Dividendo per famiglia",unit:"€ all'anno",o:{series:[{v:v(y=>y.R.perHH),color:C.blue}],fmt:v=>fE(v)}},
+    {key:"nights",title:"Pernottamenti",unit:"milioni di notti",o:{series:[{v:v(y=>y.R.nNew/1e6),color:C.blue}],base:R.nB/1e6,zero:false,fmt:v=>n2(v),axisFmt:v=>n1(v)}},
+    {key:"vd",title:"Visitatori in un giorno medio",unit:"migliaia di persone",o:{series:[{v:v(y=>y.R.vdN/365/1e3),color:C.blue,name:"Totale"},{v:v(y=>y.R.dayV1/365/1e3),color:C.navy,dash:[4,3],name:"di cui escursionisti"}],base:R.vdB/365/1e3,legend:true,fmt:v=>n1(v)}},
+    {key:"homes",title:"Case tornate ai residenti",unit:"abitazioni e persone",o:{series:[{type:"bar",v:v(y=>y.R.toRes),color:C.blue,name:"Abitazioni"},{v:v(y=>y.R.newRes),color:C.navy,name:"Nuovi residenti netti"}],legend:true,fmt:v=>n0(v),endBars:true}},
+    {key:"rent",title:"Canone medio richiesto",unit:"€/m² al mese",o:{series:[{v:v(y=>P.rent*(1+y.R.rentChg)),color:C.blue}],base:P.rent,zero:false,fmt:v=>"€"+n2(v),axisFmt:v=>n1(v)}},
+    {key:"jobs",title:"Occupazione",unit:"posti di lavoro rispetto a oggi",o:{series:[{type:"bar",v:v(y=>-y.R.jobsLost),color:C.orange,name:"Persi"},{type:"bar",v:v(y=>y.R.jobsGained),color:C.lblue,name:"Creati"},{v:v(y=>y.R.jobsNet),color:C.navy,name:"Saldo"}],legend:true,fmt:v=>(v<0?MIN:"+")+n0(Math.abs(v))}}
+  ].map(d=>(d.o.labels=ys.map(y=>y.year),d.o.shade=TL.n-1,d));
+}
+/* valore di un'ipotesi con la sua unità */
+function fmtParam(p,v){
+  if(p.bool) return v?"Sì":"No";
+  if(p.select){ const o=p.select.find(x=>x[0]===v); return o?o[1]:String(v); }
+  if(p.pct){ const x=v*100; return (Math.abs(x-Math.round(x))<1e-9?n0(x):Math.abs(x*10-Math.round(x*10))<1e-9?n1(x):n2(x))+"%"; }
+  const mag=a=>Math.abs(a)>=100?n0(a):(Math.abs(a)<10&&a%1?n2(a):n1(a).replace(/,0$/,""));
+  const val=(v<0?MIN:"")+mag(Math.abs(v)); const u=p.unit||"";
+  if(u[0]==="€"){ const rest=u.slice(1).trim(); return "€"+val+(rest?(rest[0]==="/"?rest:" "+rest):""); }
+  return val+(u&&u!=="unità"?" "+u:"");
+}
 function pnlSteps(R){
   const steps=[{label:"Maggior gettito lordo",v:(R.G-R.base)/1e6},{label:"Evasione",v:-R.evasionLoss/1e6},{label:"Quota allo Stato",v:-R.levy/1e6}];
   if(R.dayFeeNet>0) steps.push({label:"Contributo d'accesso",v:R.dayFeeNet/1e6});
-  steps.push({label:"Incremento netto",t:"s"},{label:"Perdite collaterali",v:-R.collateral/1e6},{label:"Risparmi netti",v:R.savings/1e6},{label:"Prima del Fondo",t:"s"},{label:"Fondo: commercio",v:-R.fComm/1e6},{label:"Fondo: garanzia affitti",v:-R.fGuar/1e6},{label:"Fondo: imprese e talenti",v:-R.fTalent/1e6},{label:"Saldo strutturale",t:"s"});
+  steps.push({label:"Incremento netto",t:"s"},{label:"Perdite collaterali",v:-R.collateral/1e6},{label:"Risparmi netti",v:R.savings/1e6},{label:"Prima del Fondo",t:"s"},{label:"Fondo: commercio",v:-R.fComm/1e6},{label:"Fondo: garanzia affitti",v:-R.fGuar/1e6},{label:"Fondo: imprese e talenti",v:-R.fTalent/1e6});
+  if(R.fTrain>0) steps.push({label:"Fondo: riqualificazione",v:-R.fTrain/1e6});
+  steps.push({label:"Saldo strutturale",t:"s"});
   return steps;
 }
 function stakeGroups(R){
@@ -311,5 +370,5 @@ function visitorBars(c,x,y,w,S){
   names.forEach((nm,j)=>{ const lx=x+150+j*Math.min(190,(w-150)/3); c.rect(lx,y+152,12,12,{fill:cols[j]}); c.t1(nm,lx+18,y+163,{size:12.5,color:C.ink}); });
   return 170;
 }
-root.FMK={fMc,pnlSteps,stakeGroups,tornadoRows,visitorBars,C,ML,MR,CW,n0,n1,n2,fM,fMs,fE,fE2,fP,fPs,fN,fNs,fMn,fMn1,MIN,frame,callout,calloutH,kpi,bullets,numbered,chartTitle,table,chip,hBarPairs,hBars,diverging,waterfall,columns,taxFunction,densityR,tornadoChart,frontier,heat,gantt};
+root.FMK={evoDefs,fmtParam,trend,fMc,pnlSteps,stakeGroups,tornadoRows,visitorBars,C,ML,MR,CW,n0,n1,n2,fM,fMs,fE,fE2,fP,fPs,fN,fNs,fMn,fMn1,MIN,frame,callout,calloutH,kpi,bullets,numbered,chartTitle,table,chip,hBarPairs,hBars,diverging,waterfall,columns,taxFunction,densityR,tornadoChart,frontier,heat,gantt};
 })(typeof self!=="undefined"?self:this);
