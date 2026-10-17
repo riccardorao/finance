@@ -1,37 +1,42 @@
-# Il Dividendo di Firenze
+# Il Dividendo di Firenze · modello micro-economico
 
-| File | What it is |
+Un unico file HTML interattivo (`dividendo-firenze-it.html`, si apre in qualsiasi browser, funziona offline)
+che simula una riforma progressiva dell'imposta di soggiorno di Firenze e mostra come, al variare dei
+parametri, cambiano tutti i fattori coinvolti. Il pulsante **Salva scenario** esporta una presentazione in PDF
+(16:9, vettoriale, stile consulenza strategica) con i risultati dello scenario impostato.
+
+| File | Contenuto |
 |---|---|
-| `dividendo-firenze-it.html` | Italian white-paper edition: interactive on screen, A4 layout when printed (Stampa → Salva come PDF) |
-| `white-paper-dividendo-firenze.pdf` | A4 PDF of the Italian white paper, central scenario (26 pages) |
-| `dividendo-firenze.html` | English simulator, same model and numbers |
+| `dividendo-firenze-it.html` | La console del modello, in italiano (file autonomo, generato da `build.py`) |
+| `white-paper-dividendo-firenze.pdf` | PDF esportato dallo scenario Centrale (31 slide) |
+| `src/` | Sorgenti: modello, strato di disegno, slide, interfaccia, caratteri e librerie |
+| `tests/model.test.js` | Verifica numerica del modello da riga di comando |
+| `dividendo-firenze.html` | Versione precedente in inglese (modello v2, non più aggiornata) |
 
-`dividendo-firenze.html` is a single-page, offline simulator of a proposed reform of Florence's tourist tax
-(*imposta di soggiorno*): a progressive tariff `t = max(T_min, α · p_night)`, an exemption for EU citizens under 30,
-and a "civic dividend" that returns the net surplus to residents through lower local taxes and free transit.
+## Il modello
 
-Open the file in a browser. Levers on the left change the tax design and market response; every input in the
-*Assumptions* section can be edited and is tagged as published data, a third-party estimate or a model assumption,
-with links to sources. Edits persist in the browser's local storage.
+Equilibrio parziale, annuale, per una sola città. Cinque tipologie di visitatore con prezzi log-normali,
+elasticità crescente con il rincaro e traslazione parziale dell'imposta sull'ospite. Da lì il modello calcola:
 
-What the model covers:
+1. gettito dell'imposta, quota allo Stato, evasione, contributo d'accesso per gli escursionisti;
+2. surplus dei turisti, margini di albergatori e proprietari, ristorazione e commercio, perdita di efficienza;
+3. conversione degli affitti brevi in locazioni (soglia sul premio R), canoni, prezzi, effetto patrimoniale;
+4. occupazione, costi di transizione, indennità, spesa del dividendo in città;
+5. conto economico del Comune, Fondo Armonizzatore, dividendo civico, famiglia tipo;
+6. chi paga e chi riceve, quota del costo su non residenti, effetto netto sui residenti;
+7. percorso a cinque anni, cinque scenari, mappa delle scelte, sensibilità, incertezza (400 simulazioni),
+   matrice degli effetti, verifiche numeriche.
 
-1. **Tax function** – new tariff per visitor persona against today's flat tariffs (Delibera DG/2024/00535).
-2. **Demand** – five personas with log-normal nightly prices and constant price elasticities; partial pass-through;
-   displacement to the metropolitan belt.
-3. **Municipal account** – calibrated to 2025 revenue (≈ €82m), extra evasion, the 30% State levy on extra revenue,
-   collateral effects on TARI, IMU, IRPEF surcharge and fees, operating savings, Fondo Armonizzatore.
-4. **Housing** – short-let owners switch to long lets when the reform pushes short-let net income below long-let
-   income after a risk discount; rent and price effects from the supply shock.
-5. **Civic dividend**, five-year transition path, first/second/third-order effects, sensitivity tornado and
-   legal-feasibility checks.
+Ogni ipotesi è modificabile nella scheda **Ipotesi** ed è etichettata come dato, stima o ipotesi, con la fonte.
 
-Annex C of the Italian edition runs automatic numerical checks on every change: calibration to 2025 revenue,
-the accounting identity of the waterfall, conservation of overnight stays, direction of effects, convergence
-of the five-year path, the Laffer scan and the implied elasticity. The uncertainty table uses 400 seeded
-Monte Carlo draws.
+## Costruire e verificare
 
-To regenerate the PDF for another scenario, open the Italian HTML in a browser and print to PDF; the print
-stylesheet lays it out on A4.
+```bash
+python3 firenze/build.py                  # genera dividendo-firenze-it.html
+node firenze/tests/model.test.js          # verifica numerica
+python3 firenze/build.py --artifact FILE  # variante senza doctype per la pubblicazione come artefatto
+```
 
-All figures are estimates under stated assumptions, for discussion.
+Il PDF è generato nel browser con `pdf-lib` e `fontkit` (inclusi in `src/vendor`), con gli stessi caratteri
+dell'anteprima. I caratteri (Source Sans 3, Source Serif 4, licenza OFL) sono incorporati in `src/fonts.js`;
+i file originali non sono nel repository: per rigenerare i sottoinsiemi vedi `src/fonts/LEGGIMI.txt`.

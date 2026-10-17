@@ -10,3 +10,6 @@ node_modules/
 data/sample/ledger.json
 data/sample/data.json
 .DS_Store
+
+# caratteri originali (vedi firenze/src/fonts/LEGGIMI.txt)
+firenze/src/fonts/*.ttf

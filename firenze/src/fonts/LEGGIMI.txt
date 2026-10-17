@@ -1,0 +1,10 @@
+Caratteri usati (licenza SIL OFL): Source Sans 3 (400, 600, 700) e Source Serif 4 (400, 600).
+I file TTF originali non sono nel repository. Per rigenerare i sottoinsiemi incorporati:
+
+1. Scaricare i TTF statici da Google Fonts (CSS API con User-Agent assente restituisce i .ttf) in questa cartella,
+   con i nomi SS3-400.ttf, SS3-600.ttf, SS3-700.ttf, SF4-400.ttf, SF4-600.ttf.
+2. pip install fonttools brotli
+3. Per ciascun file:
+   pyftsubset FILE.ttf --unicodes="U+0020-007E,U+00A0-00FF,U+0100-017F,U+2010-2015,U+2018-201E,U+2020,U+2022,U+2026,U+2030,U+2032,U+2033,U+20AC,U+2116,U+2190-2193,U+2212,U+2211,U+221A,U+2248,U+2260,U+2264,U+2265,U+0391-03C9,U+2070-209F,U+25B2,U+25BC,U+25CF,U+25CB,U+25A0" --layout-features='' --no-hinting --desubroutinize --drop-tables+=GSUB,GPOS,GDEF,BASE,STAT,gasp,prep --output-file=sub/FILE.ttf
+   (senza kerning né legature, così anteprima e PDF hanno testi della stessa larghezza)
+4. Ricodificare i file di sub/ in base64 dentro ../fonts.js (window.FM_FONTS = {"SS3-400": "...", ...}).

@@ -1,0 +1,60 @@
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="eyebrow">Modello micro-economico · Comune di Firenze</span>
+      <h1>Il Dividendo di Firenze</h1>
+    </div>
+    <div class="scen" role="group" aria-label="Scenari">
+      <span class="lbl">Scenario</span>
+      <span id="scenbtns"></span>
+      <span id="scenname" class="badge" hidden></span>
+    </div>
+    <div class="actions">
+      <button type="button" id="chkbadge" class="badge ok" title="Verifiche numeriche" hidden></button>
+      <button type="button" class="primary" id="btnSave">Salva scenario</button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="params" aria-label="Parametri del modello">
+      <button type="button" class="ptoggle" id="ptoggle" aria-expanded="false" aria-controls="pbody">Parametri e ipotesi</button>
+      <div class="ptabs" role="tablist">
+        <button type="button" role="tab" id="pt-leve" aria-selected="true" aria-controls="pbody">Leve</button>
+        <button type="button" role="tab" id="pt-ip" aria-selected="false" aria-controls="pbody">Ipotesi <span id="modcnt"></span></button>
+      </div>
+      <div class="pbody" id="pbody"></div>
+      <div class="pfoot">
+        <button type="button" id="btnReset">Ripristina</button>
+        <button type="button" id="btnExport">Esporta parametri</button>
+        <button type="button" id="btnImport">Importa parametri</button>
+        <input type="file" id="fileImport" accept=".json,application/json" hidden>
+      </div>
+    </aside>
+
+    <main class="out">
+      <section class="kpis" id="kpis" aria-label="Risultati principali"></section>
+      <div class="tabs" id="tabs" role="tablist" aria-label="Sezioni dei risultati"></div>
+      <div id="tabbody" role="tabpanel"></div>
+    </main>
+  </div>
+</div>
+
+<div class="modal" id="saveModal" hidden role="dialog" aria-modal="true" aria-labelledby="saveTitle">
+  <div class="box">
+    <h2 id="saveTitle">Salva scenario</h2>
+    <p class="note">Genera la presentazione in PDF (formato 16:9) con tutti i risultati dello scenario attuale: sintesi, grafici, rischi, percorso e allegati.</p>
+    <label for="f-name">Nome dello scenario<input type="text" id="f-name" autocomplete="off"></label>
+    <label for="f-aud">Destinatario<input type="text" id="f-aud" autocomplete="off"></label>
+    <label for="f-auth">A cura di (facoltativo)<input type="text" id="f-auth" autocomplete="off"></label>
+    <label class="check" for="f-app"><input type="checkbox" id="f-app" checked><span>Includi gli allegati: ipotesi, metodo, verifiche numeriche e fonti</span></label>
+    <p class="est" id="f-est"></p>
+    <div class="busy" id="f-busy" hidden><span class="spin"></span><span id="f-busytxt"></span></div>
+    <div class="acts">
+      <button type="button" class="primary" id="f-go">Genera e salva il PDF</button>
+      <button type="button" id="f-json">Salva anche i parametri (JSON)</button>
+      <button type="button" id="f-cancel">Chiudi</button>
+    </div>
+    <p class="note" id="f-msg" aria-live="polite"></p>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
