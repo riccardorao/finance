@@ -42,6 +42,17 @@ const extremes = [{ tmin: 0, alpha: 0 }, { tmin: 3, alpha: 0 }, { tmin: 30, alph
   { tmin: 100, alpha: 0 }, { tmin: 3, alpha: 1 }, { tmin: 100, alpha: 1 }, { tmin: 100, alpha: 1, cap: 100 }, { tmin: 60, alpha: 0.5, dayFee: 15, u30: 50 },
   { u30: 20 }, { fundCommercial: 40, fundTalent: 40, trainCost: 15000, trainCoverage: 1 }, { guaranteeOn: false, trainCoverage: 0 }];
 extremes.forEach((e, i) => { const P = Object.assign(FM.defaults(), e); FM.resizePlan(P, 1 + (i % 5)); check("estremo " + i, P); });
+// ottimizzazione: ogni ottimo rispetta i vincoli e la frontiera è monotona
+{
+  const P = FM.defaults(), O = FM.optimize(P);
+  Object.entries(O.opt).forEach(([k, e]) => { if (!e) return fail(`ottimo ${k} non trovato`); finite(e.R, "", "ottimo " + k); if (!FM.feasible(e.R)) fail(`ottimo ${k} viola i vincoli`); });
+  for (let i = 1; i < O.front.length; i++) if (O.front[i].saldo < O.front[i - 1].saldo || O.front[i].dwl < O.front[i - 1].dwl) fail("frontiera non monotona");
+  if (O.opt.isoSaldo.R.saldo < FM.run(P).saldo - 1) fail("ottimo a parità di saldo sotto il saldo della proposta");
+  ["res", "bal", "eff"].forEach((k, i) => { const w = (e) => FM.welfare(e.R, e.Q, FM.PERSP[i].om).W; if (w(O.opt[k]) < w({ R: FM.run(P), Q: P }) - 1) fail(`ottimo ${k} peggiore della proposta`); });
+  const w = FM.welfare(FM.run(P), P, 1), tot = FM.run(P).netMonetary + w.ext + w.prem;
+  if (Math.abs(w.W - tot) > 1) fail("benessere complessivo diverso dalla somma degli effetti");
+  console.log(`ottimo bilanciato: pavimento €${O.opt.bal.Q.tmin}, aliquota ${(O.opt.bal.Q.alpha * 100).toFixed(1)}%, contributo €${O.opt.bal.Q.dayFee} · stesso saldo con perdita ${(O.opt.isoSaldo.R.dwl / 1e6).toFixed(1)} invece di ${(FM.run(P).dwl / 1e6).toFixed(1)} mln`);
+}
 const mc = FM.monteCarlo(FM.defaults(), 400);
 if (!(mc.saldo.p10 > 0)) fail("la politica di base dovrebbe avere saldo positivo nel 90% delle simulazioni");
 console.log(failed ? `\n${failed} controlli falliti` : "\nTutti i controlli superati");

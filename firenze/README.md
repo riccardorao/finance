@@ -35,7 +35,10 @@ elasticità crescente con il rincaro e traslazione parziale dell'imposta sull'os
 6. chi paga e chi riceve, quota del costo su non residenti, effetto netto sui residenti;
 7. percorso anno per anno su dieci anni: la domanda si adegua con ritardo, le riconversioni convergono
    all'equilibrio, la riqualificazione è spesa quando i posti si perdono;
-8. mappa delle scelte, sensibilità, incertezza (400 simulazioni), matrice degli effetti, verifiche numeriche.
+8. benessere e ottimo: frontiera tra saldo del Comune e perdita di efficienza, vincitori e vinti tra residenti e
+   non residenti, combinazioni ottimali per tre prospettive (solo residenti, bilanciata, efficienza complessiva),
+   a parità di saldo o di perdita e a legislazione vigente;
+9. mappa delle scelte, sensibilità, incertezza (400 simulazioni), matrice degli effetti, verifiche numeriche.
 
 Ogni ipotesi è etichettata come dato, stima, letteratura, regola o ipotesi, con la fonte e la derivazione.
 

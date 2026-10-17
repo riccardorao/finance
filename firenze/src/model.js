@@ -156,7 +156,10 @@ const PARAMS=[
   {id:"order",g:"Dividendo civico",label:"Ordine degli sgravi",v:"irpef,tari,tpl",kind:"regola",select:[["irpef,tari,tpl","Addizionale IRPEF → TARI → trasporti"]],note:"Prima l'addizionale IRPEF (sgravio più visibile e meno costoso), poi la TARI domestica, poi il trasporto pubblico gratuito."},
 
   {id:"demandAdj",g:"Dinamica",label:"Adeguamento della domanda nel primo anno",v:.7,step:.05,pct:1,unit:"%",kind:"ipotesi",note:"Quota della reazione di lungo periodo che si manifesta nell'anno della variazione: prenotazioni anticipate, pacchetti e contratti con i tour operator."},
-  {id:"convSpeed",g:"Dinamica",label:"Velocità delle riconversioni",v:.4,step:.05,pct:1,unit:"% all'anno",kind:"ipotesi",note:"Ogni anno si chiude questa quota della distanza tra appartamenti riconvertiti e livello di equilibrio: ristrutturazioni, scadenze e prenotazioni già in calendario."}
+  {id:"convSpeed",g:"Dinamica",label:"Velocità delle riconversioni",v:.4,step:.05,pct:1,unit:"% all'anno",kind:"ipotesi",note:"Ogni anno si chiude questa quota della distanza tra appartamenti riconvertiti e livello di equilibrio: ristrutturazioni, scadenze e prenotazioni già in calendario."},
+
+  {id:"extCost",g:"Benessere",label:"Costo della congestione per visitatore-giorno",v:5,step:1,unit:"€",kind:"ipotesi",note:"Danno non monetario per i residenti (affollamento, rumore, usura degli spazi) di un visitatore in più per un giorno, oltre ai costi già nel bilancio comunale. Non esiste una stima per Firenze: l'ottimo è ricalcolato con €0, €10 e €20."},
+  {id:"fundsPremium",g:"Benessere",label:"Valore aggiunto di €1 di entrate comunali",v:.15,step:.05,pct:1,unit:"%",kind:"letteratura",note:"Il dividendo sostituisce addizionale IRPEF e TARI, che distorcono a loro volta: €1 raccolto dai visitatori vale circa €1,15 per i residenti (costo marginale dei fondi pubblici tra 1,1 e 1,3 negli studi sui paesi europei)."}
 ];
 const PMAP=Object.fromEntries(PARAMS.map(p=>[p.id,p]));
 // gruppi di ipotesi, nell'ordine in cui sono presentati
@@ -168,7 +171,8 @@ const GROUPS=[
   {id:"Lavoro",title:"Lavoro",intro:"Posti di lavoro legati alla spesa turistica, durata della disoccupazione e domanda locale creata da dividendo e nuovi residenti."},
   {id:"Finanza comunale",title:"Finanza comunale",intro:"Le voci del bilancio comunale toccate dalla riforma: tributi collaterali, costi dei servizi legati ai flussi, sgravi finanziati dal dividendo."},
   {id:"Dividendo civico",title:"Regole del dividendo",intro:"Regole di destinazione del saldo, fissate nella proposta."},
-  {id:"Dinamica",title:"Dinamica nel tempo",intro:"Velocità con cui domanda e mercato abitativo si adeguano: determinano il percorso anno per anno, non il risultato a regime."}
+  {id:"Dinamica",title:"Dinamica nel tempo",intro:"Velocità con cui domanda e mercato abitativo si adeguano: determinano il percorso anno per anno, non il risultato a regime."},
+  {id:"Benessere",title:"Valutazione del benessere",intro:"Grandezze che servono solo a confrontare le politiche nella pagina «Benessere e ottimo»: non cambiano i risultati economici del modello."}
 ];
 const LEVER_IDS=PARAMS.filter(p=>p.g==="leve").map(p=>p.id);
 
@@ -481,6 +485,60 @@ function laffer(P){
   return {tmin:bt,alpha:ba};
 }
 
+/* ---------- benessere: vincitori, vinti e ottimo ---------- */
+// Prospettive di valutazione: peso dato al benessere di chi non risiede a Firenze (turisti, gestori e proprietari esterni, Stato, cintura).
+const PERSP=[
+  {id:"res",label:"Solo residenti",om:0,desc:"Conta solo il benessere dei fiorentini: turisti e operatori esterni non pesano."},
+  {id:"bal",label:"Bilanciata",om:.5,desc:"Il benessere di chi non risiede pesa la metà di quello dei residenti."},
+  {id:"eff",label:"Efficienza complessiva",om:1,desc:"Ogni euro conta allo stesso modo, chiunque lo guadagni o lo perda."}
+];
+// Scompone ogni portatore di interesse in quota residente e non residente; aggiunge congestione evitata e valore dei fondi pubblici.
+function welfare(R,P,om){
+  let res=0,non=0,oth=0; const rows=[];
+  R.stake.forEach(x=>{ const r=x.id==="evas"?P.resShareOps:x.res;
+    if(x.id==="state"||x.id==="belt"){ oth+=x.v; rows.push({id:x.id,label:x.label,res:0,non:x.v}); }
+    else { res+=x.v*r; non+=x.v*(1-r); rows.push({id:x.id,label:x.label,res:x.v*r,non:x.v*(1-r)}); } });
+  const ext=P.extCost*(R.vdB-R.vdN), prem=P.fundsPremium*R.saldo;
+  rows.push({id:"ext",label:"Congestione evitata",res:ext,non:0},{id:"prem",label:"Tributi più efficienti (dividendo)",res:prem,non:0});
+  const city=res+ext+prem, outside=non+oth;
+  return {res,non,oth,ext,prem,city,outside,W:city+(om===undefined?.5:om)*outside,rows,
+    winRes:rows.reduce((a,x)=>a+Math.max(0,x.res),0),loseRes:rows.reduce((a,x)=>a+Math.min(0,x.res),0)};
+}
+// Vincoli della riforma: il Comune non perde entrate; pernottamenti e visitatori al giorno non aumentano.
+const feasible=R=>R.saldo>=0&&R.nChg<=1e-9&&R.vdChg<=1e-9;
+const OPT_B={tmin:[0,40,.5],alpha:[0,.4,.005],u30:[0,10,.5],dayFee:[0,10,.5]};
+function optimize(P){
+  const R0=run(P), base=cloneP(P); base.cap=0;
+  const ev=(x,fix)=>{ const Q=Object.assign(cloneP(base),fix||{},x); return {x,Q,R:run(Q)}; };
+  const cloud=[];
+  for(let t=0;t<=40;t+=2) for(let a=0;a<=.4001;a+=.02) for(const u of [0,5]) for(const d of [0,5,10]) cloud.push(ev({tmin:t,alpha:+a.toFixed(3),u30:u,dayFee:d}));
+  // migliore sulla griglia, poi ricerca per coordinate con passo che si dimezza
+  function pick(score,o){ o=o||{}; const B=Object.assign({},OPT_B,o.bounds||{}), keys=Object.keys(B).filter(k=>B[k][1]>B[k][0]);
+    let best=null,bs=-Infinity; (o.start||cloud).forEach(e=>{ const sc=score(e); if(sc>bs){ bs=sc; best=e; } });
+    if(!best||bs===-Infinity) return null;
+    let x=Object.assign({},best.x); const st={tmin:2,alpha:.02,u30:2,dayFee:2};
+    for(let it=0;it<80;it++){ let imp=false;
+      keys.forEach(k=>[-1,1].forEach(d=>{ const v=clamp(+(x[k]+d*st[k]).toFixed(4),B[k][0],B[k][1]); if(v===x[k]) return; const e=ev(Object.assign({},x,{[k]:v}),o.fix); const sc=score(e); if(sc>bs+1){ bs=sc; x=e.x; best=e; imp=true; } }));
+      if(!imp){ let more=false; keys.forEach(k=>{ if(st[k]>B[k][2]+1e-9){ st[k]=Math.max(B[k][2],st[k]/2); more=true; } }); if(!more) break; } }
+    return best; }
+  const W=(om,ext)=>e=>feasible(e.R)?welfare(e.R,ext===undefined?e.Q:Object.assign({},e.Q,{extCost:ext}),om).W:-Infinity;
+  const opt={};
+  PERSP.forEach(p=>{ opt[p.id]=pick(W(p.om)); });
+  opt.isoSaldo=pick(e=>feasible(e.R)&&e.R.saldo>=R0.saldo?-e.R.dwl:-Infinity);
+  opt.isoDwl=pick(e=>feasible(e.R)&&e.R.dwl<=R0.dwl?e.R.saldo:-Infinity);
+  const legalStart=[]; for(let t=0;t<=10;t+=1) for(let a=0;a<=.4001;a+=.02) for(const u of [0,5]) legalStart.push(ev({tmin:t,alpha:+a.toFixed(3),u30:u,dayFee:0},{cap:10}));
+  opt.legal=pick(W(.5),{start:legalStart,fix:{cap:10},bounds:{tmin:[0,10,.5],dayFee:[0,0,.5],u30:[0,10,.5]}});
+  // ottimo bilanciato al variare del costo della congestione
+  const extSens=[0,5,10,20].map(v=>({ext:v,e:pick(W(.5,v))}));
+  // frontiera di Pareto tra saldo e perdita di efficienza, tra le combinazioni ammissibili
+  const ok=cloud.concat(Object.values(opt).filter(e=>e&&!e.Q.cap)).filter(e=>feasible(e.R)).sort((a,b)=>b.R.saldo-a.R.saldo); let mn=Infinity; const front=[];
+  ok.forEach(e=>{ if(e.R.dwl<mn-1){ mn=e.R.dwl; front.push(e); } }); front.reverse();
+  // benessere su una griglia di pavimento e aliquota, con under 30 e contributo della politica scelta
+  const tL=[0,4,8,12,16,20,25,30], aL=[0,.04,.08,.12,.16,.2,.25,.3];
+  const heat=tL.map(t=>aL.map(a=>{ const e=ev({tmin:t,alpha:a,u30:P.u30,dayFee:P.dayFee}); return {t,a,feas:feasible(e.R),saldo:e.R.saldo,dwl:e.R.dwl,W:PERSP.map(p=>welfare(e.R,e.Q,p.om).W)}; }));
+  return {R0,cloud:cloud.map(e=>({saldo:e.R.saldo,dwl:e.R.dwl,feas:feasible(e.R)})),front:front.map(e=>({x:e.x,saldo:e.R.saldo,dwl:e.R.dwl})),opt,extSens,heat:{tL,aL,cells:heat}};
+}
+
 /* ---------- verifiche numeriche ---------- */
 function sanity(P,R,pathRes){
   const out=[]; const add=(ok,t,d)=>out.push({s:ok===true?"ok":ok===false?"bad":"warn",t,d});
@@ -536,5 +594,5 @@ function sanity(P,R,pathRes){
   return out;
 }
 
-return {SRC,SRCI,SEG0,SEGNUM,PARAMS,PMAP,GROUPS,LEVER_IDS,PLAN_KEYS,RAMP_KEYS,HORIZON,PLAN_MAX,NQ,defaults,cloneP,merge,origin,rampPlan,levers,resizePlan,run,timeline,monteCarlo,tornado,impactMatrix,MATRIX_OUT,MATRIX_LEVERS,policyMap,laffer,sanity,taxNew,lnPartial,normCdf,clamp,MC_KEYS};
+return {PERSP,welfare,feasible,optimize,SRC,SRCI,SEG0,SEGNUM,PARAMS,PMAP,GROUPS,LEVER_IDS,PLAN_KEYS,RAMP_KEYS,HORIZON,PLAN_MAX,NQ,defaults,cloneP,merge,origin,rampPlan,levers,resizePlan,run,timeline,monteCarlo,tornado,impactMatrix,MATRIX_OUT,MATRIX_LEVERS,policyMap,laffer,sanity,taxNew,lnPartial,normCdf,clamp,MC_KEYS};
 });

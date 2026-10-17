@@ -16,10 +16,10 @@ try{ FMD.initFonts(window.FM_FONTS); }catch(e){ console.error(e); }
 const KEY="dividendo-firenze-v4", OLD="dividendo-firenze-v3";
 let P=FM.defaults();
 const META={name:"",audience:"Commissione consiliare e forze politiche",author:"",appendix:true};
-const UI={page:"pol",slide:0};
+const UI={page:"pol",slide:0,persp:"bal"};
 try{ const s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem(OLD)||"null");
   if(s&&s.P) FM.merge(P,s.P); if(s&&s.META){ Object.assign(META,s.META); if(!localStorage.getItem(KEY)) META.name=""; }
-  if(s&&s.UI){ if(s.UI.page) UI.page=s.UI.page; if(s.UI.slide) UI.slide=s.UI.slide; } }catch(e){}
+  if(s&&s.UI){ if(s.UI.page) UI.page=s.UI.page; if(s.UI.slide) UI.slide=s.UI.slide; if(s.UI.persp) UI.persp=s.UI.persp; } }catch(e){}
 const policy=()=>{ const o={}; FM.LEVER_IDS.forEach(id=>o[id]=P[id]); o.plan=P.plan; return o; };
 function persist(){ try{ localStorage.setItem(KEY,JSON.stringify({P:policy(),META,UI})); }catch(e){} }
 const DEFNAME="Proposta di riforma";
@@ -35,6 +35,7 @@ const A={
   get MAP(){ return memo("map",()=>FM.policyMap(P)); },
   get SAN(){ return memo("san",()=>FM.sanity(P,R,A.TL)); },
   get NG(){ return memo("ng",()=>{ const Q=FM.cloneP(P); Q.guaranteeOn=false; return FM.run(Q); }); },
+  get OPT(){ return memo("opt",()=>FM.optimize(P)); },
   get D5(){ return memo("d5",()=>{ const Q=FM.cloneP(P); Q.dayFee=P.dayFee>0?P.dayFee:5; return FM.run(Q); }); }
 };
 const S={ get P(){return P;}, get R(){return R;}, get MAP(){return A.MAP;}, get TL(){return A.TL;}, get name(){return scenName();}, get MC(){return A.MC;}, get TOR(){return A.TOR;}, get MAT(){return A.MAT;}, get SAN(){return A.SAN;} };
@@ -184,9 +185,13 @@ const CH={
   jobs:(c,w)=>{ const h=340; K.columns(c,40,0,w-46,h,[{label:"Posti persi nel turismo",v:-R.jobsLost},{label:"Dividendo speso in città",v:R.pool*P.mpcRes/1e6*P.jobsPerMRes},{label:"Nuovi residenti",v:R.newRes*P.newResSpend/1e6*P.jobsPerMRes},{label:"Spesa del Fondo",v:(R.fComm+R.fTalent)/1e6*P.jobsPerMRes},{label:"Saldo netto",v:R.jobsNet,c:C.navy}],{fmt:v=>(v>=0?"+":MIN)+n0(Math.abs(v)),axisFmt:v=>n0(v),labH:62,maxBw:70}); return h; },
   frontier:(c,w)=>{ const h=Math.round(Math.max(340,Math.min(480,w*.5))); K.frontier(c,0,0,w,h,S); return h; },
   tornado:(c,w)=>K.tornadoChart(c,0,0,w,K.tornadoRows(A.TOR),{labelW:Math.min(230,w*.34),rowH:36})+6,
+  pareto:(c,w)=>{ const h=Math.round(Math.max(380,Math.min(520,w*.62))); K.pareto(c,0,0,w,h,A.OPT,welMarks()); return h; },
+  winA:(c,w)=>K.diverging(c,0,0,w,K.winGroups(FM.welfare(R,P,persp().om)),{labelW:Math.min(240,w*.44),rowH:27,gh:26})+4,
+  winB:(c,w)=>{ const e=A.OPT.opt[UI.persp]; return e?K.diverging(c,0,0,w,K.winGroups(FM.welfare(e.R,e.Q,persp().om)),{labelW:Math.min(240,w*.44),rowH:27,gh:26})+4:40; },
+  wheat:(c,w)=>{ const i=FM.PERSP.findIndex(p=>p.id===UI.persp); return K.gridHeat(c,0,0,w,A.OPT.heat,{val:z=>z.W[i],labelW:90}); },
   evo:(c,w,el)=>{ const d=K.evoDefs(S).find(x=>x.key===el.dataset.k); const h=Math.round(Math.max(230,Math.min(300,w*.62))); K.trend(c,0,0,w,h,d.o); return h; }
 };
-const CHMIN={wf:700,ops:440,jobs:480,tax:540,taxmini:300,frontier:500,stake:500,tornado:480,dens:440,load:480,poltrend:420,evo:300};
+const CHMIN={pareto:520,winA:420,winB:420,wheat:520,wf:700,ops:440,jobs:480,tax:540,taxmini:300,frontier:500,stake:500,tornado:480,dens:440,load:480,poltrend:420,evo:300};
 function paintCharts(){
   $$("[data-ch]").forEach(el=>{ const f=CH[el.dataset.ch]; if(!f) return; const w=Math.max(CHMIN[el.dataset.ch]||380,Math.floor(el.clientWidth)||380); const so=new FMD.SvgOut(colorMap); const c=new FMD.Canvas(so); let h=0; try{ h=f(c,w,el); }catch(e){ console.error(el.dataset.ch,e); } el.innerHTML=so.region(w,Math.max(40,h),el.dataset.label); });
 }
@@ -334,6 +339,49 @@ function pgChk(){
    +card("Esito",`${A.SAN.filter(x=>x.s==="ok").length} verifiche superate su ${A.SAN.length}.`,`<div class="chk">${A.SAN.map(x=>`<div class="it"><span class="chip ${x.s}">${lab[x.s]}</span><div><b>${esc(x.t)}.</b> ${esc(x.d)}</div></div>`).join("")}</div>`);
 }
 
+/* ---------- benessere e ottimo ---------- */
+const persp=()=>FM.PERSP.find(p=>p.id===UI.persp)||FM.PERSP[1];
+const OPTCOL=[["isoSaldo","Stesso saldo, minima perdita","Stesso saldo"],["isoDwl","Stessa perdita, massimo saldo","Stessa perdita"],["res","Ottimo: solo residenti","Residenti"],["bal","Ottimo: bilanciata","Bilanciata"],["eff","Ottimo: efficienza","Efficienza"],["legal","Ottimo a legge vigente","Legge vigente"]];
+function welMarks(){ const O=A.OPT; return [{dwl:R.dwl,saldo:R.saldo,label:"Proposta",color:C.orange,main:1}].concat(OPTCOL.filter(k=>O.opt[k[0]]).map(k=>({dwl:O.opt[k[0]].R.dwl,saldo:O.opt[k[0]].R.saldo,label:k[2],color:k[0]===UI.persp?C.blue:C.navy,main:k[0]===UI.persp}))); }
+const lawOf=(Q,r)=>window.FMDeckB.legal(Q,r).needsLaw?"norma nazionale":(Q.tmin>10||Math.max(...r.segs.map(s=>s.tP90))>10.0001?"maggiorazione €2":"vigente");
+function applyOpt(key){ const e=A.OPT.opt[key]; if(!e) return; ["tmin","alpha","u30","dayFee","cap"].forEach(k=>P[k]=e.Q[k]); const wasCustom=P.plan.custom; P.plan.custom=false; P.plan.rows=null; changed(); toast("Combinazione applicata"+(wasCustom?": il transitorio torna alla rampa lineare":"")); }
+function pgWel(){
+  const O=A.OPT, pp=persp(), om=pp.om, cols=[["cur","Proposta attuale",{Q:P,R}]].concat(OPTCOL.map(k=>[k[0],k[1],O.opt[k[0]]])).filter(c=>c[2]);
+  const wf=e=>FM.welfare(e.R,e.Q,om);
+  const v=(e,f)=>f(e.R,e.Q,wf(e));
+  const at=(x,B)=>Math.abs(x-B)<1e-9?" ▲":"";
+  const rows=[
+    ["Pavimento",(r,Q)=>"€"+pv(Q.tmin)],["Aliquota sul prezzo",(r,Q)=>pv(Q.alpha*100,2)+"%"+at(Q.alpha,.4)],["Imposta under 30 UE",(r,Q)=>Q.u30>0?"€"+pv(Q.u30):"esenti"],["Contributo escursionisti",(r,Q)=>Q.dayFee>0?"€"+pv(Q.dayFee)+at(Q.dayFee,10):"—"],["Tetto per notte",(r,Q)=>Q.cap>0?"€"+pv(Q.cap):"—"],
+    ["<b>Saldo del Comune</b>",r=>`<b>${fM(r.saldo)}</b>`],["<b>Perdita di efficienza</b>",r=>`<b>${fM(r.dwl)}</b>`],["Costo di €1 raccolto",r=>fMc(r.mcpf)],["Dividendo per famiglia",r=>fE(r.perHH)],
+    ["Pernottamenti",r=>fPs(r.nChg)],["Visitatori al giorno",r=>fPs(r.vdChg)],["Case ai residenti",r=>fN(r.toRes)],["Canoni",r=>fPs(r.rentChg)],
+    ["Benessere dei residenti",(r,Q,w)=>fMs(w.city)],["Benessere dei non residenti",(r,Q,w)=>fMs(w.outside)],[`<b>Benessere: ${esc(pp.label.toLowerCase())}</b>`,(r,Q,w)=>`<b>${fMs(w.W)}</b>`],["Base giuridica",(r,Q)=>lawOf(Q,r)]];
+  const tcols=[{h:"",a:"l"},...cols.map(c=>({h:esc(c[1]),cls:c[0]===UI.persp?"tgt":""}))];
+  const body=rows.map(rw=>[rw[0],...cols.map(c=>v(c[2],rw[1]))]);
+  const btns=["",...cols.map(c=>c[0]==="cur"?"":`<button type="button" class="small" data-apply="${c[0]}">Applica</button>`)];
+  const iso=O.opt.isoSaldo, best=O.opt[UI.persp], bal=O.opt.bal;
+  const wc=FM.welfare(R,P,om), wb=best?FM.welfare(best.R,best.Q,om):null;
+  const read=[];
+  if(iso) read.push(`**Lo stesso saldo con meno danni.** La proposta raccoglie ${fM(R.saldo)} con una perdita di efficienza di ${fM(R.dwl)}. Con pavimento €${pv(iso.Q.tmin)}, aliquota ${pv(iso.Q.alpha*100,2)}%${iso.Q.dayFee>0?` e contributo di €${pv(iso.Q.dayFee)}`:""} si ottiene ${fM(iso.R.saldo)} perdendo ${fM(iso.R.dwl)} (${fPs(iso.R.dwl/R.dwl-1,0)}), ma con ${fN(iso.R.toRes)} case ai residenti invece di ${fN(R.toRes)}.`);
+  read.push(`**Il pavimento è la componente più costosa.** Colpisce i segmenti più sensibili al prezzo (budget e mass-market), dove ogni euro raccolto fa perdere più notti. L'aliquota sul prezzo pesa sul lusso, che reagisce poco: è la logica di Ramsey. Il pavimento si giustifica con la decongestione e la casa, che il calcolo valuta a €${pv(P.extCost)} per visitatore-giorno evitato.`);
+  if(O.opt.res&&bal) read.push(`**Dipende da quanto contano i non residenti.** Guardando solo ai fiorentini conviene tassare il più possibile: l'ottimo è al limite dell'intervallo esplorato (aliquota ${pv(O.opt.res.Q.alpha*100,2)}%), perché il costo ricade su turisti e operatori esterni. Con la prospettiva bilanciata l'ottimo è un'aliquota del ${pv(bal.Q.alpha*100,2)}% con pavimento €${pv(bal.Q.tmin)}: saldo ${fM(bal.R.saldo)}, perdita ${fM(bal.R.dwl)}. Con l'efficienza complessiva conviene un'imposta vicina a quella di oggi.`);
+  if(bal&&bal.Q.dayFee>=9.99) read.push(`**Il contributo d'accesso è lo strumento più efficiente.** In ogni prospettiva l'ottimo lo porta al massimo esplorato (€10, la tariffa piena di Venezia): gli escursionisti spendono poco in città e la loro domanda è poco sensibile al contributo.`);
+  if(O.opt.legal) read.push(`**A legislazione vigente lo spazio è minimo.** Con il tetto di €10 il lusso non può pagare di più e il prelievo ricade sui segmenti elastici: l'ottimo bilanciato raccoglie appena ${fM(O.opt.legal.R.saldo)} di saldo. Il guadagno di benessere richiede la norma nazionale.`);
+  const comp=wc.loseRes<-1?wc.winRes/(-wc.loseRes):Infinity, compB=wb&&wb.loseRes<-1?wb.winRes/(-wb.loseRes):Infinity;
+  const ext=O.extSens.filter(x=>x.e);
+  return head("Benessere e ottimo",`Gettito per il Comune e perdita di efficienza vanno in direzioni opposte: non esiste un'unica combinazione migliore, ma una frontiera di scelte efficienti. Il modello ha valutato ${n0(O.cloud.length)} combinazioni di pavimento, aliquota, imposta under 30 e contributo d'accesso, poi ha raffinato le migliori. Vincoli: il Comune non perde entrate, pernottamenti e visitatori al giorno non aumentano.`,
+      `<div class="yrs" role="group" aria-label="Prospettiva di valutazione"><span class="hint" style="margin-right:6px">Prospettiva</span>${FM.PERSP.map(p=>`<button type="button" data-persp="${p.id}" aria-pressed="${p.id===UI.persp}" title="${esc(p.desc)}">${esc(p.label)}</button>`).join("")}</div>`)
+   +`<p class="note">${esc(pp.desc)} Benessere = variazione annua per ciascun gruppo, più la congestione evitata e il valore delle entrate comunali che sostituiscono altri tributi; il benessere di chi non risiede pesa ${pv(om*100)}%.</p>`
+   +`<div class="g2">`+card("La frontiera tra saldo ed efficienza","Ogni punto è una combinazione di leve. Sopra la frontiera non si può andare: per avere più saldo bisogna accettare più perdita di efficienza. La proposta attuale (arancione) sta all'interno: esistono combinazioni che fanno meglio su entrambi i fronti.",ch("pareto","Frontiera tra saldo e perdita di efficienza"))
+   +card("Che cosa ne ricaviamo","",`<ul class="read">${read.map(x=>`<li>${md(x)}</li>`).join("")}</ul>`)+`</div>`
+   +card("Le combinazioni ottimali","Valori annui a regime. ▲ = al limite dell'intervallo esplorato (aliquota 40%, contributo €10). «Applica» porta la combinazione nella pagina Politica, con il transitorio scelto.",tbl(tcols,body.concat([btns]),{cls:"welopt"}))
+   +`<div class="g2 even">`+card("Vincitori e vinti: proposta attuale",`€ milioni all'anno, divisi tra residenti e non residenti. Tra i residenti chi guadagna ottiene ${fM(wc.winRes)}, chi perde cede ${fM(-wc.loseRes)}${isFinite(comp)?`: i vincitori potrebbero compensare i perdenti ${n1(comp)} volte`:""}.`,ch("winA","Vincitori e vinti, proposta attuale"))
+   +card(`Vincitori e vinti: ottimo ${esc(pp.label.toLowerCase())}`,wb?`Tra i residenti chi guadagna ottiene ${fM(wb.winRes)}, chi perde cede ${fM(-wb.loseRes)}${isFinite(compB)?`: rapporto di compensazione ${n1(compB)}`:""}. I perdenti residenti sono soprattutto gestori e proprietari di affitti brevi: il Fondo Armonizzatore serve a compensarli.`:"",ch("winB","Vincitori e vinti, ottimo"))+`</div>`
+   +`<div class="g2">`+card("Benessere al variare di pavimento e aliquota",`€ milioni all'anno, prospettiva ${esc(pp.label.toLowerCase())}; imposta under 30 e contributo come nella politica scelta. Riquadro: la combinazione migliore della griglia; «—»: viola i vincoli.`,ch("wheat","Benessere per pavimento e aliquota"))
+   +card("Quanto pesa il costo della congestione","Ottimo bilanciato ricalcolato con diversi valori del danno da affollamento per visitatore-giorno: è l'ipotesi più incerta della valutazione.",tbl([{h:"Costo per visitatore-giorno",a:"l"},{h:"Pavimento"},{h:"Aliquota"},{h:"Contributo"},{h:"Saldo"},{h:"Perdita"},{h:"Pernottamenti"}],ext.map(x=>["€"+n0(x.ext)+(Math.abs(x.ext-P.extCost)<1e-9?" (ipotesi)":""),"€"+pv(x.e.Q.tmin),pv(x.e.Q.alpha*100,2)+"%","€"+pv(x.e.Q.dayFee),fM(x.e.R.saldo),fM(x.e.R.dwl),fPs(x.e.R.nChg)]))
+     +(ext.every(x=>x.e.Q.tmin<=P.tmin/2)?`<p class="note">Anche con un danno di €${n0(ext[ext.length-1].ext)} per visitatore-giorno l'ottimo non usa un pavimento alto: aumenta piuttosto l'aliquota e il contributo d'accesso. Il pavimento resta una scelta politica di decongestione, non di efficienza.</p>`:`<p class="note">Con un danno da congestione più alto l'ottimo alza il pavimento: la sua giustificazione dipende da quanto vale, per i residenti, un visitatore in meno.</p>`))+`</div>`;
+}
+function bindWel(){ const pg=$("#page"); pg.onclick=e=>{ const b=e.target.closest("button"); if(!b) return; if(b.dataset.persp){ UI.persp=b.dataset.persp; persist(); renderPage(true); } else if(b.dataset.apply) applyOpt(b.dataset.apply); }; }
+
 /* ---------- anteprima della presentazione ---------- */
 let deck=null;
 function buildDeck(){
@@ -354,13 +402,14 @@ function paintDeck(){
   wrap.onkeydown=e=>{ if(e.key==="ArrowRight") show(UI.slide+1); else if(e.key==="ArrowLeft") show(UI.slide-1); };
 }
 
-const PAGES=[["pol","Politica",pgPol],["evo","Evoluzione",pgEvo],["over","Panoramica",pgOver],["tour","Turismo",pgTour],["casa","Casa e operatori",pgCasa],["bud","Bilancio e dividendo",pgBud],["lab","Lavoro",pgLab],["who","Chi paga",pgWho],["risk","Rischi",pgRisk],["ip","Ipotesi",pgIp],["chk","Verifiche",pgChk],["deck","Presentazione",pgDeck]];
+const PAGES=[["pol","Politica",pgPol],["evo","Evoluzione",pgEvo],["over","Panoramica",pgOver],["tour","Turismo",pgTour],["casa","Casa e operatori",pgCasa],["bud","Bilancio e dividendo",pgBud],["lab","Lavoro",pgLab],["who","Chi paga",pgWho],["wel","Benessere e ottimo",pgWel],["risk","Rischi",pgRisk],["ip","Ipotesi",pgIp],["chk","Verifiche",pgChk],["deck","Presentazione",pgDeck]];
 if(!PAGES.some(p=>p[0]===UI.page)) UI.page="pol";
 function renderNav(){ $("#pages").innerHTML=PAGES.map((t,i)=>`<button type="button" role="tab" data-page="${t[0]}" aria-selected="${t[0]===UI.page}"><span class="k">${i+1}</span>${t[1]}</button>`).join(""); }
 function renderPage(keepScroll){
   const t=PAGES.find(x=>x[0]===UI.page)||PAGES[0]; $$("#pages [data-page]").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.page===UI.page)));
   const sy=window.scrollY; const pg=$("#page"); pg.oninput=pg.onchange=pg.onclick=null;
-  pg.innerHTML=t[2](); if(UI.page==="pol"){ bindPol(); updPol(); }
+  if(UI.page==="wel"&&!(cache.opt&&cache.opt.v===ver)){ pg.innerHTML=head("Benessere e ottimo","")+`<div class="busy"><span class="spin"></span><span>Cerco le combinazioni ottimali tra migliaia di politiche…</span></div>`; setTimeout(()=>{ A.OPT; if(UI.page==="wel") renderPage(true); },30); return; }
+  pg.innerHTML=t[2](); if(UI.page==="pol"){ bindPol(); updPol(); } if(UI.page==="wel") bindWel();
   paintCharts(); if(UI.page==="deck") setTimeout(paintDeck,20);
   if(keepScroll) window.scrollTo(0,sy);
 }
@@ -370,7 +419,7 @@ function goPage(id){ UI.page=id; persist(); renderPage(false); window.scrollTo({
 let tmr=null;
 function changed(){ ver++; R=FM.run(P); persist(); renderKpis(); clearTimeout(tmr);
   if(UI.page==="pol"){ syncCtls(); syncPlan(); tmr=setTimeout(()=>{ updPol(); paintCharts(); setTimeout(renderBadge,10); },60); return; }
-  const heavy=["risk","deck","chk","ip"].includes(UI.page); tmr=setTimeout(()=>{ renderPage(true); setTimeout(renderBadge,10); },heavy?140:40); }
+  const heavy=["risk","deck","chk","ip","wel"].includes(UI.page); tmr=setTimeout(()=>{ renderPage(true); setTimeout(renderBadge,10); },heavy?140:40); }
 
 /* ---------- salvataggio ---------- */
 let dlP=Promise.resolve(null);

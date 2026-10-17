@@ -320,6 +320,56 @@ function trend(c,x,y,w,h,o){
   return h;
 }
 
+/* frontiera tra saldo e perdita di efficienza: nuvola delle combinazioni, frontiera, punti notevoli */
+function pareto(c,x,y,w,h,O,marks){
+  const m={l:56,r:16,t:14,b:44}, px=x+m.l, pw=w-m.l-m.r, py=y+m.t, ph=h-m.t-m.b;
+  const pts=O.cloud, xs=pts.map(p=>p.dwl/1e6).concat(marks.map(k=>k.dwl/1e6)), ys=pts.map(p=>p.saldo/1e6).concat(marks.map(k=>k.saldo/1e6));
+  const xmax=Math.min(Math.max(...xs),Math.max(...marks.map(k=>k.dwl/1e6))*1.6+20), xmin=Math.min(0,...xs);
+  const ymax=Math.min(Math.max(...ys),Math.max(...marks.map(k=>k.saldo/1e6))*1.4+20)*1.04, ymin=Math.min(0,Math.max(-60,Math.min(...ys)));
+  const X=v=>px+(v-xmin)/(xmax-xmin)*pw, Y=v=>py+ph-(v-ymin)/(ymax-ymin)*ph, inb=(a,b)=>a>=xmin&&a<=xmax&&b>=ymin&&b<=ymax;
+  const tx=root.FMD.ticks(xmin,xmax,5), ty=root.FMD.ticks(ymin,ymax,5);
+  tx.ticks.forEach(t=>{ c.line(X(t),py,X(t),py+ph,{stroke:C.xl,sw:.8}); c.t1(n0(t),X(t),py+ph+16,{size:10.5,color:C.gray,anchor:"middle"}); });
+  ty.ticks.forEach(t=>{ c.line(px,Y(t),px+pw,Y(t),{stroke:C.xl,sw:.8}); c.t1(n0(t),px-7,Y(t)+4,{size:10.5,color:C.gray,anchor:"end"}); });
+  if(ymin<0) c.line(px,Y(0),px+pw,Y(0),{stroke:C.gray,sw:1});
+  c.t1("Perdita di efficienza, € mln all'anno",px+pw/2,py+ph+35,{size:11.5,color:C.gray,anchor:"middle"});
+  c.t1("Saldo del Comune, € mln all'anno",x+12,py+ph/2,{size:11.5,color:C.gray,anchor:"middle",rot:-90});
+  pts.forEach(p=>{ const a=p.dwl/1e6,b=p.saldo/1e6; if(inb(a,b)) c.circle(X(a),Y(b),p.feas?2.2:1.6,{fill:p.feas?C.lblue:C.lgray}); });
+  let d=""; O.front.forEach(p=>{ const a=p.dwl/1e6,b=p.saldo/1e6; if(inb(a,b)) d+=(d?"L":"M")+X(a).toFixed(1)+","+Y(b).toFixed(1); }); if(d) c.path(d,{stroke:C.navy,sw:2});
+  const placed=[];
+  marks.forEach(k=>{ const a=k.dwl/1e6,b=k.saldo/1e6; if(!inb(a,b)) return; const cx=X(a), cy=Y(b);
+    c.circle(cx,cy,k.main?7.5:6,{fill:k.color||C.navy,stroke:C.white,sw:1.5});
+    const tw=c.measure(k.label,"sansB",11.5), dots=marks.filter(q=>q!==k).map(q=>({x:X(q.dwl/1e6),y:Y(q.saldo/1e6)}));
+    const hit=(lx,ly,anc)=>{ const x0=anc==="end"?lx-tw:lx, x1=x0+tw; return dots.some(d=>d.x>x0-8&&d.x<x1+8&&d.y>ly-18&&d.y<ly+8)||placed.some(p=>Math.abs(p.y-ly)<14&&p.x0<x1&&p.x1>x0)||x1>px+pw||x0<px; };
+    let best=null; for(const [lx,ly,anc] of [[cx+11,cy-10,"start"],[cx-11,cy-10,"end"],[cx+11,cy+18,"start"],[cx-11,cy+18,"end"],[cx+11,cy-26,"start"],[cx-11,cy-26,"end"]]){ if(!hit(lx,ly,anc)){ best=[lx,ly,anc]; break; } }
+    if(!best) best=[cx+11,cy-10,"start"]; const [lx,ly,anchor]=best;
+    placed.push({y:ly,x0:anchor==="end"?lx-tw:lx,x1:(anchor==="end"?lx-tw:lx)+tw}); c.t1(k.label,lx,ly,{font:"sansB",size:11.5,color:k.color||C.navy,anchor}); });
+  c.circle(px+8,py+8,3,{fill:C.lblue}); c.t1("Combinazioni ammissibili",px+16,py+12,{size:10.5,color:C.gray});
+  c.line(px+170,py+8,px+186,py+8,{stroke:C.navy,sw:2}); c.t1("Frontiera: minima perdita per ogni saldo",px+192,py+12,{size:10.5,color:C.gray});
+}
+/* griglia a colori di un valore su pavimento (righe) e aliquota (colonne) */
+function gridHeat(c,x,y,w,H,o){ o=o||{};
+  const tL=H.tL,aL=H.aL, labW=o.labelW||96, hh=o.hh||40, rh=o.rowH||30, cw=(w-labW)/aL.length, val=o.val;
+  const vs=H.cells.flat().filter(z=>z.feas).map(val), mx=Math.max(1e-9,...vs.map(Math.abs));
+  c.t1("Aliquota sul prezzo →",x+labW,y+12,{font:"sansB",size:10.5,color:C.gray});
+  aL.forEach((a,j)=>c.t1(n0(a*100)+"%",x+labW+cw*j+cw/2,y+hh-8,{font:"sansB",size:11,color:C.navy,anchor:"middle"}));
+  c.t1("Pavimento ↓",x,y+hh-8,{font:"sansB",size:10.5,color:C.gray});
+  c.line(x,y+hh,x+w,y+hh,{stroke:C.navy,sw:1.2});
+  let best=null; H.cells.flat().forEach(z=>{ if(z.feas&&(!best||val(z)>val(best))) best=z; });
+  tL.forEach((t,i)=>{ const yy=y+hh+i*rh; c.t1("€"+n0(t),x+8,yy+rh/2+4,{size:11.5,color:C.ink});
+    aL.forEach((a,j)=>{ const z=H.cells[i][j], v=val(z), cx=x+labW+cw*j;
+      if(!z.feas){ c.rect(cx+2,yy+2,cw-4,rh-4,{fill:C.panel}); c.t1("—",cx+cw/2,yy+rh/2+4,{size:10.5,color:C.gray,anchor:"middle"}); return; }
+      const tt=Math.abs(v)/mx; c.rect(cx+2,yy+2,cw-4,rh-4,{fill:v>=0?C.blue:C.orange,op:.12+.6*Math.sqrt(tt)});
+      if(z===best) c.rect(cx+1,yy+1,cw-2,rh-2,{stroke:C.navy,sw:2});
+      c.t1((v<0?MIN:"")+n0(Math.abs(v)/1e6),cx+cw/2,yy+rh/2+4,{size:11,font:tt>.55||z===best?"sansB":"sans",color:tt>.62?C.white:C.ink,anchor:"middle"}); });
+    c.line(x,yy+rh,x+w,yy+rh,{stroke:C.xl,sw:.6}); });
+  return hh+tL.length*rh;
+}
+/* vincitori e vinti per residenza */
+function winGroups(Wl){
+  const f=(t,key)=>({title:t,rows:Wl.rows.filter(r=>Math.abs(r[key])>5e4).map(r=>({label:r.label,v:r[key]})).sort((a,b)=>a.v-b.v)});
+  return [f("Residenti a Firenze","res"),f("Non residenti, Stato e cintura","non")].filter(g=>g.rows.length);
+}
+
 /* ---------- costruttori condivisi tra slide e console ---------- */
 /* serie dell'evoluzione nel tempo, condivise tra console e presentazione */
 function evoDefs(S){
@@ -370,5 +420,5 @@ function visitorBars(c,x,y,w,S){
   names.forEach((nm,j)=>{ const lx=x+150+j*Math.min(190,(w-150)/3); c.rect(lx,y+152,12,12,{fill:cols[j]}); c.t1(nm,lx+18,y+163,{size:12.5,color:C.ink}); });
   return 170;
 }
-root.FMK={evoDefs,fmtParam,trend,fMc,pnlSteps,stakeGroups,tornadoRows,visitorBars,C,ML,MR,CW,n0,n1,n2,fM,fMs,fE,fE2,fP,fPs,fN,fNs,fMn,fMn1,MIN,frame,callout,calloutH,kpi,bullets,numbered,chartTitle,table,chip,hBarPairs,hBars,diverging,waterfall,columns,taxFunction,densityR,tornadoChart,frontier,heat,gantt};
+root.FMK={pareto,gridHeat,winGroups,evoDefs,fmtParam,trend,fMc,pnlSteps,stakeGroups,tornadoRows,visitorBars,C,ML,MR,CW,n0,n1,n2,fM,fMs,fE,fE2,fP,fPs,fN,fNs,fMn,fMn1,MIN,frame,callout,calloutH,kpi,bullets,numbered,chartTitle,table,chip,hBarPairs,hBars,diverging,waterfall,columns,taxFunction,densityR,tornadoChart,frontier,heat,gantt};
 })(typeof self!=="undefined"?self:this);

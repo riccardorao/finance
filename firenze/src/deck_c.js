@@ -125,6 +125,33 @@ function s_daypass(c,S,n){
   const body=`Il contributo è l'unica leva che agisce sugli escursionisti, circa un terzo delle presenze giornaliere. Il gettito è modesto rispetto all'imposta di soggiorno e la riscossione ha un costo: a Venezia, nel 2024, ha superato gli incassi. La valutazione di Ca' Foscari indica che il valore sta soprattutto nella prenotazione, che produce dati giornalieri sugli arrivi e permette di governare i giorni di picco.`;
   K.callout(c,800,442,420,Math.min(K.calloutH(c,420,body,{size:13,lh:18}),210),"Implicazione",body,{size:13,lh:18});
 }
+function s_pareto(c,S,n){
+  const R=S.R,O=S.OPT,o=O.opt,iso=o.isoSaldo;
+  const title=iso&&iso.R.dwl<R.dwl*.9?`Con lo stesso saldo (${fM(iso.R.saldo)}) la perdita di efficienza può scendere da ${fM(R.dwl)} a ${fM(iso.R.dwl)}: la proposta non è sulla frontiera delle scelte efficienti`:`La proposta è vicina alla frontiera delle scelte efficienti: più saldo richiede più perdita di efficienza`;
+  K.frame(c,S,n,{tag:"Gettito ed efficienza",title,source:"modello Il Dividendo di Firenze",notes:`${n0(O.cloud.length)} combinazioni di pavimento (€0–40), aliquota (0–40%), imposta under 30 e contributo d'accesso (€0–10), poi raffinate. Ammissibili: il Comune non perde entrate, pernottamenti e visitatori al giorno non aumentano. Fondo Armonizzatore invariato.`});
+  K.chartTitle(c,ML,166,690,"Saldo del Comune e perdita di efficienza","€ milioni all'anno");
+  const mk=[{dwl:R.dwl,saldo:R.saldo,label:"Proposta",color:C.orange,main:1}]; [["isoSaldo","Stesso saldo"],["isoDwl","Stessa perdita"],["bal","Bilanciata"],["eff","Efficienza"],["legal","Legge vigente"]].forEach(k=>{ if(o[k[0]]) mk.push({dwl:o[k[0]].R.dwl,saldo:o[k[0]].R.saldo,label:k[1],color:C.navy}); });
+  K.pareto(c,ML,180,690,470,O,mk);
+  const lv=Q=>"€"+pv(Q.tmin)+" · "+pv(Q.alpha*100)+"%"+(Q.dayFee>0?" · €"+pv(Q.dayFee):"");
+  const rows=[["Proposta attuale",{Q:S.P,R}],["Stesso saldo",o.isoSaldo],["Stessa perdita",o.isoDwl],["Ottimo bilanciato",o.bal],["Ottimo efficienza",o.eff],["Legge vigente",o.legal]].filter(r=>r[1]);
+  K.table(c,790,166,[{h:"Combinazione",w:140},{h:"Pavimento · aliquota · contributo",w:150,a:"r"},{h:"Saldo",w:70,a:"r"},{h:"Perdita",w:70,a:"r"}],rows.map((r,i)=>({cells:[r[0],lv(r[1].Q),fM(r[1].R.saldo),fM(r[1].R.dwl)],b:i===0})),{rh:30,hh:40,size:11.4});
+  const body=`Il pavimento è la componente più costosa: colpisce budget e mass-market, che reagiscono di più al prezzo. Aliquota sul prezzo e contributo d'accesso raccolgono con meno danni. Il prezzo di un pavimento alto, ${iso?fM(R.dwl-iso.R.dwl):"una parte della perdita"} all'anno, si giustifica solo con gli obiettivi di decongestione e di casa${iso?`: la combinazione efficiente riporta ${fN(iso.R.toRes)} case ai residenti invece di ${fN(R.toRes)}`:""}.`;
+  K.callout(c,790,402,430,Math.min(K.calloutH(c,430,body,{size:12.6,lh:17}),250),"Implicazione",body,{size:12.6,lh:17});
+}
+function s_welfare(c,S,n){
+  const R=S.R,P=S.P,O=S.OPT,o=O.opt;
+  const wc=FM.welfare(R,P,.5), comp=wc.loseRes<-1?wc.winRes/(-wc.loseRes):Infinity, b=o.bal;
+  K.frame(c,S,n,{tag:"Benessere",title:b?`Con la prospettiva bilanciata l'ottimo è un'aliquota del ${pv(b.Q.alpha*100)}% con pavimento €${pv(b.Q.tmin)}${b.Q.dayFee>0?` e contributo di €${pv(b.Q.dayFee)}`:""}: i residenti guadagnano, turisti e operatori esterni pagano`:"Vincitori e vinti della riforma",source:"modello Il Dividendo di Firenze",notes:`Benessere = variazione annua per gruppo, più congestione evitata (€${pv(P.extCost)} per visitatore-giorno) e valore delle entrate comunali che sostituiscono altri tributi (+${fP(P.fundsPremium,0)}). Prospettive: peso del benessere dei non residenti 0% (solo residenti), 50% (bilanciata), 100% (efficienza complessiva).`});
+  K.chartTitle(c,ML,166,600,"Vincitori e vinti della proposta","€ milioni all'anno");
+  K.diverging(c,ML,176,600,K.winGroups(wc),{labelW:250,rowH:24,gh:24});
+  const lv=Q=>"€"+pv(Q.tmin)+" · "+pv(Q.alpha*100)+"% · "+(Q.dayFee>0?"€"+pv(Q.dayFee):"—");
+  K.chartTitle(c,720,166,500,"Benessere della proposta e dell'ottimo","€ milioni all'anno");
+  K.table(c,720,176,[{h:"Prospettiva",w:130},{h:"Proposta",w:80,a:"r"},{h:"Ottimo",w:80,a:"r"},{h:"Leve dell'ottimo",w:210,a:"r"}],FM.PERSP.map(p=>{ const e=o[p.id]; return {cells:[p.label,fMs(FM.welfare(R,P,p.om).W),e?fMs(FM.welfare(e.R,e.Q,p.om).W):"—",e?lv(e.Q):"—"],b:p.id==="bal"}; }),{rh:30,hh:30,size:11.6});
+  const body=`Tra i residenti chi guadagna (inquilini, famiglie che ricevono il dividendo) ottiene ${fM(wc.winRes)}; chi perde (gestori e proprietari residenti) cede ${fM(-wc.loseRes)}.${isFinite(comp)?` I vincitori potrebbero compensare i perdenti ${n1(comp)} volte: è il compito del Fondo Armonizzatore.`:""} La scelta della prospettiva è politica: guardando solo ai residenti conviene tassare molto di più, guardando all'efficienza complessiva quasi nulla.`;
+  K.callout(c,720,316,500,Math.min(K.calloutH(c,500,body,{size:12.8,lh:17.5}),200),"Implicazione",body,{size:12.8,lh:17.5});
+  const ext=O.extSens.filter(x=>x.e);
+  K.table(c,720,316+Math.min(K.calloutH(c,500,body,{size:12.8,lh:17.5}),200)+18,[{h:"Costo della congestione",w:150},{h:"Leve dell'ottimo bilanciato",w:200,a:"r"},{h:"Saldo",w:75,a:"r"},{h:"Perdita",w:75,a:"r"}],ext.map(x=>({cells:["€"+n0(x.ext)+" per visitatore-giorno",lv(x.e.Q),fM(x.e.R.saldo),fM(x.e.R.dwl)],b:Math.abs(x.ext-P.extCost)<1e-9})),{rh:24,hh:26,size:11.2});
+}
 function s_frontier(c,S,n){
   const mp=S.MAP, tL=mp.tList, aL=mp.aList;
   K.frame(c,S,n,{tag:"Le scelte",title:"Più gettito significa meno presenze, con rendimenti decrescenti: la mappa mostra dove si colloca la proposta e il suo percorso",source:"modello Il Dividendo di Firenze",notes:`Ogni punto è una coppia (pavimento, aliquota) con pavimento da €${tL[0]} a €${tL[tL.length-1]} e aliquota da ${n0(aL[0]*100)}% a ${n0(aL[aL.length-1]*100)}%, senza tetto. Le linee uniscono i punti con la stessa aliquota.`});
@@ -261,7 +288,7 @@ function s_method(c,S,n){
     ["Percorso anno per anno","q_t = q_(t−1) + λ·(q*_t − q_(t−1));  U_t = U_(t−1) + μ·(U*_t − U_(t−1))"]
   ];
   let y=164; eq.forEach(e=>{ c.t1(e[0],ML,y+4,{font:"sansB",size:12.8,color:C.navy}); c.t1(e[1],ML+210,y+4,{size:13,color:C.ink}); c.line(ML,y+17,ML+700,y+17,{stroke:C.xl,sw:.8}); y+=38; });
-  const notes=["Ogni tipologia è rappresentata da 41 quantili della distribuzione dei prezzi: il passaggio dal pavimento all'aliquota avviene dentro la tipologia.","La calibrazione riproduce esattamente il gettito 2025 con le tariffe attuali; il coefficiente k assorbe tetto delle sette notti, altre esenzioni e adempimento.","L'identità ΔCS + ΔΠ operatori + gettito = −DWL è verificata a ogni calcolo (allegato D).","La simulazione di incertezza estrae 400 volte le ipotesi più incerte con seme fisso.","Nel percorso anno per anno la domanda si adegua con ritardo (λ) e le riconversioni convergono all'equilibrio a velocità μ; la riqualificazione è spesa quando i posti si perdono."];
+  const notes=["Ogni tipologia è rappresentata da 41 quantili della distribuzione dei prezzi: il passaggio dal pavimento all'aliquota avviene dentro la tipologia.","La calibrazione riproduce esattamente il gettito 2025 con le tariffe attuali; il coefficiente k assorbe tetto delle sette notti, altre esenzioni e adempimento.","L'identità ΔCS + ΔΠ operatori + gettito = −DWL è verificata a ogni calcolo (allegato D).","La simulazione di incertezza estrae 400 volte le ipotesi più incerte con seme fisso.","Nel percorso anno per anno la domanda si adegua con ritardo (λ) e le riconversioni convergono all'equilibrio a velocità μ; la riqualificazione è spesa quando i posti si perdono.","Benessere W(ω) = residenti + congestione evitata + valore delle entrate comunali + ω·(non residenti, Stato, cintura); gli ottimi massimizzano W con il vincolo che saldo ≥ 0 e che pernottamenti e visitatori non aumentino."];
   bulletsRight(c,810,170,410,notes);
   function bulletsRight(c,x,y,w,items){ K.bullets(c,x,y,w,items,{size:13,gap:14}); }
 }
@@ -284,7 +311,7 @@ function build(S){
   const per=44; const aChunks=[]; for(let i=0;i<params.length;i+=per) aChunks.push(params.slice(i,i+per));
   const SAN=S.SAN||[], half=Math.ceil(SAN.length/2), sanA=SAN.slice(0,half), sanB=SAN.slice(half);
   const b=B.slides, fee=S.P&&S.P.dayFee>0;
-  const list=[].concat([b[0],b[1],b[2],b[3],s_plan,b[4],b[5],b[6]],fee?[s_daypass]:[],[b[7],s_evoFin,b[8],b[9],b[10],b[11],s_evoCity,s_labor,s_fund,s_dividend,s_frontier,s_risk,s_matrix,s_legal,s_kpi,s_decisions,s_divider,s_personas],
+  const list=[].concat([b[0],b[1],b[2],b[3],s_plan,b[4],b[5],b[6]],fee?[s_daypass]:[],[b[7],s_evoFin,b[8],b[9],s_pareto,s_welfare,b[10],b[11],s_evoCity,s_labor,s_fund,s_dividend,s_frontier,s_risk,s_matrix,s_legal,s_kpi,s_decisions,s_divider,s_personas],
     aChunks.map((ch,i)=>(c,S2,n)=>s_assump(c,S2,n,i,aChunks.length,ch)),
     [s_method,(c,S2,n)=>s_checks(c,S2,n,0,2,sanA),(c,S2,n)=>s_checks(c,S2,n,1,2,sanB),s_sources]);
   if(S.meta&&S.meta.appendix===false) return list.slice(0,list.indexOf(s_divider));

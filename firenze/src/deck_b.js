@@ -12,7 +12,8 @@ function context(P,meta){
   const V={noFee:P.dayFee>0?vr({dayFee:0}):R,fee:P.dayFee>0?R:vr({dayFee:5}),feeV:P.dayFee>0?P.dayFee:5,
     phase1:vr({cap:P.cap>0?Math.min(P.cap,10):10,tmin:Math.min(P.tmin,10),u30:Math.min(P.u30,10),dayFee:0})};
   const date=new Date().toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
-  return {P,R,TL,MC,TOR,MAT,MAP,SAN,V,name:(meta&&meta.name)||"Proposta di riforma",meta:Object.assign({audience:"Commissione consiliare e forze politiche",author:"",date},meta||{})};
+  const OPT=FM.optimize(P);
+  return {P,R,TL,MC,TOR,MAT,MAP,SAN,V,OPT,name:(meta&&meta.name)||"Proposta di riforma",meta:Object.assign({audience:"Commissione consiliare e forze politiche",author:"",date},meta||{})};
 }
 const tgtYear=S=>S.TL.start+S.TL.n-1;
 const pv=x=>n1(x).replace(/,0$/,"");
