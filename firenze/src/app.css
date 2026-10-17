@@ -75,6 +75,9 @@ button.ghost{border-color:transparent;background:transparent;color:var(--blue);p
 .ctl .row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
 .ctl label{font-weight:600;font-size:.9rem}
 .ctl .val{font-weight:700;color:var(--blue);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ctl .nv{display:inline-flex;align-items:center;gap:4px}
+.ctl .nv input{width:74px;font-weight:700;color:var(--blue)}
+.ctl .sfx{font-size:.78rem;color:var(--gray);min-width:12px}
 .hint{font-size:.78rem;color:var(--gray);line-height:1.35}
 input[type=range]{width:100%;accent-color:var(--blue)}
 .sw{display:flex;gap:10px;align-items:flex-start;font-size:.9rem;font-weight:600}

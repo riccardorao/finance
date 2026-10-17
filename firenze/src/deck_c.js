@@ -104,8 +104,9 @@ function s_scen(c,S,n){
   c.text("**Lettura.** Il Prudente rinuncia a gettito per ridurre l'impatto su presenze e lavoro; l'Ambizioso massimizza il gettito ma colpisce di più il mass-market. Il contributo d'accesso è l'unica leva che agisce sugli escursionisti. Solo lo scenario a legislazione vigente è attuabile senza una nuova norma.",ML,y+22,{size:13.4,color:C.ink,maxWidth:1100,lh:19,boldColor:C.navy});
 }
 function s_frontier(c,S,n){
-  K.frame(c,S,n,{tag:"Scenari",title:"Più gettito significa meno presenze, con rendimenti decrescenti: la mappa mostra dove si colloca ogni scelta",source:"modello Il Dividendo di Firenze",notes:"Ogni punto è una coppia (pavimento, aliquota) con pavimento da €6 a €28 e aliquota da 0% a 20%, senza tetto. Le linee uniscono i punti con la stessa aliquota."});
-  K.chartTitle(c,ML,166,760,"Saldo strutturale e riduzione dei pernottamenti","60 combinazioni di pavimento e aliquota");
+  const mp=S.MAP, tL=mp.tList, aL=mp.aList;
+  K.frame(c,S,n,{tag:"Scenari",title:"Più gettito significa meno presenze, con rendimenti decrescenti: la mappa mostra dove si colloca ogni scelta",source:"modello Il Dividendo di Firenze",notes:`Ogni punto è una coppia (pavimento, aliquota) con pavimento da €${tL[0]} a €${tL[tL.length-1]} e aliquota da ${n0(aL[0]*100)}% a ${n0(aL[aL.length-1]*100)}%, senza tetto. Le linee uniscono i punti con la stessa aliquota.`});
+  K.chartTitle(c,ML,166,760,"Saldo strutturale e riduzione dei pernottamenti",`${mp.pts.length} combinazioni di pavimento e aliquota`);
   K.frontier(c,ML,180,760,470,S);
   const body=`A parità di riduzione delle presenze, alzare l'aliquota sul lusso rende di più che alzare il pavimento: la domanda di fascia alta reagisce meno. Oltre un certo livello del pavimento le presenze calano molto più del gettito cresce. La scelta politica è quanto spingere sulla decongestione e quanto sul gettito.`;
   K.callout(c,860,176,360,Math.min(K.calloutH(c,360,body,{size:13.2,lh:18.5}),300),"Come leggere la mappa",body,{size:13.2,lh:18.5});

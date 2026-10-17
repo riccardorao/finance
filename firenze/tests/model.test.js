@@ -17,7 +17,8 @@ for (const [k, s] of scenarios) {
   if (Math.abs(R.stake.reduce((a, x) => a + x.v, 0) - R.netMonetary) > 1) fail(`${k}: somma dei portatori di interesse`);
   console.log(`${k.padEnd(10)} saldo ${(R.saldo / 1e6).toFixed(1).padStart(6)} mln · dividendo €${Math.round(R.perHH)} · verifiche ${san.filter((x) => x.s === "ok").length}/${san.length}`);
 }
-const extremes = [{ tmin: 3, alpha: 0 }, { tmin: 30, alpha: 0.2 }, { tmin: 30, alpha: 0.2, cap: 5, dayFee: 15 }, { tmin: 12, alpha: 0.08, passThrough: 0.4, epsMult: 1.6, evasion: 0.4, stateLevy: 0.5 }];
+const extremes = [{ tmin: 3, alpha: 0 }, { tmin: 30, alpha: 0.2 }, { tmin: 30, alpha: 0.2, cap: 5, dayFee: 15 }, { tmin: 12, alpha: 0.08, passThrough: 0.4, epsMult: 1.6, evasion: 0.4, stateLevy: 0.5 },
+  { tmin: 100, alpha: 0 }, { tmin: 3, alpha: 1 }, { tmin: 100, alpha: 1 }, { tmin: 100, alpha: 1, cap: 100 }, { tmin: 60, alpha: 0.5, dayFee: 15 }];
 extremes.forEach((e, i) => {
   const P = Object.assign(FM.defaults(), e), R = FM.run(P), san = FM.sanity(P, R, FM.path(P, R));
   finite(R, "", "estremo " + i);

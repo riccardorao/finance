@@ -183,7 +183,7 @@ function taxFunction(c,x,y,w,h,S){
   const x0=Math.log(20),x1=Math.log(1500),y0=Math.log(2); const capV=P.cap>0?P.cap:P.alpha*1500; const yMax=Math.max(60,capV*1.15,P.tmin*1.6), y1=Math.log(yMax);
   const X=v=>px+(Math.log(v)-x0)/(x1-x0)*pw, Y=v=>py+ph-(Math.log(Math.max(2,v))-y0)/(y1-y0)*ph;
   [20,50,100,200,500,1000].forEach(t=>{ c.line(X(t),py,X(t),py+ph,{stroke:C.xl,sw:.8}); c.t1("€"+n0(t),X(t),py+ph+17,{size:10.5,color:C.gray,anchor:"middle"}); });
-  [2,5,10,20,50,100].filter(t=>t<=yMax).forEach(t=>{ c.line(px,Y(t),px+pw,Y(t),{stroke:C.xl,sw:.8}); c.t1("€"+t,px-7,Y(t)+4,{size:10.5,color:C.gray,anchor:"end"}); });
+  [2,5,10,20,50,100,200,500,1000,2000].filter(t=>t<=yMax).forEach(t=>{ c.line(px,Y(t),px+pw,Y(t),{stroke:C.xl,sw:.8}); c.t1("€"+n0(t),px-7,Y(t)+4,{size:10.5,color:C.gray,anchor:"end"}); });
   c.t1("Prezzo della camera per persona e per notte (scala logaritmica)",px+pw/2,py+ph+34,{size:11,color:C.gray,anchor:"middle"});
   c.t1("Imposta per notte",x+10,py+ph/2,{size:11,color:C.gray,anchor:"middle",rot:-90});
   // tariffa attuale: scalini medi per tipologia come linea tratteggiata

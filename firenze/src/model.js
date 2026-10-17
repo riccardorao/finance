@@ -42,9 +42,9 @@ const SEGNUM=["share","price","sigma","eps","tOld","belt","apt","spend"];
 /* ---------- parametri ---------- */
 // g:"leve" = leve di politica; altrimenti gruppo di ipotesi. kind: dato | stima | ipotesi. pct: mostrato ×100.
 const PARAMS=[
-  {id:"tmin",g:"leve",sub:"Disegno dell'imposta",label:"Pavimento T_min",v:12,min:3,max:30,step:.5,unit:"€/notte",hint:"Pagato da ogni ospite tassabile con camera economica."},
-  {id:"alpha",g:"leve",sub:"Disegno dell'imposta",label:"Aliquota sul lusso α",v:.08,min:0,max:.2,step:.005,pct:1,unit:"% del prezzo",hint:"Si applica quando α × prezzo supera il pavimento."},
-  {id:"cap",g:"leve",sub:"Disegno dell'imposta",label:"Tetto per notte",v:0,min:0,max:60,step:1,unit:"€/notte",hint:"0 = nessun tetto. La legge consente oggi al massimo €10 (€12 con la maggiorazione 2026)."},
+  {id:"tmin",g:"leve",sub:"Disegno dell'imposta",label:"Pavimento T_min",v:12,min:3,max:100,step:.5,unit:"€/notte",hint:"Pagato da ogni ospite tassabile con camera economica. Il modello è calibrato fino a circa €30."},
+  {id:"alpha",g:"leve",sub:"Disegno dell'imposta",label:"Aliquota sul lusso α",v:.08,min:0,max:1,step:.005,pct:1,unit:"% del prezzo",hint:"Si applica quando α × prezzo supera il pavimento. Il modello è calibrato fino a circa il 20%."},
+  {id:"cap",g:"leve",sub:"Disegno dell'imposta",label:"Tetto per notte",v:0,min:0,max:100,step:1,unit:"€/notte",hint:"0 = nessun tetto. La legge consente oggi al massimo €10 (€12 con la maggiorazione 2026)."},
   {id:"youthExempt",g:"leve",sub:"Disegno dell'imposta",label:"Esenzione cittadini UE under 30",v:true,bool:1},
   {id:"dayFee",g:"leve",sub:"Disegno dell'imposta",label:"Contributo d'accesso per escursionisti",v:0,min:0,max:15,step:.5,unit:"€/visita",hint:"Opzionale. Richiede una norma nazionale (precedente: Venezia)."},
   {id:"passThrough",g:"leve",sub:"Reazione del mercato",label:"Traslazione sull'ospite",v:.85,min:.4,max:1,step:.05,pct:1,unit:"",hint:"Quota della variazione d'imposta che arriva nel conto dell'ospite; il resto lo assorbe il gestore."},
@@ -409,14 +409,15 @@ function impactMatrix(P){
   return {rows,cols:MATRIX_OUT,base:MATRIX_OUT.map(o=>o.f(b[o.id]))};
 }
 function policyMap(P,tList,aList){
-  tList=tList||[6,8,10,12,14,16,18,20,24,28]; aList=aList||[0,.04,.08,.12,.16,.2];
+  const wide=P.tmin>30||P.alpha>.2;
+  tList=tList||(wide?[4,8,12,16,20,30,40,60,80,100]:[6,8,10,12,14,16,18,20,24,28]); aList=aList||(wide?[0,.05,.1,.2,.4,.6,.8,1]:[0,.04,.08,.12,.16,.2]);
   const pts=[]; tList.forEach(t=>aList.forEach(a=>{ const Q=cloneP(P); Q.tmin=t; Q.alpha=a; Q.cap=0; const r=run(Q);
     pts.push({t,a,saldo:r.saldo,net:r.net,nChg:r.nChg,vdChg:r.vdChg,perHH:r.perHH,toRes:r.toRes}); }));
   return {pts,tList,aList};
 }
 function laffer(P){
-  let bt=[P.tmin,-Infinity]; for(let t=4;t<=60;t+=1){ const Q=cloneP(P); Q.tmin=t; const r=run(Q); if(r.net>bt[1]) bt=[t,r.net]; }
-  let ba=[P.alpha,-Infinity]; for(let a=0;a<=.5001;a+=.01){ const Q=cloneP(P); Q.alpha=a; const r=run(Q); if(r.net>ba[1]) ba=[a,r.net]; }
+  let bt=[P.tmin,-Infinity]; for(let t=4;t<=100;t+=1){ const Q=cloneP(P); Q.tmin=t; const r=run(Q); if(r.net>bt[1]) bt=[t,r.net]; }
+  let ba=[P.alpha,-Infinity]; for(let a=0;a<=1.0001;a+=.02){ const Q=cloneP(P); Q.alpha=a; const r=run(Q); if(r.net>ba[1]) ba=[a,r.net]; }
   return {tmin:bt,alpha:ba};
 }
 
@@ -460,13 +461,14 @@ function sanity(P,R,pathRes){
   add(Math.abs(R.stake.reduce((a,x)=>a+x.v,0)-R.netMonetary)<1,"Somma dei portatori di interesse",`Somma degli effetti monetari ${fm(R.netMonetary)}.`);
   if(pathRes) add(Math.abs(pathRes.yearly[4]-R.saldo+R.fTrainTotal*TRAIN[4])<Math.max(1e4,Math.abs(R.saldo)*.005),"Convergenza del percorso",`Il quinto anno (${fm(pathRes.yearly[4])}) coincide con il saldo a regime.`);
   const L=laffer(P);
-  add(P.tmin<L.tmin[0]?true:null,"Curva di Laffer: pavimento",L.tmin[0]>=60?`Tra €4 e €60 il gettito netto continua a crescere con il pavimento: lo scenario (€${n2(P.tmin,1)}) è lontano dal punto in cui un rincaro riduce il gettito. Oltre €20–25 il modello è un'estrapolazione: il limite vero è politico e di decongestione.`:`A parità di aliquota il gettito netto è massimo con un pavimento di circa €${L.tmin[0]}; lo scenario usa €${n2(P.tmin,1)}.`);
-  add(P.alpha<L.alpha[0]-1e-9?true:null,"Curva di Laffer: aliquota",L.alpha[0]>=.49?`Tra 0% e 50% il gettito netto continua a crescere con l'aliquota, perché la domanda di lusso è poco elastica; lo scenario usa ${pc(P.alpha)}.`:`A parità di pavimento il gettito netto è massimo con un'aliquota di circa ${pc(L.alpha[0],0)}; lo scenario usa ${pc(P.alpha)}.`);
+  add(P.tmin<L.tmin[0]?true:null,"Curva di Laffer: pavimento",L.tmin[0]>=100?`Tra €4 e €100 il gettito netto continua a crescere con il pavimento: lo scenario (€${n2(P.tmin,1)}) è lontano dal punto in cui un rincaro riduce il gettito. Oltre €20–30 il modello è un'estrapolazione: il limite vero è politico e di decongestione.`:`A parità di aliquota il gettito netto è massimo con un pavimento di circa €${L.tmin[0]}; lo scenario usa €${n2(P.tmin,1)}.`);
+  add(P.alpha<L.alpha[0]-1e-9?true:null,"Curva di Laffer: aliquota",L.alpha[0]>=.99?`Tra 0% e 100% il gettito netto continua a crescere con l'aliquota, perché la domanda di lusso è poco elastica; lo scenario usa ${pc(P.alpha)}.`:`A parità di pavimento il gettito netto è massimo con un'aliquota di circa ${pc(L.alpha[0],0)}; lo scenario usa ${pc(P.alpha)}.`);
   const avgDp=R.segs.reduce((a,s)=>a+s.nB*((s.exempt?0:s.tAvg)-s.tOld)*P.passThrough,0), avgG=R.segs.reduce((a,s)=>a+s.nB*(s.meanP+s.tOld),0);
   const impl=avgDp!==0?R.nChg/(avgDp/avgG):0;
   add(impl<0&&impl>-1.5?true:null,"Elasticità complessiva implicita",`${n2(impl)}: variazione dei pernottamenti ÷ variazione media del costo. Riferimento: −0,5/−0,7 per la spesa turistica [${SRCI.elast}]; a Firenze l'introduzione dell'imposta non ha avuto effetti misurabili [${SRCI.biagi}].`);
   add(Math.abs(R.rentChg)<=.1?true:null,"Campo di validità del modello abitativo",`Variazione dei canoni ${pc(R.rentChg)}: l'approssimazione lineare è affidabile entro ±10%.`);
   add(R.share<=.5?true:null,"Quota di stock riconvertita",`${pc(R.share)} degli affitti brevi: entro il limite di plausibilità del 50%.`);
+  if(P.tmin>30||P.alpha>.2||P.cap>30) add(null,"Campo di calibrazione",`Pavimento €${n2(P.tmin,1)}, aliquota ${pc(P.alpha)}: oltre i valori vicini a quelli osservati (circa €30 e 20%) le elasticità sono un'estrapolazione e i risultati vanno letti come ordini di grandezza.`);
   add(R.nonResShare>=0&&R.nonResShare<=1,"Quota del costo su non residenti",`${pc(R.nonResShare,0)} del costo ricade su non residenti (turisti e proprietari non fiorentini).`);
   return out;
 }

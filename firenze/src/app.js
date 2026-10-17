@@ -61,13 +61,14 @@ function renderKpis(){
 /* ---------- pannello dei parametri ---------- */
 const LEVE=FM.PARAMS.filter(p=>p.g==="leve");
 function fmtLever(p,v){ if(p.bool) return v?"Sì":"No"; if(p.select) return ""; if(p.id==="cap") return v>0?"€"+n0(v):"nessuno"; if(p.pct) return fP(v,p.step<.01?1:0).replace(/,0%/,"%"); if(p.unit==="€/notte"||p.unit==="€/visita") return "€"+n1(v).replace(/,0$/,""); if(p.unit==="€ mln/anno") return "€"+n1(v).replace(/,0$/,"")+" mln"; if(p.unit==="×") return n2(v)+"×"; return n2(v); }
+const leverSfx=p=>p.pct?"%":(p.unit==="€/notte"||p.unit==="€/visita")?"€":p.unit==="€ mln/anno"?"€ mln":p.unit==="×"?"×":"";
 function buildLeve(){
   let html="",cur="";
   LEVE.forEach(p=>{
     if(p.sub!==cur){ if(cur) html+="</div>"; cur=p.sub; html+=`<div class="grp"><span class="eyebrow">${esc(cur)}</span>`; }
     if(p.bool) html+=`<label class="sw" for="in-${p.id}"><input type="checkbox" id="in-${p.id}" data-p="${p.id}"><span>${esc(p.label)}</span></label>`;
     else if(p.select) html+=`<div class="ctl"><label for="in-${p.id}">${esc(p.label)}</label><select id="in-${p.id}" data-p="${p.id}">${p.select.map(o=>`<option value="${o[0]}">${esc(o[1])}</option>`).join("")}</select></div>`;
-    else html+=`<div class="ctl"><div class="row"><label for="in-${p.id}">${esc(p.label)}</label><span class="val" id="v-${p.id}"></span></div><input type="range" id="in-${p.id}" data-p="${p.id}" min="${p.min}" max="${p.max}" step="${p.step}">${p.hint?`<span class="hint">${esc(p.hint)}</span>`:""}</div>`;
+    else html+=`<div class="ctl"><div class="row"><label for="in-${p.id}">${esc(p.label)}</label><span class="nv"><input type="number" id="n-${p.id}" data-n="${p.id}" min="${p.pct?p.min*100:p.min}" max="${p.pct?p.max*100:p.max}" step="${p.pct?p.step*100:p.step}" aria-label="${esc(p.label)}: valore"><span class="sfx">${leverSfx(p)}</span></span></div><input type="range" id="in-${p.id}" data-p="${p.id}" min="${p.min}" max="${p.max}" step="${p.step}">${p.hint?`<span class="hint">${esc(p.hint)}</span>`:""}</div>`;
   });
   return html+"</div>";
 }
@@ -83,7 +84,7 @@ function buildIpotesi(){
   return html;
 }
 function syncPanel(){
-  LEVE.forEach(p=>{ const i=$("#in-"+p.id); if(!i) return; if(p.bool) i.checked=!!P[p.id]; else i.value=P[p.id]; const v=$("#v-"+p.id); if(v) v.textContent=fmtLever(p,P[p.id]); });
+  LEVE.forEach(p=>{ const i=$("#in-"+p.id); if(!i) return; if(p.bool) i.checked=!!P[p.id]; else i.value=P[p.id]; const nv=$("#n-"+p.id); if(nv&&document.activeElement!==nv) nv.value=p.pct?+(P[p.id]*100).toFixed(2):P[p.id]; });
   let mod=0;
   FM.PARAMS.filter(p=>p.g!=="leve").forEach(p=>{ const i=$("#as-"+p.id); if(!i) return; const shown=p.pct?+(P[p.id]*100).toFixed(3):P[p.id]; if(document.activeElement!==i) i.value=shown; const m=Math.abs(P[p.id]-DEF[p.id])>1e-12; i.closest(".arow").classList.toggle("mod",m); if(m) mod++; });
   P.segs.forEach((s,i)=>SEGCOLS.forEach(c=>{ const el=$(`#sg-${i}-${c[0]}`); if(el&&document.activeElement!==el) el.value=c[2]?+(s[c[0]]*100).toFixed(2):s[c[0]]; const m=Math.abs(s[c[0]]-DEF.segs[i][c[0]])>1e-12; if(el) el.style.borderColor=m?"var(--blue)":""; if(m) mod++; }));
@@ -92,7 +93,11 @@ function syncPanel(){
 function showPanel(which){ UI.ptab=which; $("#pt-leve").setAttribute("aria-selected",which==="leve"); $("#pt-ip").setAttribute("aria-selected",which==="ip"); $("#pbody").innerHTML=which==="leve"?buildLeve():buildIpotesi(); bindPanel(); syncPanel(); persist(); }
 function bindPanel(){
   const b=$("#pbody");
-  if(UI.ptab==="leve"){ b.oninput=e=>{ const id=e.target.dataset.p; if(!id) return; const p=FM.PMAP[id]; P[id]=p.bool?e.target.checked:(p.select?e.target.value:parseFloat(e.target.value)); META.name=""; const v=$("#v-"+id); if(v) v.textContent=fmtLever(p,P[id]); changed(); }; b.onchange=null; }
+  if(UI.ptab==="leve"){
+    b.oninput=e=>{ const t=e.target;
+      if(t.dataset.n){ const p=FM.PMAP[t.dataset.n]; let v=parseFloat(t.value); if(!isFinite(v)) return; if(p.pct) v/=100; v=Math.max(p.min,Math.min(p.max,v)); P[p.id]=v; META.name=""; const r=$("#in-"+p.id); if(r) r.value=v; changed(); return; }
+      const id=t.dataset.p; if(!id) return; const p=FM.PMAP[id]; P[id]=p.bool?t.checked:(p.select?t.value:parseFloat(t.value)); META.name=""; syncPanel(); changed(); };
+    b.onchange=e=>{ if(e.target.dataset.n) syncPanel(); }; }
   else {
     b.oninput=null;
     b.onchange=e=>{ const t=e.target;
@@ -211,7 +216,7 @@ function tabPath(){
   const rows=[row("Pavimento / aliquota",(r,p)=>"€"+n1(p.tmin).replace(",0","")+" / "+n1(p.alpha*100).replace(",0","")+"%"+(p.cap>0?" (tetto €"+p.cap+")":"")),row("Contributo d'accesso",(r,p)=>p.dayFee>0?"€"+n1(p.dayFee).replace(",0","")+" a visita":"—"),row("Gettito netto al Comune",r=>fM(r.net),1),row("Saldo strutturale",r=>fM(r.saldo),1),row("Dividendo per famiglia",r=>fE(r.perHH)),row("Pernottamenti",r=>fPs(r.nChg)),row("Visitatori-giorno",r=>fPs(r.vdChg)),row("Abitazioni ai residenti",r=>fN(r.toRes)),row("Canoni",r=>fPs(r.rentChg)),row("Occupazione netta",r=>fNs(r.jobsNet)),row("Costo su non residenti",r=>fP(r.nonResShare,0)),row("Perdita di efficienza",r=>fM(r.dwl)),row("Base giuridica",(r,p)=>lg(p,r))];
   const cols=[{h:"",a:"l"},...ks.map(k=>({h:esc(FM.SCEN[k].name)+(k===cur?" ●":"")}))];
   return `<div class="two">`+card("Saldo strutturale nei primi cinque anni","€ milioni. La domanda si adegua in un anno, le conversioni in tre o quattro; la riqualificazione dei lavoratori pesa sui primi tre anni.",ch("path","Saldo nei primi cinque anni")+tbl([{h:"",a:"l"},...pr.yearly.map((_,i)=>({h:"Anno "+(i+1)}))],[["Saldo annuo",...pr.yearly.map(v=>n1(v/1e6))]],{foot:["Saldo cumulato",...pr.cum.map(v=>n1(v/1e6))]}))
-   +card("Mappa delle scelte","Saldo e riduzione delle presenze per 60 coppie di pavimento e aliquota; i punti scuri sono gli scenari.",ch("frontier","Mappa delle scelte"))+`</div>`
+   +card("Mappa delle scelte",`Saldo e riduzione delle presenze per ${A.MAP.pts.length} coppie di pavimento e aliquota; i punti scuri sono gli scenari.`,ch("frontier","Mappa delle scelte"))+`</div>`
    +card("Scenari a confronto","Stesse ipotesi di mercato; cambiano solo le leve. ● = scenario attuale.",tbl(cols,rows));
 }
 function tabSens(){
