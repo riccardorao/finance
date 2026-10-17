@@ -17,7 +17,7 @@ def read(p):
 def scripts():
     out = []
     for s in SCRIPTS:
-        code = read(s)
+        code = read(s).replace("\ufffd", "\\uFFFD")   # il carattere di sostituzione dentro le stringhe delle librerie
         assert "</script" not in code, s
         out.append("<script>\n" + code + "\n</script>")
     return "\n".join(out)
