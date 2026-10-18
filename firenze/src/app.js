@@ -16,10 +16,10 @@ try{ FMD.initFonts(window.FM_FONTS); }catch(e){ console.error(e); }
 const KEY="dividendo-firenze-v4", OLD="dividendo-firenze-v3";
 let P=FM.defaults();
 const META={name:"",audience:"Commissione consiliare e forze politiche",author:"",appendix:true};
-const UI={page:"pol",slide:0,persp:"bal"};
+const UI={page:"pro",slide:0,persp:"bal",det:"evo"};
 try{ const s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem(OLD)||"null");
   if(s&&s.P) FM.merge(P,s.P); if(s&&s.META){ Object.assign(META,s.META); if(!localStorage.getItem(KEY)) META.name=""; }
-  if(s&&s.UI){ if(s.UI.page) UI.page=s.UI.page; if(s.UI.slide) UI.slide=s.UI.slide; if(s.UI.persp) UI.persp=s.UI.persp; } }catch(e){}
+  if(s&&s.UI){ if(s.UI.page) UI.page=s.UI.page; if(s.UI.slide) UI.slide=s.UI.slide; if(s.UI.persp) UI.persp=s.UI.persp; if(s.UI.det) UI.det=s.UI.det; } }catch(e){}
 const policy=()=>{ const o={}; FM.LEVER_IDS.forEach(id=>o[id]=P[id]); o.plan=P.plan; return o; };
 function persist(){ try{ localStorage.setItem(KEY,JSON.stringify({P:policy(),META,UI})); }catch(e){} }
 const DEFNAME="Proposta di riforma";
@@ -77,6 +77,8 @@ function ctl(id){ const p=FM.PMAP[id];
 function syncCtls(){
   FM.LEVER_IDS.forEach(id=>{ const p=FM.PMAP[id], i=$("#in-"+id); if(i){ if(p.bool) i.checked=!!P[id]; else if(document.activeElement!==i) i.value=P[id]; }
     const nv=$("#n-"+id); if(nv&&document.activeElement!==nv) nv.value=toShow(p,P[id]); });
+  const ec=$("#in-enforceChk"); if(ec) ec.checked=P.enforce!=="campione";
+  const pm=$("#pmode"); if(pm) pm.textContent=P.plan.n===1?`A regime dal ${P.plan.start}.`:`Dal ${P.plan.start} al ${tgtYear()}, ${P.plan.custom?"con valori personalizzati":"in rampa lineare da oggi"}.`;
 }
 function setLever(id,v){ const p=FM.PMAP[id]; if(!p.bool&&!p.select){ if(!isFinite(v)) return; v=Math.max(p.min,Math.min(p.max,v)); } P[id]=v; changed(); }
 
@@ -111,45 +113,58 @@ function setPlanCell(k,y,v){
 }
 
 /* ---------- contributo d'accesso: come funzionerebbe ---------- */
-function dayHow(){
-  return `<div class="how"><h4>Il codice d'accesso, in breve</h4><dl>
-    <dt>Chi paga</dt><dd>Chi entra in città in giornata senza dormire a Firenze, una volta per visita, con tariffa diversa per cittadini UE under 30, UE over 30 ed extra-UE.</dd>
-    <dt>Chi non paga</dt><dd id="dh-free"></dd>
-    <dt>Come si verifica</dt><dd id="dh-how"></dd>
-  </dl><button type="button" class="small" data-go="acc">Come funziona il sistema →</button><div class="figs" id="dayfigs"></div></div>`;
+/* ---------- pagina Proposta: leve compatte e sintesi degli effetti ---------- */
+function cctl(id,lab){ const p=FM.PMAP[id], L=esc(lab||p.label), tt=p.hint?` title="${esc(p.hint)}"`:"";
+  if(p.bool) return `<label class="cs"${tt}><input type="checkbox" id="in-${id}" data-p="${id}"><span>${L}</span></label>`;
+  return `<div class="cc"><label for="n-${id}"${tt}>${L}</label><input type="range" id="in-${id}" data-p="${id}" min="${p.min}" max="${p.max}" step="${p.step}" aria-label="${L}"><span class="nv"><input type="number" id="n-${id}" data-n="${id}" min="${toShow(p,p.min)}" max="${toShow(p,p.max)}" step="${toShow(p,p.step)}"><span class="sfx">${sfx(p)}</span></span></div>`; }
+function inPanel(){
+  return `<aside class="inpanel" aria-label="Leve della politica"><div class="inscroll">
+    <div class="ig"><h4>Imposta di soggiorno <small>per notte e per persona</small></h4>${cctl("tmin","Pavimento")}${cctl("alpha","Aliquota sul prezzo")}${cctl("cap","Tetto (0 = nessuno)")}${cctl("u30","Under 30 UE (0 = esenti)")}</div>
+    <div class="ig"><h4>Contributo d'accesso <small>per escursionista</small></h4>${cctl("dayFee","Tariffa base (UE over 30)")}${cctl("dayU30","Sconto UE under 30")}${cctl("dayXUE","Maggiorazione extra-UE")}
+      <label class="cs" title="Ospiti registrati da un residente, nati a Firenze o nell'area metropolitana, proprietari di casa"><input type="checkbox" id="in-familyExempt" data-p="familyExempt"><span>Esenti i legami con Firenze</span></label>
+      <label class="cs" title="Verifica alla prenotazione di musei e monumenti, sui bus turistici e con i treni; altrimenti solo controlli a campione"><input type="checkbox" id="in-enforceChk" data-enf="1"><span>Verifica automatica (musei, bus, treni)</span></label></div>
+    <div class="ig"><h4>Fondo Armonizzatore <small>€ mln all'anno</small></h4>${cctl("fundCommercial","Riconversione commerciale")}${cctl("fundTalent","Imprese e talenti")}${cctl("trainCoverage","Lavoratori riqualificati")}${cctl("trainCost","Costo per lavoratore")}${cctl("guaranteeOn","Garanzia sugli affitti a residenti")}</div>
+    <div class="ig"><h4>Transitorio <small>anni per arrivare all'obiettivo</small></h4><div class="yrs" id="yrs" role="group" aria-label="Anni per arrivare all'obiettivo">${Array.from({length:FM.PLAN_MAX},(_,i)=>`<button type="button" data-n-years="${i+1}" aria-pressed="false">${i+1}</button>`).join("")}</div><p class="hint" id="pmode"></p><button type="button" class="small" data-go="evo">Valori anno per anno →</button></div>
+  </div><div class="infoot"><button type="button" class="small" id="polreset">Ripristina la proposta di base</button></div></aside>`;
 }
-function dayFigs(){
-  const r=A.D5, on=P.dayFee>0, fee=on?P.dayFee:5, g=id=>r.dayGroups.find(x=>x.id===id);
-  const f=[["€"+pv(g("u30").fee)+" · €"+pv(g("o30").fee)+" · €"+pv(g("xue").fee),"UE under 30 · UE over 30 · extra-UE"],[n2(r.L1/1e6)+" mln",`visite pagate su ${n2(r.L0/1e6)} mln soggette`],[fM(r.dayFeeNet),"gettito netto all'anno, dopo evasione e costi"],[fPs(r.vdChg),"visitatori al giorno, con l'imposta di soggiorno scelta"]];
-  $("#dh-free").textContent="Residenti, Città metropolitana, pendolari e studenti, chi pernotta (paga già l'imposta di soggiorno), minori di 14 anni"+(P.familyExempt?" e chi ha legami con Firenze: ospiti di un residente, nati a Firenze o nell'area metropolitana, proprietari di casa.":".");
-  $("#dh-how").textContent=P.enforce==="campione"?"Solo con controlli a campione nel centro, come a Venezia: costosi e facili da aggirare.":"In automatico: chi prenota un museo, sale su un bus turistico o compra un treno di andata e ritorno in giornata senza un codice valido trova il contributo aggiunto al biglietto.";
-  $("#dayfigs").innerHTML=(on?"":`<p class="hint" style="grid-column:1/-1">Contributo non attivo. Stima con €5 di base:</p>`)+f.map(x=>`<div class="fig"><span class="v">${x[0]}</span><span class="l">${x[1]}</span></div>`).join("");
+function verdict(){
+  const ws=K.winSummary(R,P), tour=(ws.find(x=>x.label.startsWith("Turisti"))||{v:0}).v, ops=R.dPiHotel+R.strLandlords+R.dPiComp, tl=A.TL;
+  const lev=`pavimento €${pv(P.tmin)} e aliquota ${pv(P.alpha*100,2)}%`+(P.dayFee>0?`, contributo d'accesso da €${pv(P.dayFee)}`:"");
+  return md(`Con ${lev}, **a regime (dal ${tgtYear()}) il Comune incassa ${fM(R.net+R.dayFeeNet)} netti all'anno** (${fMs(R.dTax)} rispetto a oggi) e, dopo il Fondo Armonizzatore, **${fM(R.saldo)} finanziano un dividendo di ${fE(R.perHH)} a famiglia**. `
+    +`Il costo ricade per il ${fP(R.nonResShare,0)} su chi non vive a Firenze: i turisti pagano ${fM(-Math.min(0,tour))} in più, gli operatori perdono ${fM(-Math.min(0,ops))} di margini. `
+    +`Le presenze calano del ${fP(Math.abs(R.nChg),1)}, i visitatori al giorno del ${fP(Math.abs(R.vdChg),1)}; **${fN(R.toRes)} case tornano ai residenti** e i canoni scendono del ${fP(Math.abs(R.rentChg),1)}.`
+    +(tl.n>1?` Si arriva all'obiettivo in ${tl.n} anni: nel primo anno il saldo è ${fM(tl.years[0].R.saldo)}.`:""));
 }
-function fundFigs(){
-  const ng=A.NG;
-  const f=[[fM(R.fund),"Fondo a regime, all'anno"],[fM(R.fGuar),`garanzia sugli affitti: ${P.guaranteeOn?fNs(R.units-ng.units)+" appartamenti riconvertiti in più":"disattivata"}`],[fM(R.fTrainTotal),`riqualificazione una tantum per ${fN(R.jobsLost*P.trainCoverage)} lavoratori`],[fM(R.fComm+R.fTalent),"commercio, imprese e talenti, all'anno"]];
-  $("#fundfigs").innerHTML=f.map(x=>`<div class="fig"><span class="v">${x[0]}</span><span class="l">${x[1]}</span></div>`).join("");
+const TILES=[["rev","Entrate nette al Comune",()=>fM(R.net+R.dayFeeNet),()=>fMs(R.dTax)+" rispetto a oggi"],["div","Dividendo per famiglia",()=>fE(R.perHH),()=>"saldo "+fM(R.saldo)+" dopo il Fondo"],["vd","Visitatori al giorno",()=>fPs(R.vdChg),()=>"pernottamenti "+fPs(R.nChg)],["homes","Case ai residenti",()=>fN(R.toRes),()=>"canoni "+fPs(R.rentChg)],["jobs","Occupazione netta",()=>fNs(R.jobsNet),()=>fN(R.jobsLost)+" persi, "+fN(R.jobsGained)+" creati"],["eff","Costo di €1 raccolto",()=>fMc(R.mcpf),()=>"perdita di efficienza "+fM(R.dwl)]];
+const SPARK={rev:[y=>(y.R.net+y.R.dayFeeNet)/1e6,()=>P.baseRevenue],div:[y=>y.R.perHH],vd:[y=>y.R.vdN/365/1e3,()=>R.vdB/365/1e3],homes:[y=>y.R.toRes],jobs:[y=>y.R.jobsNet,()=>0],eff:[y=>y.R.dwl/1e6,()=>0]};
+function evalBox(){
+  const L=window.FMDeckB.legal(P,R), law=lawOf(P,R), it=[];
+  const why=[L.tmin==="bad"||L.prop==="bad"?"l'imposta supera il tetto di €10–12 per notte":"",P.dayFee>0?"il contributo d'accesso oggi è consentito solo a Venezia":""].filter(Boolean).join(" e ");
+  it.push([L.needsLaw?"warn":law==="vigente"?"ok":"warn","Fattibilità",L.needsLaw?`Serve una norma nazionale perché ${why}; la Fase 1 parte comunque a legislazione vigente.`:law==="vigente"?"Realizzabile a legislazione vigente.":"Usa la maggiorazione di €2 prevista per il 2026."]);
+  const optOK=cache.opt&&cache.opt.v===ver, mcOK=cache.mc&&cache.mc.v===ver;
+  if(optOK){ const iso=A.OPT.opt.isoSaldo, gap=iso?R.dwl-iso.R.dwl:0;
+    it.push(gap>Math.max(1e6,.1*Math.abs(R.dwl))?["warn","Efficienza",`Migliorabile: lo stesso saldo si ottiene con ${fM(gap)} in meno di perdita (pavimento €${pv(iso.Q.tmin)}, aliquota ${pv(iso.Q.alpha*100,2)}%, contributo €${pv(iso.Q.dayFee)}), ma con ${fN(iso.R.toRes)} case ai residenti invece di ${fN(R.toRes)}. <button type="button" class="small" data-applyiso="1">Applica</button>`]:["ok","Efficienza","La proposta è vicina alla frontiera: non si ottiene lo stesso saldo con molta meno perdita."]); }
+  else it.push(["","Efficienza",`<span class="spin"></span> confronto con migliaia di combinazioni…`]);
+  if(mcOK){ const mc=A.MC.saldo; it.push([mc.neg<.05?"ok":"warn","Robustezza",`Saldo positivo in ${n0((1-mc.neg)*A.MC.n)} simulazioni su ${A.MC.n} con le ipotesi più incerte (tra ${fM(mc.p10)} e ${fM(mc.p90)}).`]); }
+  else it.push(["","Robustezza",`<span class="spin"></span> simulazione delle ipotesi incerte…`]);
+  const san=A.SAN, bad=san.filter(x=>x.s==="bad").length, warn=san.filter(x=>x.s==="warn").length;
+  it.push([bad?"bad":warn?"warn":"ok","Verifiche numeriche",bad?`${bad} verifiche non superate.`:warn?`${warn} da controllare su ${san.length}.`:`${san.length} verifiche superate: calibrazione, identità contabili, convergenza.`]);
+  return `<div class="chk">${it.map(x=>`<div class="it"><span class="chip ${x[0]||""}">${{ok:"OK",warn:"Attenzione",bad:"Errore","":"…"}[x[0]]}</span><div><b>${x[1]}.</b> ${x[2]}</div></div>`).join("")}</div>`;
 }
-function polFigs(){
-  const tl=A.TL, y1=tl.years[0], yt=tl.years.find(x=>x.y===tl.n), yl=tl.years[tl.years.length-1];
-  const rows=[["Gettito netto al Comune",r=>fM(r.net+r.dayFeeNet)],["Saldo dopo il Fondo",r=>fM(r.saldo)],["Dividendo per famiglia",r=>fE(r.perHH)],["Pernottamenti",r=>fPs(r.nChg)],["Visitatori al giorno",r=>fPs(r.vdChg)],["Appartamenti riconvertiti",r=>fN(r.units)],["Canoni",r=>fPs(r.rentChg)],["Occupazione netta",r=>fNs(r.jobsNet)]];
-  const cols=[{h:"",a:"l"},{h:"Primo anno<br>"+y1.year},...(tl.n>1?[{h:"Obiettivo<br>"+yt.year}]:[]),{h:"Ultimo anno<br>"+yl.year},{h:"A regime<br>&nbsp;"}];
-  $("#polfigs").innerHTML=tbl(cols,rows.map(r=>[r[0],r[1](y1.R),...(tl.n>1?[r[1](yt.R)]:[]),r[1](yl.R),`<b>${r[1](R)}</b>`]))+`<p class="hint">Saldo cumulato in ${tl.H} anni: <b>${fM(yl.saldoCum)}</b>; dividendo erogato: <b>${fM(yl.divCum)}</b>; riserva accantonata: <b>${fM(yl.reserveCum)}</b>.</p>`;
+function proOut(){
+  return `<div class="verdict">${verdict()}</div>`
+   +`<div class="tiles">${TILES.map(t=>`<div class="tile"><span class="l">${t[1]}</span><span class="v">${t[2]()}</span><span class="s">${t[3]()}</span><div class="chart" data-ch="spark" data-k="${t[0]}" data-label="${esc(t[1])} nel tempo"></div></div>`).join("")}</div>`
+   +card("Come si produce l'effetto","Valori annui a regime: ogni passaggio è la conseguenza del precedente.",ch("chain","Catena degli effetti"))
+   +`<div class="g2 even">`+card("Chi vince e chi perde",`€ milioni all'anno a regime. Il ${fP(R.nonResShare,0)} del costo ricade su chi non vive a Firenze.`,ch("wins","Chi vince e chi perde"))
+   +card("Valutazione","",`<div id="evalbox">${evalBox()}</div>`)+`</div>`
+   +`<div class="g2 even">`+card("Nel tempo","€ milioni. Barre: saldo dopo il Fondo; linea: entrate nette al Comune; tratteggio: gettito di oggi.",ch("poltrend","Percorso anno per anno"))
+   +card("Approfondimenti","",`<div class="golinks">${[["evo","Transitorio ed evoluzione","valori anno per anno e serie storiche"],["acc","Codice d'accesso","come si verifica e chi paga"],["wel","Benessere e ottimo","frontiera, vincitori e vinti, combinazioni ottimali"],["bud","Bilancio e dividendo","dal gettito al saldo, famiglia tipo"],["risk","Rischi","sensibilità e incertezza"],["ip","Ipotesi","dati, fonti e calibrazione"]].map(g=>`<button type="button" class="golink" data-go="${g[0]}"><b>${g[1]}</b><span>${g[2]}</span></button>`).join("")}</div>`)+`</div>`;
 }
-function pgPol(){
-  const n=P.plan.n;
-  return head("La politica",`Scegli l'imposta, il contributo per gli escursionisti e il Fondo Armonizzatore che vuoi raggiungere, poi il percorso per arrivarci. Tutto il resto del modello è fissato sui dati (pagina «Ipotesi»).`,`<button type="button" class="small" id="polreset">Ripristina la proposta di base</button>`)
-   +`<div class="gpol">`
-   +card("Imposta di soggiorno","Imposta per notte e per persona = max(pavimento; aliquota × prezzo), entro il tetto. Minori e notti oltre la settima restano esenti.",ctl("tmin")+ctl("alpha")+ctl("cap")+ctl("u30")+ch("taxmini","Imposta per notte"))
-   +card("Contributo d'accesso per gli escursionisti","Chi visita la città in giornata oggi non paga nulla, ma è circa un terzo delle presenze di un giorno medio.",ctl("dayFee")+ctl("dayU30")+ctl("dayXUE")+ctl("familyExempt")+ctl("enforce")+dayHow())
-   +card("Fondo Armonizzatore","Finanziato dal maggior gettito, accompagna chi perde dalla riforma e sostiene il ritorno delle case ai residenti.",ctl("fundCommercial")+ctl("fundTalent")+ctl("guaranteeOn")+ctl("trainCoverage")+ctl("trainCost")+`<div class="figs" id="fundfigs"></div>`)
-   +`</div>`
-   +card("Transitorio: come si arriva all'obiettivo",`La politica non deve essere operativa a regime dal primo giorno: scegli in quanti anni raggiungere l'obiettivo e i valori di ciascun anno. Dall'anno dell'obiettivo in poi valgono i valori della colonna evidenziata.`,
-      `<div class="phead" style="align-items:center"><div class="yrs" id="yrs" role="group" aria-label="Anni per arrivare all'obiettivo"><span class="hint" style="margin-right:6px">Anni per arrivare all'obiettivo</span>${Array.from({length:FM.PLAN_MAX},(_,i)=>`<button type="button" data-n-years="${i+1}" aria-pressed="${i+1===n}">${i+1}</button>`).join("")}</div><label class="hint" style="display:flex;gap:8px;align-items:center">Primo anno <input type="number" id="planstart" min="2025" max="2040" step="1" style="width:76px"></label></div><div id="planwrap">${planHTML()}</div><div id="planmode"></div>`)
-   +`<div class="g2">`+card("Il percorso anno per anno","€ milioni. Barre: saldo dopo il Fondo; linea: gettito netto al Comune. In grigio gli anni del transitorio; la linea tratteggiata è il gettito di oggi.",ch("poltrend","Percorso anno per anno"))+card("Dal primo anno al regime","Il regime è l'equilibrio di lungo periodo con i valori obiettivo.",`<div id="polfigs"></div>`)+`</div>`;
-}
-function updPol(){ syncCtls(); syncPlan(); dayFigs(); fundFigs(); polFigs(); const ps=$("#planstart"); if(ps&&document.activeElement!==ps) ps.value=P.plan.start; }
-function bindPol(){
+function pgPro(){ return `<div class="pro">${inPanel()}<div class="proout" id="proOut">${proOut()}</div></div>`; }
+let defT=null;
+function scheduleDeferred(){ clearTimeout(defT); const v0=ver; defT=setTimeout(()=>{ if(ver!==v0||UI.page!=="pro") return; A.MC; A.OPT; const b=$("#evalbox"); if(b&&ver===v0) b.innerHTML=evalBox(); },700); }
+function updPro(){ syncCtls(); syncPlan(); const o=$("#proOut"); if(o){ o.innerHTML=proOut(); paintCharts(); } scheduleDeferred(); }
+function bindInputs(){
   const pg=$("#page");
   pg.oninput=e=>{ const t=e.target;
     if(t.dataset.n){ const p=FM.PMAP[t.dataset.n]; let v=parseFloat(t.value); if(!isFinite(v)) return; if(p.pct) v/=100; setLever(p.id,v); return; }
@@ -158,11 +173,13 @@ function bindPol(){
     if(t.dataset.plan){ const p=FM.PMAP[t.dataset.plan]; if(p.bool) return; let v=parseFloat(t.value); if(!isFinite(v)) return; if(p.pct) v/=100; setPlanCell(p.id,+t.dataset.y,v); return; }
     if(t.id==="planstart"){ const v=parseInt(t.value,10); if(v>=2025&&v<=2040){ P.plan.start=v; rerenderPlan(); changed(); } } };
   pg.onchange=e=>{ const t=e.target;
+    if(t.dataset.enf){ setLever("enforce",t.checked?"integrato":"campione"); return; }
     if(t.type==="checkbox"){ if(t.dataset.p) setLever(t.dataset.p,t.checked); else if(t.dataset.tg) setLever(t.dataset.tg,t.checked); else if(t.dataset.plan) setPlanCell(t.dataset.plan,+t.dataset.y,t.checked); return; }
     if(t.dataset.n||t.dataset.tg||t.dataset.plan) syncCtls(),syncPlan(); };
   pg.onclick=e=>{ const b=e.target.closest("button"); if(!b) return;
     if(b.dataset.nYears){ FM.resizePlan(P,+b.dataset.nYears); rerenderPlan(); changed(); }
     else if(b.id==="planramp"){ P.plan.custom=false; P.plan.rows=null; changed(); toast("Rampa lineare ripristinata"); }
+    else if(b.dataset.applyiso){ const e2=A.OPT.opt.isoSaldo; if(e2){ ["tmin","alpha","u30","dayFee","cap"].forEach(k=>P[k]=e2.Q[k]); changed(); toast("Combinazione efficiente applicata"); } }
     else if(b.id==="polreset"){ const d=FM.defaults(); FM.LEVER_IDS.forEach(id=>P[id]=d[id]); P.plan=d.plan; META.name=""; rerenderPlan(); changed(); toast("Proposta di base ripristinata"); } };
 }
 function rerenderPlan(){ const w=$("#planwrap"); if(w) w.innerHTML=planHTML(); }
@@ -172,7 +189,7 @@ const evoKeys={};
 const CH={
   tax:(c,w)=>{ const h=Math.round(Math.max(300,Math.min(460,w*.46))); K.taxFunction(c,0,0,w,h,S); return h; },
   taxmini:(c,w)=>{ const h=Math.round(Math.max(240,Math.min(320,w*.62))); K.taxFunction(c,0,0,w,h,S); return h; },
-  poltrend:(c,w)=>{ const tl=A.TL, h=300; K.trend(c,0,0,w,h,{labels:tl.years.map(y=>y.year),shade:tl.n-1,series:[{type:"bar",v:tl.years.map(y=>y.R.saldo/1e6),color:C.blue,name:"Saldo dopo il Fondo"},{v:tl.years.map(y=>(y.R.net+y.R.dayFeeNet)/1e6),color:C.navy,name:"Gettito netto al Comune"}],base:P.baseRevenue,legend:true,fmt:v=>n1(v)}); return h; },
+  poltrend:(c,w)=>{ const tl=A.TL, h=UI.page==="pro"?240:300; K.trend(c,0,0,w,h,{labels:tl.years.map(y=>y.year),shade:tl.n-1,series:[{type:"bar",v:tl.years.map(y=>y.R.saldo/1e6),color:C.blue,name:"Saldo dopo il Fondo"},{v:tl.years.map(y=>(y.R.net+y.R.dayFeeNet)/1e6),color:C.navy,name:"Gettito netto al Comune"}],base:P.baseRevenue,legend:true,fmt:v=>n1(v)}); return h; },
   nights:(c,w)=>K.hBarPairs(c,0,0,w,R.segs.map(s=>({label:s.short,a:s.nB/1e6,b:s.nN/1e6,tag:fPs(s.chg),tagColor:s.chg<0?C.orange:C.blue})),{labelW:Math.min(160,w*.26),valW:Math.min(120,w*.2),rowH:54,bh:14,fmt:v=>n2(v)}),
   eff:(c,w)=>K.hBarPairs(c,0,0,w,R.segs.map(s=>({label:s.short,a:s.effOld,b:s.effNew})),{labelW:Math.min(160,w*.26),valW:70,rowH:54,bh:14,fmt:v=>fP(v,1),max:Math.max(...R.segs.map(s=>Math.max(s.effOld,s.effNew)))*1.05}),
   load:(c,w)=>K.visitorBars(c,0,0,w,S),
@@ -185,6 +202,9 @@ const CH={
   jobs:(c,w)=>{ const h=340; K.columns(c,40,0,w-46,h,[{label:"Posti persi nel turismo",v:-R.jobsLost},{label:"Dividendo speso in città",v:R.pool*P.mpcRes/1e6*P.jobsPerMRes},{label:"Nuovi residenti",v:R.newRes*P.newResSpend/1e6*P.jobsPerMRes},{label:"Spesa del Fondo",v:(R.fComm+R.fTalent)/1e6*P.jobsPerMRes},{label:"Saldo netto",v:R.jobsNet,c:C.navy}],{fmt:v=>(v>=0?"+":MIN)+n0(Math.abs(v)),axisFmt:v=>n0(v),labH:62,maxBw:70}); return h; },
   frontier:(c,w)=>{ const h=Math.round(Math.max(340,Math.min(480,w*.5))); K.frontier(c,0,0,w,h,S); return h; },
   tornado:(c,w)=>K.tornadoChart(c,0,0,w,K.tornadoRows(A.TOR),{labelW:Math.min(230,w*.34),rowH:36})+6,
+  spark:(c,w,el)=>{ const f=SPARK[el.dataset.k], tl=A.TL, h=44; K.spark(c,2,4,w-4,h-8,tl.years.map(f[0]),{shade:tl.n-1,base:f[1]?f[1]():undefined}); return h; },
+  chain:(c,w)=>{ const cols=w>=1000?6:w>=620?3:2, rows=Math.ceil(6/cols), h=rows*196+(rows-1)*16; K.chain(c,0,0,w,h,S,{cols}); return h; },
+  wins:(c,w)=>K.diverging(c,0,0,w,[{title:"Variazione annua a regime",rows:K.winSummary(R,P)}],{labelW:Math.min(270,w*.48),rowH:30,gh:26})+4,
   accflow:(c,w)=>{ const h=Math.round(Math.max(380,Math.min(470,w*.36))); K.accessFlow(c,0,0,w,h,P); return h; },
   pareto:(c,w)=>{ const h=Math.round(Math.max(380,Math.min(520,w*.62))); K.pareto(c,0,0,w,h,A.OPT,welMarks()); return h; },
   winA:(c,w)=>K.diverging(c,0,0,w,K.winGroups(FM.welfare(R,P,persp().om)),{labelW:Math.min(240,w*.44),rowH:27,gh:26})+4,
@@ -192,7 +212,7 @@ const CH={
   wheat:(c,w)=>{ const i=FM.PERSP.findIndex(p=>p.id===UI.persp); return K.gridHeat(c,0,0,w,A.OPT.heat,{val:z=>z.W[i],labelW:90}); },
   evo:(c,w,el)=>{ const d=K.evoDefs(S).find(x=>x.key===el.dataset.k); const h=Math.round(Math.max(230,Math.min(300,w*.62))); K.trend(c,0,0,w,h,d.o); return h; }
 };
-const CHMIN={accflow:900,pareto:520,winA:420,winB:420,wheat:520,wf:700,ops:440,jobs:480,tax:540,taxmini:300,frontier:500,stake:500,tornado:480,dens:440,load:480,poltrend:420,evo:300};
+const CHMIN={spark:100,chain:300,wins:420,accflow:900,pareto:520,winA:420,winB:420,wheat:520,wf:700,ops:440,jobs:480,tax:540,taxmini:300,frontier:500,stake:500,tornado:480,dens:440,load:480,poltrend:420,evo:300};
 function paintCharts(){
   $$("[data-ch]").forEach(el=>{ const f=CH[el.dataset.ch]; if(!f) return; const w=Math.max(CHMIN[el.dataset.ch]||380,Math.floor(el.clientWidth)||380); const so=new FMD.SvgOut(colorMap); const c=new FMD.Canvas(so); let h=0; try{ h=f(c,w,el); }catch(e){ console.error(el.dataset.ch,e); } el.innerHTML=so.region(w,Math.max(40,h),el.dataset.label); });
 }
@@ -200,7 +220,14 @@ function paintCharts(){
 /* ---------- pagine dei risultati ---------- */
 const GO=id=>`data-go="${id}"`;
 function pgEvo(){
-  const tl=A.TL, ys=tl.years, defs=K.evoDefs(S);
+  const n=P.plan.n;
+  return head("Transitorio ed evoluzione","La politica non deve essere a regime dal primo giorno: scegli in quanti anni raggiungere l'obiettivo e, se vuoi, i valori di ogni anno. Sotto, l'evoluzione delle grandezze principali rispetto a oggi.")
+   +card("Valori anno per anno","Dall'anno dell'obiettivo in poi valgono i valori della colonna evidenziata, gli stessi della pagina «Proposta».",
+      `<div class="phead" style="align-items:center"><div class="yrs" id="yrs" role="group" aria-label="Anni per arrivare all'obiettivo"><span class="hint" style="margin-right:6px">Anni per arrivare all'obiettivo</span>${Array.from({length:FM.PLAN_MAX},(_,i)=>`<button type="button" data-n-years="${i+1}" aria-pressed="${i+1===n}">${i+1}</button>`).join("")}</div><label class="hint" style="display:flex;gap:8px;align-items:center">Primo anno <input type="number" id="planstart" min="2025" max="2040" step="1" style="width:76px"></label></div><div id="planwrap">${planHTML()}</div><div id="planmode"></div>`)
+   +`<div id="evoOut">${evoOut()}</div>`;
+}
+function evoOut(){
+  const tl=A.TL, ys=tl.years, defs=K.evoDefs(S), y1=ys[0], yt=ys.find(x=>x.y===tl.n);
   const yc=ys.map(y=>({h:String(y.year),cls:y.y<tl.n?"tr":""}));
   const row=(l,f,b)=>[b?`<b>${l}</b>`:l,...ys.map(y=>f(y))];
   const rows=[
@@ -225,48 +252,9 @@ function pgEvo(){
     row("Posti creati dalla domanda locale",y=>fN(y.R.jobsGained)),
     row("Occupazione netta",y=>fNs(y.R.jobsNet),1)];
   const last=ys[ys.length-1];
-  return head("Evoluzione nel tempo",`Anno per anno dal ${tl.start} al ${tl.start+tl.H-1}, rispetto a oggi e a parità di altre condizioni. ${tl.n>1?`In grigio i ${tl.n-1} anni di transitorio; dal ${tl.start+tl.n-1} valgono i valori obiettivo.`:"La politica è a regime dal primo anno."} Domanda e mercato abitativo si adeguano con ritardo.`)
+  return `<p class="note">${tl.n>1?`In grigio i ${tl.n-1} anni di transitorio; dal ${tl.start+tl.n-1} valgono i valori obiettivo. Nel primo anno (${y1.year}) i pernottamenti variano del ${fPs(y1.R.nChg)} e il saldo è ${fM(y1.R.saldo)}; nell'anno dell'obiettivo (${yt.year}) ${fPs(yt.R.nChg)} e ${fM(yt.R.saldo)}.`:`La politica è a regime dal primo anno: nel ${y1.year} i pernottamenti variano del ${fPs(y1.R.nChg)} e il saldo è ${fM(y1.R.saldo)}.`} Domanda e mercato abitativo si adeguano con ritardo.</p>`
    +`<div class="g4">`+defs.map(d=>card(d.title,d.unit,`<div class="chart" data-ch="evo" data-k="${d.key}" data-label="${esc(d.title)}"></div>`)).join("")+`</div>`
    +card("Tabella anno per anno",`Cumulato in ${tl.H} anni: saldo ${fM(last.saldoCum)}, dividendo erogato ${fM(last.divCum)}, riserva ${fM(last.reserveCum)}.`,tbl([{h:"",a:"l"},...yc],rows));
-}
-function effects(){
-  const avgOld=P.baseRevenue*1e6/(P.totalNights*1e6*(1-P.minorShare)), avgNew=R.G/(R.nNew*(1-P.minorShare));
-  const opsD=R.dPiHotel+R.strLandlords+R.dPiComp;
-  const f=[
-    {t:"Imposta media per notte",v:"€"+n2(avgNew),d:"oggi €"+n2(avgOld),dir:avgNew-avgOld,go:"tour"},
-    {t:"Gettito lordo dell'imposta",v:fM(R.G),d:fMs(R.G-R.base)+" sull'oggi",dir:R.G-R.base,go:"bud"},
-    {t:"Pernottamenti",v:fPs(R.nChg),d:n1(R.nNew/1e6)+" mln di notti",dir:R.nChg,go:"tour"},
-    {t:"Surplus dei turisti",v:fMs(R.cs),d:"maggior costo e minore consumo",dir:R.cs,go:"who"}];
-  const s=[
-    {t:"Margini degli operatori",v:fMs(opsD),d:"alberghi, affitti brevi, commercio",dir:opsD,go:"casa"},
-    {t:"Appartamenti riconvertiti",v:fN(R.units),d:fP(R.share,1)+" dello stock",dir:R.units,go:"casa"},
-    {t:"Spesa turistica",v:fMs(R.dSpend),d:"valore aggiunto "+fMs(R.vaChg),dir:R.dSpend,go:"lab"},
-    {t:"Occupazione netta",v:fNs(R.jobsNet),d:fN(R.jobsLost)+" persi, "+fN(R.jobsGained)+" creati",dir:R.jobsNet,go:"lab"},
-    {t:"Visitatori al giorno",v:fPs(R.vdChg),d:"escursionisti inclusi",dir:R.vdChg,go:"tour"}];
-  const t=[
-    {t:"Canoni e prezzi",v:fPs(R.rentChg),d:"prezzi "+fPs(R.priceChg),dir:R.rentChg,go:"casa"},
-    {t:"Nuovi residenti",v:fNs(R.newRes),d:"in "+fN(R.toRes)+" abitazioni",dir:R.newRes,go:"casa"},
-    {t:"Comuni della cintura",v:fMs(R.beltTaxRev+R.beltProfit),d:fMn(R.belt)+" di notti spostate",dir:1,go:"who"},
-    {t:"Saldo del Comune",v:fM(R.saldo),d:"dopo il Fondo",dir:R.saldo,go:"bud"},
-    {t:"Dividendo per famiglia",v:fE(R.perHH),d:"all'anno, dopo la riserva",dir:R.perHH,go:"bud"},
-    {t:"Costo su non residenti",v:fP(R.nonResShare,0),d:"residenti: "+fMs(R.residentsNet),dir:0,go:"who"}];
-  return [f,s,t];
-}
-function pgOver(){
-  const [f,s,t]=effects(), tl=A.TL;
-  const col=(h,sub,list)=>`<div class="fxcol"><h4>${h}<small>${sub}</small></h4>${list.map(x=>`<button type="button" class="fxc ${x.dir>0?"up":x.dir<0?"dn":""}" ${GO(x.go)}><span class="t">${x.t}</span><span class="v">${x.v}</span><span class="d">${x.d}</span></button>`).join("")}</div>`;
-  const lux=seg("lux"),mass=seg("mass");
-  const read=[
-    `**Imposta.** max(€${pv(P.tmin)}; ${pv(P.alpha*100)}% del prezzo)${P.cap>0?", tetto €"+pv(P.cap):""}; under 30 UE ${P.u30>0?"€"+pv(P.u30)+" a notte":"esenti"}${P.dayFee>0?`; €${pv(P.dayFee)} per escursionista`:""}. Obiettivo dal ${tgtYear()}${tl.n>1?` dopo ${tl.n-1} anni di transitorio`:""}.`,
-    `**Gettito.** Lordo ${fM(R.G)}, netto per il Comune ${fM(R.net+R.dayFeeNet)} (${fMs(R.dTax)} sull'oggi).`,
-    `**Domanda.** Pernottamenti ${fPs(R.nChg)}: mass-market ${fPs(mass.chg)}, lusso ${fPs(lux.chg)}. Visitatori al giorno ${fPs(R.vdChg)}.`,
-    `**Operatori e case.** Margini ${fMs(R.dPiHotel+R.strLandlords+R.dPiComp)}; ${fN(R.units)} appartamenti convertono; canoni ${fPs(R.rentChg)}, prezzi ${fPs(R.priceChg)}.`,
-    `**Comune.** Saldo ${fM(R.saldo)} dopo ${fM(R.fund)} di Fondo; dividendo ${fE(R.perHH)} a famiglia.`,
-    `**Lavoro.** ${fN(R.jobsLost)} posti a rischio, ${fN(R.jobsGained)} ricreati dalla domanda locale.`,
-    `**Incidenza.** ${fP(R.nonResShare,0)} del costo su non residenti; effetto netto sui residenti ${fMs(R.residentsNet)}.`].map(x=>`<li>${md(x)}</li>`).join("");
-  return head("Panoramica a regime",`Effetti annui quando la politica è a regime (dal ${tgtYear()}) e domanda e mercato abitativo si sono adeguati. Clicca su una cartella per il dettaglio.`)
-   +card("Mappa degli effetti","Il colore indica il segno dell'effetto: blu aumenta, arancione diminuisce.",`<div class="fx">${col("Primo ordine","prezzi e gettito, entro pochi mesi",f)}${col("Secondo ordine","mercati e lavoro, 1–3 anni",s)}${col("Terzo ordine","città e conti pubblici, 3–10 anni",t)}</div>`)
-   +`<div class="g2">`+card("Chi paga e chi riceve","Variazione annua a regime, € milioni.",ch("stake","Chi paga e chi riceve"))+card("Lettura della proposta","",`<ul class="read">${read}</ul>`)+`</div>`;
 }
 function pgTour(){
   const rows=R.segs.map(s=>[esc(s.short),fE2(s.tOld),s.exempt?"esente":fE2(s.tAvg),fP(s.effOld,1),fP(s.effNew,1),fMn(s.nB),fMn(s.nN),fPs(s.chg),fMn(s.beltN),fM(s.cs),fM(s.dwl)]);
@@ -432,23 +420,31 @@ function paintDeck(){
   wrap.onkeydown=e=>{ if(e.key==="ArrowRight") show(UI.slide+1); else if(e.key==="ArrowLeft") show(UI.slide-1); };
 }
 
-const PAGES=[["pol","Politica",pgPol],["acc","Codice d'accesso",pgAcc],["evo","Evoluzione",pgEvo],["over","Panoramica",pgOver],["tour","Turismo",pgTour],["casa","Casa e operatori",pgCasa],["bud","Bilancio e dividendo",pgBud],["lab","Lavoro",pgLab],["who","Chi paga",pgWho],["wel","Benessere e ottimo",pgWel],["risk","Rischi",pgRisk],["ip","Ipotesi",pgIp],["chk","Verifiche",pgChk],["deck","Presentazione",pgDeck]];
-if(!PAGES.some(p=>p[0]===UI.page)) UI.page="pol";
-function renderNav(){ $("#pages").innerHTML=PAGES.map((t,i)=>`<button type="button" role="tab" data-page="${t[0]}" aria-selected="${t[0]===UI.page}"><span class="k">${i+1}</span>${t[1]}</button>`).join(""); }
+const PAGES=[["pro","Proposta",pgPro],["evo","Transitorio ed evoluzione",pgEvo],["acc","Codice d'accesso",pgAcc],["tour","Turismo",pgTour],["casa","Casa e operatori",pgCasa],["bud","Bilancio e dividendo",pgBud],["lab","Lavoro",pgLab],["who","Chi paga",pgWho],["wel","Benessere e ottimo",pgWel],["risk","Rischi",pgRisk],["ip","Ipotesi",pgIp],["chk","Verifiche",pgChk],["deck","Presentazione",pgDeck]];
+const DETAIL=PAGES.filter(p=>p[0]!=="pro"&&p[0]!=="deck").map(p=>p[0]);
+if(!PAGES.some(p=>p[0]===UI.page)) UI.page="pro";
+if(!UI.det||!DETAIL.includes(UI.det)) UI.det="evo";
+function renderNav(){
+  const prim=[["pro","Proposta"],["det","Approfondimenti"],["deck","Salva e presenta"]], cur=DETAIL.includes(UI.page)?"det":UI.page;
+  $("#pages").innerHTML=prim.map((t,i)=>`<button type="button" role="tab" data-page="${t[0]}" aria-selected="${t[0]===cur}"><span class="k">${i+1}</span>${t[1]}</button>`).join("");
+  const sub=$("#subpages"); sub.hidden=cur!=="det"; sub.innerHTML=PAGES.filter(p=>DETAIL.includes(p[0])).map(p=>`<button type="button" data-page="${p[0]}" aria-current="${p[0]===UI.page}">${p[1]}</button>`).join("");
+  setHdr();
+}
 function renderPage(keepScroll){
-  const t=PAGES.find(x=>x[0]===UI.page)||PAGES[0]; $$("#pages [data-page]").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.page===UI.page)));
+  const t=PAGES.find(x=>x[0]===UI.page)||PAGES[0]; renderNav(); $("#kpis").hidden=UI.page==="pro"||UI.page==="deck";
   const sy=window.scrollY; const pg=$("#page"); pg.oninput=pg.onchange=pg.onclick=null;
   if(UI.page==="wel"&&!(cache.opt&&cache.opt.v===ver)){ pg.innerHTML=head("Benessere e ottimo","")+`<div class="busy"><span class="spin"></span><span>Cerco le combinazioni ottimali tra migliaia di politiche…</span></div>`; setTimeout(()=>{ A.OPT; if(UI.page==="wel") renderPage(true); },30); return; }
-  pg.innerHTML=t[2](); if(UI.page==="pol"){ bindPol(); updPol(); } if(UI.page==="wel") bindWel();
+  pg.innerHTML=t[2](); if(UI.page==="pro"||UI.page==="evo"){ bindInputs(); syncCtls(); syncPlan(); const ps=$("#planstart"); if(ps) ps.value=P.plan.start; if(UI.page==="pro") scheduleDeferred(); } if(UI.page==="wel") bindWel();
   paintCharts(); if(UI.page==="deck") setTimeout(paintDeck,20);
   if(keepScroll) window.scrollTo(0,sy);
 }
-function goPage(id){ UI.page=id; persist(); renderPage(false); window.scrollTo({top:0}); const b=$(`#pages [data-page="${id}"]`); if(b&&b.scrollIntoView) b.scrollIntoView({block:"nearest",inline:"nearest"}); }
+function goPage(id){ if(id==="det") id=UI.det; if(DETAIL.includes(id)) UI.det=id; UI.page=id; persist(); renderPage(false); window.scrollTo({top:0}); const b=$(`#subpages [data-page="${id}"]`); if(b&&b.scrollIntoView) b.scrollIntoView({block:"nearest",inline:"nearest"}); }
 
 /* ---------- aggiornamento ---------- */
 let tmr=null;
 function changed(){ ver++; R=FM.run(P); persist(); renderKpis(); clearTimeout(tmr);
-  if(UI.page==="pol"){ syncCtls(); syncPlan(); tmr=setTimeout(()=>{ updPol(); paintCharts(); setTimeout(renderBadge,10); },60); return; }
+  if(UI.page==="pro"){ syncCtls(); syncPlan(); tmr=setTimeout(()=>{ updPro(); setTimeout(renderBadge,10); },60); return; }
+  if(UI.page==="evo"){ syncPlan(); tmr=setTimeout(()=>{ const o=$("#evoOut"); if(o){ o.innerHTML=evoOut(); paintCharts(); } setTimeout(renderBadge,10); },60); return; }
   const heavy=["risk","deck","chk","ip","wel"].includes(UI.page); tmr=setTimeout(()=>{ renderPage(true); setTimeout(renderBadge,10); },heavy?140:40); }
 
 /* ---------- salvataggio ---------- */
@@ -494,6 +490,7 @@ async function saveJson(){
 /* ---------- eventi ---------- */
 renderNav();
 $("#pages").addEventListener("click",e=>{ const b=e.target.closest("[data-page]"); if(b) goPage(b.dataset.page); });
+$("#subpages").addEventListener("click",e=>{ const b=e.target.closest("[data-page]"); if(b) goPage(b.dataset.page); });
 $("#page").addEventListener("click",e=>{ const b=e.target.closest("[data-go]"); if(b) goPage(b.dataset.go); });
 $("#chkbadge").onclick=()=>goPage("chk");
 $("#btnSave").onclick=openSave; $("#f-cancel").onclick=()=>{ $("#saveModal").hidden=true; $("#btnSave").focus(); };
@@ -504,7 +501,7 @@ $("#fileImport").onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r
 const fsOK=!!(document.fullscreenEnabled&&document.documentElement.requestFullscreen);
 if(fsOK){ const b=$("#btnFull"); b.hidden=false; b.onclick=()=>{ if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(()=>toast("Lo schermo intero non è consentito qui: usa F11")); };
   document.addEventListener("fullscreenchange",()=>{ b.textContent=document.fullscreenElement?"Esci dallo schermo intero":"Schermo intero"; }); }
-const setHdr=()=>{ document.documentElement.style.setProperty("--hdr",$("#top").offsetHeight+"px"); };
+function setHdr(){ document.documentElement.style.setProperty("--hdr",$("#top").offsetHeight+"px"); }
 let rt=null; new ResizeObserver(()=>{ clearTimeout(rt); rt=setTimeout(()=>{ setHdr(); paintCharts(); },90); }).observe($("#page"));
 window.addEventListener("beforeunload",persist);
 

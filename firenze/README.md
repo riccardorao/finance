@@ -5,6 +5,18 @@ che simula una riforma progressiva dell'imposta di soggiorno di Firenze e mostra
 politica, cambiano nel tempo tutti i fattori coinvolti. Il pulsante **Salva scenario** esporta una presentazione
 in PDF (16:9, vettoriale, stile consulenza strategica) con i risultati della politica impostata.
 
+## Come si usa
+
+La console ha tre voci: **Proposta**, **Approfondimenti**, **Salva e presenta**.
+
+- **Proposta**: a sinistra le leve (imposta di soggiorno, contributo d'accesso, Fondo Armonizzatore, anni di
+  transitorio), a destra la sintesi: un giudizio in una frase, sei indicatori con la loro evoluzione, la catena
+  degli effetti dalla tariffa al dividendo, chi vince e chi perde, e una valutazione su fattibilità giuridica,
+  efficienza, robustezza e verifiche numeriche.
+- **Approfondimenti**: transitorio anno per anno, codice d'accesso, effetti per settore, benessere e ottimo,
+  rischi, ipotesi e verifiche.
+- **Salva e presenta**: anteprima della presentazione e salvataggio in PDF.
+
 ## La politica
 
 Si definiscono soltanto le leve: pavimento, aliquota sul prezzo, tetto, imposta per i cittadini UE under 30,

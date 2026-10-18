@@ -399,6 +399,47 @@ function accessFlow(c,x,y,w,h,P){
   return h;
 }
 
+/* minigrafico di una serie annuale: anni di transitorio ombreggiati, base di oggi tratteggiata */
+function spark(c,x,y,w,h,vals,o){ o=o||{};
+  const v=vals.filter(isFinite), base=o.base; let lo=Math.min(...v,base!==undefined?base:Infinity), hi=Math.max(...v,base!==undefined?base:-Infinity); if(hi-lo<1e-9){ hi+=1; lo-=1; }
+  const pad=(hi-lo)*.12; lo-=pad; hi+=pad; const n=vals.length, X=i=>x+(n>1?i/(n-1):.5)*w, Y=t=>y+h-(t-lo)/(hi-lo)*h;
+  if(o.shade>0) c.rect(x,y,(o.shade/(n-1))*w,h,{fill:C.panel});
+  if(base!==undefined) c.line(x,Y(base),x+w,Y(base),{stroke:C.gray,sw:.9,dash:[3,3]});
+  let d=""; vals.forEach((t,i)=>{ if(isFinite(t)) d+=(d?"L":"M")+X(i).toFixed(1)+","+Y(t).toFixed(1); }); c.path(d,{stroke:o.color||C.blue,sw:1.8});
+  c.circle(X(n-1),Y(vals[n-1]),2.6,{fill:o.color||C.blue});
+}
+/* sintesi di vincitori e vinti in pochi gruppi */
+function winSummary(R,P){
+  const W=root.FM.welfare(R,P,1), r=id=>W.rows.find(x=>x.id===id)||{res:0,non:0}, sum=(ids,k)=>ids.reduce((a,id)=>a+r(id)[k],0), ops=["hotel","str","comp","llong","evas"];
+  return [{label:"Turisti ed escursionisti",v:r("tour").non},{label:"Gestori e proprietari non residenti",v:sum(ops,"non")},{label:"Gestori e proprietari fiorentini",v:sum(ops,"res")},
+    {label:"Inquilini fiorentini (canoni più bassi)",v:r("tenant").res},{label:"Famiglie fiorentine (dividendo e Fondo)",v:r("com").res+r("fund").res+r("prem").res},{label:"Residenti: meno affollamento",v:r("ext").res},
+    {label:"Stato (quota del maggior gettito)",v:r("state").non},{label:"Comuni e operatori della cintura",v:r("belt").non}].filter(x=>Math.abs(x.v)>5e4).sort((a,b)=>a.v-b.v);
+}
+/* catena degli effetti: dalla tariffa al dividendo */
+function chainSteps(S){
+  const R=S.R,P=S.P, seg=id=>R.segs.find(x=>x.id===id), bud=seg("budget"), lux=seg("lux");
+  const avgOld=P.baseRevenue*1e6/(P.totalNights*1e6*(1-P.minorShare)), avgNew=R.G/(R.nNew*(1-P.minorShare)), ops=R.dPiHotel+R.strLandlords+R.dPiComp;
+  const g=id=>R.dayGroups.find(x=>x.id===id), pv=x=>n1(x).replace(/,0$/,"");
+  return [
+    {t:"Prezzo del soggiorno",v:"€"+n2(avgOld)+" → €"+n2(avgNew),s:"imposta media per notte",d:P.dayFee>0?`Escursionisti: €${pv(g("u30").fee)}–€${pv(g("xue").fee)} a visita, verificati ${P.enforce==="campione"?"a campione":"in automatico"}.`:"Escursionisti: nessun contributo d'accesso."},
+    {t:"Domanda",v:fPs(R.nChg),s:"pernottamenti",d:`Visitatori al giorno ${fPs(R.vdChg)}. Reagisce il turismo economico (${fPs(bud.chg,0)}), quasi nulla il lusso (${fPs(lux.chg)}).`},
+    {t:"Operatori e lavoro",v:fMs(ops),s:"margini all'anno",d:`${fN(R.jobsLost)} posti a rischio nel turismo, ${fN(R.jobsGained)} ricreati dalla domanda locale.`},
+    {t:"Casa",v:fN(R.units),s:"affitti brevi riconvertiti",d:`Canoni ${fPs(R.rentChg)}: ${fE(-R.rentChg*R.annualRent)} all'anno in meno per una famiglia in affitto.`},
+    {t:"Comune",v:fM(R.saldo),s:"saldo dopo il Fondo",d:`Entrate nette ${fMs(R.dTax)}, dopo Stato, evasione e perdite collaterali; ${fM(R.fund)} al Fondo Armonizzatore.`},
+    {t:"Famiglie fiorentine",v:fE(R.perHH),s:"dividendo all'anno",d:root.FMDeckB?("Il dividendo "+root.FMDeckB.divPhrase(R,P)+"."):""}];
+}
+function chain(c,x,y,w,h,S,o){ o=o||{};
+  const st=chainSteps(S), cols=o.cols||(w>=1000?6:w>=620?3:2), rows=Math.ceil(st.length/cols), gap=22, bw=(w-gap*(cols-1))/cols, bh=(h-(rows-1)*16)/rows;
+  st.forEach((k,i)=>{ const cx=x+(i%cols)*(bw+gap), cy=y+Math.floor(i/cols)*(bh+16), last=i===st.length-1;
+    c.rect(cx,cy,bw,bh,{fill:last?C.navy:C.pblue,r:5});
+    c.t1(String(i+1)+"  "+k.t.toUpperCase(),cx+12,cy+20,{font:"sansB",size:10.5,color:last?"#9DBCE3":C.blue});
+    c.t1(k.v,cx+12,cy+50,{font:"serifSB",size:Math.min(24,bw/8),color:last?C.white:C.navy});
+    c.t1(k.s,cx+12,cy+68,{size:11,color:last?"#C9D8EE":C.gray});
+    c.text(k.d,cx+12,cy+88,{size:11.2,color:last?C.white:C.ink,maxWidth:bw-24,lh:14.5,maxH:bh-96});
+    if(i%cols<cols-1&&i<st.length-1){ const ax=cx+bw+3, ay=cy+bh/2; c.path(`M${ax},${ay-7} L${ax+gap-6},${ay} L${ax},${ay+7} Z`,{fill:C.navy}); } });
+  return rows*bh+(rows-1)*16;
+}
+
 /* ---------- costruttori condivisi tra slide e console ---------- */
 /* serie dell'evoluzione nel tempo, condivise tra console e presentazione */
 function evoDefs(S){
@@ -449,5 +490,5 @@ function visitorBars(c,x,y,w,S){
   names.forEach((nm,j)=>{ const lx=x+150+j*Math.min(190,(w-150)/3); c.rect(lx,y+152,12,12,{fill:cols[j]}); c.t1(nm,lx+18,y+163,{size:12.5,color:C.ink}); });
   return 170;
 }
-root.FMK={accessRows,accessFlow,pareto,gridHeat,winGroups,evoDefs,fmtParam,trend,fMc,pnlSteps,stakeGroups,tornadoRows,visitorBars,C,ML,MR,CW,n0,n1,n2,fM,fMs,fE,fE2,fP,fPs,fN,fNs,fMn,fMn1,MIN,frame,callout,calloutH,kpi,bullets,numbered,chartTitle,table,chip,hBarPairs,hBars,diverging,waterfall,columns,taxFunction,densityR,tornadoChart,frontier,heat,gantt};
+root.FMK={spark,winSummary,chainSteps,chain,accessRows,accessFlow,pareto,gridHeat,winGroups,evoDefs,fmtParam,trend,fMc,pnlSteps,stakeGroups,tornadoRows,visitorBars,C,ML,MR,CW,n0,n1,n2,fM,fMs,fE,fE2,fP,fPs,fN,fNs,fMn,fMn1,MIN,frame,callout,calloutH,kpi,bullets,numbered,chartTitle,table,chip,hBarPairs,hBars,diverging,waterfall,columns,taxFunction,densityR,tornadoChart,frontier,heat,gantt};
 })(typeof self!=="undefined"?self:this);

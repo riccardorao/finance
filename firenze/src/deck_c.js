@@ -108,6 +108,15 @@ function s_evoCity(c,S,n){
   const body=`I flussi reagiscono subito; case e canoni seguono più lentamente, perché le riconversioni richiedono la scadenza delle prenotazioni e lavori di adeguamento. Il dividendo arriva prima dei benefici sul mercato della casa: è la contropartita visibile nei primi anni.`;
   K.callout(c,ML+784,418,376,Math.min(K.calloutH(c,376,body,{size:12.8,lh:17.5}),238),"Implicazione",body,{size:12.8,lh:17.5});
 }
+function s_chain(c,S,n){
+  const R=S.R,P=S.P,TL=S.TL;
+  K.frame(c,S,n,{tag:"La riforma in una pagina",title:`Dalla tariffa al dividendo: ${fM(R.saldo)} di saldo e ${fE(R.perHH)} a famiglia, pagati per il ${fP(R.nonResShare,0)} da chi non vive a Firenze`,source:"modello Il Dividendo di Firenze",notes:`Valori annui a regime (dal ${B.tgtYear(S)}). Ogni passaggio è la conseguenza del precedente: il prezzo cambia la domanda, la domanda i margini e le case, il saldo finanzia il dividendo.`});
+  K.chain(c,ML,160,CW,200,S,{cols:6});
+  K.chartTitle(c,ML,394,600,"Chi vince e chi perde","€ milioni all'anno");
+  K.diverging(c,ML,400,600,[{title:"",rows:K.winSummary(R,P)}],{labelW:270,rowH:31,gh:8,bh:16});
+  K.chartTitle(c,700,394,520,"Nel tempo","€ milioni: saldo (barre) ed entrate nette (linea)");
+  K.trend(c,700,406,520,254,{labels:TL.years.map(y=>y.year),shade:TL.n-1,series:[{type:"bar",v:TL.years.map(y=>y.R.saldo/1e6),color:C.blue},{v:TL.years.map(y=>(y.R.net+y.R.dayFeeNet)/1e6),color:C.navy}],base:P.baseRevenue,fmt:v=>n1(v)});
+}
 function s_access(c,S,n){
   const P=S.P,R=S.R;
   K.frame(c,S,n,{tag:"Contributo d'accesso",title:"Il problema degli escursionisti è la verifica: un codice digitale unico, controllato in automatico dove i visitatori devono comunque passare",source:"modello Il Dividendo di Firenze; precedente: Comune di Venezia (contributo di accesso, 2024–2026)",notes:"Il codice non è un biglietto e non vieta l'ingresso: senza un codice valido il contributo si aggiunge al biglietto del museo, del bus o del treno. Musei statali e Opera del Duomo richiedono convenzioni; treni e bus turistici accordi con i vettori."});
@@ -314,7 +323,7 @@ function build(S){
   const per=44; const aChunks=[]; for(let i=0;i<params.length;i+=per) aChunks.push(params.slice(i,i+per));
   const SAN=S.SAN||[], half=Math.ceil(SAN.length/2), sanA=SAN.slice(0,half), sanB=SAN.slice(half);
   const b=B.slides, fee=S.P&&S.P.dayFee>0;
-  const list=[].concat([b[0],b[1],b[2],b[3],s_plan,b[4],b[5],b[6]],fee?[s_access,s_daypass]:[],[b[7],s_evoFin,b[8],b[9],s_pareto,s_welfare,b[10],b[11],s_evoCity,s_labor,s_fund,s_dividend,s_frontier,s_risk,s_matrix,s_legal,s_kpi,s_decisions,s_divider,s_personas],
+  const list=[].concat([b[0],b[1],s_chain,b[2],b[3],s_plan,b[4],b[5],b[6]],fee?[s_access,s_daypass]:[],[b[7],s_evoFin,b[8],b[9],s_pareto,s_welfare,b[10],b[11],s_evoCity,s_labor,s_fund,s_dividend,s_frontier,s_risk,s_matrix,s_legal,s_kpi,s_decisions,s_divider,s_personas],
     aChunks.map((ch,i)=>(c,S2,n)=>s_assump(c,S2,n,i,aChunks.length,ch)),
     [s_method,(c,S2,n)=>s_checks(c,S2,n,0,2,sanA),(c,S2,n)=>s_checks(c,S2,n,1,2,sanB),s_sources]);
   if(S.meta&&S.meta.appendix===false) return list.slice(0,list.indexOf(s_divider));
