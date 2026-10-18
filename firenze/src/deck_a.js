@@ -370,6 +370,35 @@ function winGroups(Wl){
   return [f("Residenti a Firenze","res"),f("Non residenti, Stato e cintura","non")].filter(g=>g.rows.length);
 }
 
+/* categorie del codice d'accesso: chi paga, come si riconosce, quanto */
+function accessRows(R,P){
+  const g=id=>R.dayGroups.find(x=>x.id===id), money=v=>v>0?"€"+n1(v).replace(/,0$/,""):"esente";
+  const rows=[
+    {cat:"Residenti nel Comune",how:"Carta d'identità elettronica o SPID: codice permanente",fee:"esente"},
+    {cat:"Città metropolitana, pendolari, studenti",how:"Residenza, abbonamento o attestato di lavoro e di studio",fee:"esente"},
+    {cat:"Ospiti che pernottano",how:"Codice emesso dalla struttura alla registrazione; pagano già l'imposta di soggiorno",fee:"esente"},
+    {cat:"Legami con Firenze",how:"Ospiti registrati da un residente; nati a Firenze o nella Città metropolitana (dal codice fiscale); proprietari che pagano l'IMU",fee:P.familyExempt?"esente":"paga"},
+    {cat:"Minori di 14 anni, persone con disabilità",how:"Documento o certificazione",fee:"esente"}];
+  ["u30","o30","xue"].forEach(id=>{ const x=g(id); rows.push({cat:x.label,how:id==="xue"?"Passaporto":"Documento d'identità (età e cittadinanza)",fee:money(x.fee),L1:x.L1,rev:x.rev,pay:1}); });
+  return rows;
+}
+/* schema del sistema automatizzato del codice d'accesso */
+function accessFlow(c,x,y,w,h,P){
+  const colW=Math.min(300,w*.31), midW=Math.min(250,w*.24), gap=(w-2*colW-midW)/2, xL=x, xM=x+colW+gap, xR=xM+midW+gap;
+  const left=[["Residenti","gratuito, con CIE o SPID"],["Pernottanti","emesso dalla struttura al check-in"],["Legami con Firenze",P.familyExempt?"ospiti di residenti, nati, proprietari":"non previsto: pagano"],["Escursionisti","online o con il biglietto, tariffa per categoria"]];
+  const right=[["Musei e monumenti","verifica alla prenotazione o in biglietteria"],["Bus turistici","per passeggero, con il permesso ZTL"],["Treni e vettori","insieme al biglietto di andata e ritorno"],["Tour operator e guide","per i gruppi, prima dell'arrivo"],["Controlli a campione","Polizia municipale nel centro UNESCO"]];
+  c.t1("CHI OTTIENE IL CODICE",xL,y+12,{font:"sansB",size:11,color:C.blue}); c.t1("DOVE SI VERIFICA",xR,y+12,{font:"sansB",size:11,color:C.blue});
+  const top=y+24, bh=(h-24-8*(left.length-1))/left.length, rbh=(h-24-8*(right.length-1))/right.length;
+  const arrow=(x1,y1,x2,y2)=>{ c.line(x1,y1,x2-7,y2,{stroke:C.gray,sw:1.3}); const a=Math.atan2(y2-y1,x2-x1), s=7; c.path(`M${x2},${y2} L${x2-s*Math.cos(a-.4)},${y2-s*Math.sin(a-.4)} L${x2-s*Math.cos(a+.4)},${y2-s*Math.sin(a+.4)} Z`,{fill:C.gray}); };
+  const midY=top+(h-24)/2, mh=Math.min(h-24,190), my=midY-mh/2;
+  left.forEach((b,i)=>{ const yy=top+i*(bh+8), pay=i===3; c.rect(xL,yy,colW,bh,{fill:pay?C.orange:C.pblue,r:4}); c.t1(b[0],xL+12,yy+bh/2-3,{font:"sansB",size:13,color:pay?C.white:C.navy}); c.text(b[1],xL+12,yy+bh/2+14,{size:11,color:pay?C.white:C.ink,maxWidth:colW-24,lh:13}); arrow(xL+colW+2,yy+bh/2,xM-2,midY+(i-1.5)*18); });
+  c.rect(xM,my,midW,mh,{fill:C.navy,r:6});
+  c.text("Registro comunale del codice d'accesso",xM+14,my+30,{font:"sansB",size:13.5,color:C.white,maxWidth:midW-28,lh:17});
+  c.text("Risponde solo «valido» o «non valido» con la categoria. Nessun dato sugli spostamenti; dati cancellati dopo 12 mesi.",xM+14,my+76,{size:11,color:"#C9D8EE",maxWidth:midW-28,lh:14});
+  right.forEach((b,i)=>{ const yy=top+i*(rbh+8); c.rect(xR,yy,colW,rbh,{fill:C.panel,r:4}); c.rect(xR,yy,4,rbh,{fill:C.navy}); c.t1(b[0],xR+14,yy+rbh/2-3,{font:"sansB",size:13,color:C.navy}); c.text(b[1],xR+14,yy+rbh/2+14,{size:11,color:C.ink,maxWidth:colW-28,lh:13}); arrow(xM+midW+2,midY+(i-2)*16,xR-2,yy+rbh/2); });
+  return h;
+}
+
 /* ---------- costruttori condivisi tra slide e console ---------- */
 /* serie dell'evoluzione nel tempo, condivise tra console e presentazione */
 function evoDefs(S){
@@ -420,5 +449,5 @@ function visitorBars(c,x,y,w,S){
   names.forEach((nm,j)=>{ const lx=x+150+j*Math.min(190,(w-150)/3); c.rect(lx,y+152,12,12,{fill:cols[j]}); c.t1(nm,lx+18,y+163,{size:12.5,color:C.ink}); });
   return 170;
 }
-root.FMK={pareto,gridHeat,winGroups,evoDefs,fmtParam,trend,fMc,pnlSteps,stakeGroups,tornadoRows,visitorBars,C,ML,MR,CW,n0,n1,n2,fM,fMs,fE,fE2,fP,fPs,fN,fNs,fMn,fMn1,MIN,frame,callout,calloutH,kpi,bullets,numbered,chartTitle,table,chip,hBarPairs,hBars,diverging,waterfall,columns,taxFunction,densityR,tornadoChart,frontier,heat,gantt};
+root.FMK={accessRows,accessFlow,pareto,gridHeat,winGroups,evoDefs,fmtParam,trend,fMc,pnlSteps,stakeGroups,tornadoRows,visitorBars,C,ML,MR,CW,n0,n1,n2,fM,fMs,fE,fE2,fP,fPs,fN,fNs,fMn,fMn1,MIN,frame,callout,calloutH,kpi,bullets,numbered,chartTitle,table,chip,hBarPairs,hBars,diverging,waterfall,columns,taxFunction,densityR,tornadoChart,frontier,heat,gantt};
 })(typeof self!=="undefined"?self:this);

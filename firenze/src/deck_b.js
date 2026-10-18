@@ -11,6 +11,7 @@ function context(P,meta){
   // varianti di confronto: senza e con contributo d'accesso; Fase 1 a legislazione vigente (tetto di €10, nessun contributo)
   const V={noFee:P.dayFee>0?vr({dayFee:0}):R,fee:P.dayFee>0?R:vr({dayFee:5}),feeV:P.dayFee>0?P.dayFee:5,
     phase1:vr({cap:P.cap>0?Math.min(P.cap,10):10,tmin:Math.min(P.tmin,10),u30:Math.min(P.u30,10),dayFee:0})};
+  if(P.dayFee>0) V.enf={integrato:vr({enforce:"integrato"}),campione:vr({enforce:"campione"})};
   const date=new Date().toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
   const OPT=FM.optimize(P);
   return {P,R,TL,MC,TOR,MAT,MAP,SAN,V,OPT,name:(meta&&meta.name)||"Proposta di riforma",meta:Object.assign({audience:"Commissione consiliare e forze politiche",author:"",date},meta||{})};

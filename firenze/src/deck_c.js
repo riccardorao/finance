@@ -108,22 +108,25 @@ function s_evoCity(c,S,n){
   const body=`I flussi reagiscono subito; case e canoni seguono più lentamente, perché le riconversioni richiedono la scadenza delle prenotazioni e lavori di adeguamento. Il dividendo arriva prima dei benefici sul mercato della casa: è la contropartita visibile nei primi anni.`;
   K.callout(c,ML+784,418,376,Math.min(K.calloutH(c,376,body,{size:12.8,lh:17.5}),238),"Implicazione",body,{size:12.8,lh:17.5});
 }
+function s_access(c,S,n){
+  const P=S.P,R=S.R;
+  K.frame(c,S,n,{tag:"Contributo d'accesso",title:"Il problema degli escursionisti è la verifica: un codice digitale unico, controllato in automatico dove i visitatori devono comunque passare",source:"modello Il Dividendo di Firenze; precedente: Comune di Venezia (contributo di accesso, 2024–2026)",notes:"Il codice non è un biglietto e non vieta l'ingresso: senza un codice valido il contributo si aggiunge al biglietto del museo, del bus o del treno. Musei statali e Opera del Duomo richiedono convenzioni; treni e bus turistici accordi con i vettori."});
+  K.accessFlow(c,ML,164,CW,360,P);
+  const items=[
+    ["**Chi non va colpito.** Chi torna a trovare la famiglia è registrato come ospite dal familiare residente; chi è nato a Firenze o nell'area metropolitana è riconosciuto dal codice fiscale; pendolari, studenti e proprietari di casa sono esenti."],
+    ["**Chi paga.** Le visite organizzate di massa: gruppi in bus e in crociera, gite in giornata da Roma. Tariffa ridotta per i cittadini UE under 30, maggiorata per gli extra-UE."],
+    ["**Tutele.** Norma nazionale come per Venezia; distinzioni solo per età e tra UE ed extra-UE (diritto UE); valutazione d'impatto privacy, nessun tracciamento, dati cancellati dopo 12 mesi."]];
+  items.forEach((t,i)=>{ const x=ML+i*390; c.rect(x,544,374,112,{fill:C.pblue}); c.rect(x,544,4,112,{fill:C.navy}); c.text(t[0],x+18,570,{size:12.4,color:C.ink,maxWidth:340,lh:16.5,boldColor:C.navy}); });
+}
 function s_daypass(c,S,n){
-  const R=S.R,P=S.P;
-  K.frame(c,S,n,{tag:"Contributo d'accesso",title:`Come funzionerebbe il contributo d'accesso: €${pv(P.dayFee)} per visita a chi entra in città senza pernottare, ${fM(R.dayFeeNet)} netti all'anno`,source:"modello Il Dividendo di Firenze; escursionisti: Comune di Firenze e Centro Studi Turistici (dati di telefonia mobile); precedente: Comune di Venezia",notes:`Escursionisti soggetti: ${fP(P.dayLiable,0)} del totale; mancata riscossione: ${fP(P.dayEvasion,0)}; elasticità delle visite al costo della gita (€${n0(P.dayCost)}): ${n2(P.dayElast).replace("-",MIN)}.`});
-  K.numbered(c,ML,180,680,[
-    "**Chi paga.** Chi entra in città per una visita in giornata senza dormire a Firenze, una volta per visita.",
-    "**Esenzioni.** Residenti della Città metropolitana, pendolari per lavoro e studio, minori di 14 anni, persone con disabilità, chi pernotta a Firenze o nei comuni della cintura aderenti all'accordo metropolitano.",
-    "**Pagamento.** Prenotazione online con codice QR, oppure insieme al biglietto del treno o del bus turistico, con il vettore che versa al Comune; i tour operator pagano per i gruppi.",
-    "**Controlli.** Verifiche a campione agli arrivi (Santa Maria Novella, terminal dei bus turistici, parcheggi scambiatori) e nel centro UNESCO, con sanzioni.",
-    "**Calendario.** Tutto l'anno nel modello; in alternativa solo nei giorni di picco, come a Venezia, con gettito ed effetto ridotti in proporzione.",
-    "**Base giuridica e precedente.** Serve una norma nazionale: oggi il contributo è consentito solo a Venezia (art. 1, c. 1129, L. 145/2018). Nel 2025 Venezia lo ha applicato in 54 giorni: 723.497 paganti, €5,4 mln."],{size:13.2,gap:12});
-  K.kpi(c,800,166,200,124,n2(R.L0/1e6)+" mln","Escursionisti soggetti","su "+n1(R.dayV0/1e6)+" mln all'anno",{size:28});
-  K.kpi(c,1020,166,200,124,n2(R.L1/1e6)+" mln","Visite pagate",fPs(R.L1/R.L0-1)+" rispetto a oggi",{size:28});
-  K.kpi(c,800,302,200,124,fM(R.dayFeeNet),"Gettito netto","dopo la mancata riscossione",{size:28,color:C.blue});
-  K.kpi(c,1020,302,200,124,fPs(R.vdChg),"Visitatori al giorno","insieme all'imposta di soggiorno",{size:28});
-  const body=`Il contributo è l'unica leva che agisce sugli escursionisti, circa un terzo delle presenze giornaliere. Il gettito è modesto rispetto all'imposta di soggiorno e la riscossione ha un costo: a Venezia, nel 2024, ha superato gli incassi. La valutazione di Ca' Foscari indica che il valore sta soprattutto nella prenotazione, che produce dati giornalieri sugli arrivi e permette di governare i giorni di picco.`;
-  K.callout(c,800,442,420,Math.min(K.calloutH(c,420,body,{size:13,lh:18}),210),"Implicazione",body,{size:13,lh:18});
+  const R=S.R,P=S.P,E=S.V.enf, rows=K.accessRows(R,P), cur=P.enforce==="campione"?"campione":"integrato";
+  K.frame(c,S,n,{tag:"Contributo d'accesso",title:`Contributo di €${pv(P.dayFee)} di base: ${fM(R.dayFeeNet)} netti all'anno con ${cur==="integrato"?"la verifica automatica":"i soli controlli a campione"}, ${fPs(R.vdChg)} visitatori al giorno insieme all'imposta di soggiorno`,source:"modello Il Dividendo di Firenze; escursionisti: Comune di Firenze e Centro Studi Turistici (dati di telefonia mobile); costi: Comune di Venezia",notes:`Escursionisti soggetti: ${fP(P.dayLiable,0)} dei ${n1(R.dayV0/1e6)} mln annui${P.familyExempt?`, meno il ${fP(P.dayTies,0)} con legami con Firenze`:""}. Composizione: ${fP(P.dayMixU30,0)} UE under 30, ${fP(1-P.dayMixU30-P.dayMixXUE,0)} UE over 30, ${fP(P.dayMixXUE,0)} extra-UE. Elasticità al costo della gita tra ${n2(P.dayElastXUE).replace("-",MIN)} (extra-UE) e ${n2(P.dayElastU30).replace("-",MIN)} (UE under 30).`});
+  K.table(c,ML,164,[{h:"Categoria",w:250},{h:"Come si riconosce",w:330},{h:"Tariffa",w:120,a:"r"},{h:"Visite pagate",w:100,a:"r"},{h:"Dovuto",w:90,a:"r"}],rows.map(x=>({cells:[x.cat,x.how,x.fee,x.pay?fN(x.L1):"—",x.pay?fM(x.rev):"—"],b:!!x.pay,rh:x.how.length>70?40:30})),{rh:30,hh:28,size:11.4});
+  const cm=[["Non riscosso",m=>fP(E[m].dayEv,0)],["Costo di gestione",m=>fM(E[m].dayOpCost)],["Gettito netto",m=>fM(E[m].dayFeeNet)]];
+  K.chartTitle(c,960,166,260,"Sistema di verifica","");
+  K.table(c,960,176,[{h:"",w:124},{h:"Integrato",w:68,a:"r"},{h:"A campione",w:68,a:"r"}],cm.map((r,i)=>({cells:[r[0],r[1]("integrato"),r[1]("campione")],b:i===2})),{rh:30,hh:28,size:11.4});
+  const body=`La verifica automatica dentro prenotazioni dei musei, permessi dei bus e biglietti ferroviari costa meno dei controlli a campione e lascia scoperto soprattutto chi arriva in auto senza entrare in un museo. A Venezia, nel 2024, i costi di gestione hanno superato gli incassi.`;
+  K.callout(c,960,320,260,Math.min(K.calloutH(c,260,body,{size:12,lh:16.5}),330),"Implicazione",body,{size:12,lh:16.5});
 }
 function s_pareto(c,S,n){
   const R=S.R,O=S.OPT,o=O.opt,iso=o.isoSaldo;
@@ -311,7 +314,7 @@ function build(S){
   const per=44; const aChunks=[]; for(let i=0;i<params.length;i+=per) aChunks.push(params.slice(i,i+per));
   const SAN=S.SAN||[], half=Math.ceil(SAN.length/2), sanA=SAN.slice(0,half), sanB=SAN.slice(half);
   const b=B.slides, fee=S.P&&S.P.dayFee>0;
-  const list=[].concat([b[0],b[1],b[2],b[3],s_plan,b[4],b[5],b[6]],fee?[s_daypass]:[],[b[7],s_evoFin,b[8],b[9],s_pareto,s_welfare,b[10],b[11],s_evoCity,s_labor,s_fund,s_dividend,s_frontier,s_risk,s_matrix,s_legal,s_kpi,s_decisions,s_divider,s_personas],
+  const list=[].concat([b[0],b[1],b[2],b[3],s_plan,b[4],b[5],b[6]],fee?[s_access,s_daypass]:[],[b[7],s_evoFin,b[8],b[9],s_pareto,s_welfare,b[10],b[11],s_evoCity,s_labor,s_fund,s_dividend,s_frontier,s_risk,s_matrix,s_legal,s_kpi,s_decisions,s_divider,s_personas],
     aChunks.map((ch,i)=>(c,S2,n)=>s_assump(c,S2,n,i,aChunks.length,ch)),
     [s_method,(c,S2,n)=>s_checks(c,S2,n,0,2,sanA),(c,S2,n)=>s_checks(c,S2,n,1,2,sanB),s_sources]);
   if(S.meta&&S.meta.appendix===false) return list.slice(0,list.indexOf(s_divider));

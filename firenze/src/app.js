@@ -36,6 +36,8 @@ const A={
   get SAN(){ return memo("san",()=>FM.sanity(P,R,A.TL)); },
   get NG(){ return memo("ng",()=>{ const Q=FM.cloneP(P); Q.guaranteeOn=false; return FM.run(Q); }); },
   get OPT(){ return memo("opt",()=>FM.optimize(P)); },
+  get ENF(){ return memo("enf",()=>{ const o={}, f=P.dayFee>0?P.dayFee:5; ["integrato","campione"].forEach(m=>{ const Q=FM.cloneP(P); Q.enforce=m; Q.dayFee=f; o[m]=FM.run(Q); });
+    const Q=FM.cloneP(P); Q.dayFee=f; Q.familyExempt=!P.familyExempt; const alt=FM.run(Q), cur=P.enforce==="campione"?o.campione:o.integrato; o.famCost=P.familyExempt?alt.dayFeeNet-cur.dayFeeNet:cur.dayFeeNet-alt.dayFeeNet; return o; }); },
   get D5(){ return memo("d5",()=>{ const Q=FM.cloneP(P); Q.dayFee=P.dayFee>0?P.dayFee:5; return FM.run(Q); }); }
 };
 const S={ get P(){return P;}, get R(){return R;}, get MAP(){return A.MAP;}, get TL(){return A.TL;}, get name(){return scenName();}, get MC(){return A.MC;}, get TOR(){return A.TOR;}, get MAT(){return A.MAT;}, get SAN(){return A.SAN;} };
@@ -69,13 +71,14 @@ const md=s=>s.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");
 const sfx=p=>p.pct?"%":p.unit&&p.unit[0]==="€"?(p.unit==="€ mln/anno"?"€ mln":"€"):"";
 const toShow=(p,v)=>p.pct?+(v*100).toFixed(2):v;
 function ctl(id){ const p=FM.PMAP[id];
+  if(p.select) return `<div class="ctl"><label for="in-${id}">${esc(p.label)}</label><select id="in-${id}" data-p="${id}">${p.select.map(o=>`<option value="${o[0]}">${esc(o[1])}</option>`).join("")}</select>${p.hint?`<span class="hint">${esc(p.hint)}</span>`:""}</div>`;
   if(p.bool) return `<label class="sw" for="in-${id}"><input type="checkbox" id="in-${id}" data-p="${id}"><span>${esc(p.label)}${p.hint?`<small>${esc(p.hint)}</small>`:""}</span></label>`;
   return `<div class="ctl"><div class="row"><label for="n-${id}">${esc(p.label)}${p.sym?`<span class="sym">${esc(p.sym)}</span>`:""}</label><span class="nv"><input type="number" id="n-${id}" data-n="${id}" min="${toShow(p,p.min)}" max="${toShow(p,p.max)}" step="${toShow(p,p.step)}"><span class="sfx">${sfx(p)}</span></span></div><input type="range" id="in-${id}" data-p="${id}" min="${p.min}" max="${p.max}" step="${p.step}" aria-label="${esc(p.label)}">${p.hint?`<span class="hint">${esc(p.hint)}</span>`:""}</div>`; }
 function syncCtls(){
   FM.LEVER_IDS.forEach(id=>{ const p=FM.PMAP[id], i=$("#in-"+id); if(i){ if(p.bool) i.checked=!!P[id]; else if(document.activeElement!==i) i.value=P[id]; }
     const nv=$("#n-"+id); if(nv&&document.activeElement!==nv) nv.value=toShow(p,P[id]); });
 }
-function setLever(id,v){ const p=FM.PMAP[id]; if(!p.bool){ if(!isFinite(v)) return; v=Math.max(p.min,Math.min(p.max,v)); } P[id]=v; changed(); }
+function setLever(id,v){ const p=FM.PMAP[id]; if(!p.bool&&!p.select){ if(!isFinite(v)) return; v=Math.max(p.min,Math.min(p.max,v)); } P[id]=v; changed(); }
 
 /* ---------- transitorio ---------- */
 const PLAN_LAB={tmin:["Pavimento","€"],alpha:["Aliquota sul prezzo","%"],cap:["Tetto per notte","€"],u30:["Under 30 UE","€"],dayFee:["Contributo escursionisti","€"],fundCommercial:["Fondo: commercio","€ mln"],fundTalent:["Fondo: imprese e talenti","€ mln"],guaranteeOn:["Garanzia sugli affitti",""]};
@@ -109,21 +112,18 @@ function setPlanCell(k,y,v){
 
 /* ---------- contributo d'accesso: come funzionerebbe ---------- */
 function dayHow(){
-  return `<div class="how"><h4>Come funzionerebbe</h4><dl>
-    <dt>Chi paga</dt><dd>Chi entra in città per una visita in giornata senza dormire a Firenze. Si paga una volta per visita, qualunque sia la durata.</dd>
-    <dt>Chi è esente</dt><dd>Residenti della Città metropolitana, pendolari per lavoro e studio, minori di 14 anni, persone con disabilità e accompagnatori, chi pernotta a Firenze (paga già l'imposta di soggiorno) e chi dorme nei comuni della cintura che aderiscono all'accordo metropolitano. Nel modello paga il <b id="dh-liable"></b> degli escursionisti.</dd>
-    <dt>Come si paga</dt><dd>Prenotazione online con codice QR, come a Venezia; oppure insieme al biglietto del treno o del bus turistico, con il vettore che versa al Comune. I tour operator pagano per i gruppi.</dd>
-    <dt>Controlli</dt><dd>Verifiche a campione agli arrivi (Santa Maria Novella, terminal dei bus turistici, parcheggi scambiatori) e nel centro UNESCO, con sanzione per chi è sprovvisto. Nel modello si perde il <b id="dh-evas"></b> del dovuto.</dd>
-    <dt>Quando</dt><dd>Nel modello tutto l'anno. Si può limitare ai giorni di maggiore affollamento, come fa Venezia: gettito ed effetto sui flussi si riducono in proporzione.</dd>
-    <dt>Il precedente</dt><dd>Venezia applica il contributo dal 2024 nei giorni di picco, dalle 8:30 alle 16: €5 con prenotazione anticipata, €10 negli ultimi giorni. Nel 2025, in 54 giorni, 723.497 paganti e €5,4 mln di incasso; nel 2024 i costi di gestione (circa €3 mln) hanno superato gli incassi.</dd>
-    <dt>Base giuridica</dt><dd>Serve una norma nazionale: oggi il contributo è consentito solo a Venezia (art. 1, c. 1129, L. 145/2018, che rinvia all'art. 4, c. 3-bis, del D.Lgs. 23/2011).</dd>
-  </dl><div class="figs" id="dayfigs"></div></div>`;
+  return `<div class="how"><h4>Il codice d'accesso, in breve</h4><dl>
+    <dt>Chi paga</dt><dd>Chi entra in città in giornata senza dormire a Firenze, una volta per visita, con tariffa diversa per cittadini UE under 30, UE over 30 ed extra-UE.</dd>
+    <dt>Chi non paga</dt><dd id="dh-free"></dd>
+    <dt>Come si verifica</dt><dd id="dh-how"></dd>
+  </dl><button type="button" class="small" data-go="acc">Come funziona il sistema →</button><div class="figs" id="dayfigs"></div></div>`;
 }
 function dayFigs(){
-  const r=A.D5, on=P.dayFee>0, fee=on?P.dayFee:5;
-  const f=[[n2(R.L0/1e6)+" mln","escursionisti soggetti all'anno, su "+n1(R.dayV0/1e6)+" mln"],[n2(r.L1/1e6)+" mln",`visite pagate con €${pv(fee)}`],[fPs(r.L1/r.L0-1),"visite degli escursionisti soggetti"],[fM(r.dayFeeNet),"gettito netto all'anno"],[fPs(r.vdChg),"visitatori al giorno, con l'imposta di soggiorno scelta"]];
-  $("#dh-liable").textContent=fP(P.dayLiable,0); $("#dh-evas").textContent=fP(P.dayEvasion,0);
-  $("#dayfigs").innerHTML=(on?"":`<p class="hint" style="grid-column:1/-1">Contributo non attivo. Stima con €5 a visita:</p>`)+f.map(x=>`<div class="fig"><span class="v">${x[0]}</span><span class="l">${x[1]}</span></div>`).join("");
+  const r=A.D5, on=P.dayFee>0, fee=on?P.dayFee:5, g=id=>r.dayGroups.find(x=>x.id===id);
+  const f=[["€"+pv(g("u30").fee)+" · €"+pv(g("o30").fee)+" · €"+pv(g("xue").fee),"UE under 30 · UE over 30 · extra-UE"],[n2(r.L1/1e6)+" mln",`visite pagate su ${n2(r.L0/1e6)} mln soggette`],[fM(r.dayFeeNet),"gettito netto all'anno, dopo evasione e costi"],[fPs(r.vdChg),"visitatori al giorno, con l'imposta di soggiorno scelta"]];
+  $("#dh-free").textContent="Residenti, Città metropolitana, pendolari e studenti, chi pernotta (paga già l'imposta di soggiorno), minori di 14 anni"+(P.familyExempt?" e chi ha legami con Firenze: ospiti di un residente, nati a Firenze o nell'area metropolitana, proprietari di casa.":".");
+  $("#dh-how").textContent=P.enforce==="campione"?"Solo con controlli a campione nel centro, come a Venezia: costosi e facili da aggirare.":"In automatico: chi prenota un museo, sale su un bus turistico o compra un treno di andata e ritorno in giornata senza un codice valido trova il contributo aggiunto al biglietto.";
+  $("#dayfigs").innerHTML=(on?"":`<p class="hint" style="grid-column:1/-1">Contributo non attivo. Stima con €5 di base:</p>`)+f.map(x=>`<div class="fig"><span class="v">${x[0]}</span><span class="l">${x[1]}</span></div>`).join("");
 }
 function fundFigs(){
   const ng=A.NG;
@@ -141,7 +141,7 @@ function pgPol(){
   return head("La politica",`Scegli l'imposta, il contributo per gli escursionisti e il Fondo Armonizzatore che vuoi raggiungere, poi il percorso per arrivarci. Tutto il resto del modello è fissato sui dati (pagina «Ipotesi»).`,`<button type="button" class="small" id="polreset">Ripristina la proposta di base</button>`)
    +`<div class="gpol">`
    +card("Imposta di soggiorno","Imposta per notte e per persona = max(pavimento; aliquota × prezzo), entro il tetto. Minori e notti oltre la settima restano esenti.",ctl("tmin")+ctl("alpha")+ctl("cap")+ctl("u30")+ch("taxmini","Imposta per notte"))
-   +card("Contributo d'accesso per gli escursionisti","Chi visita la città in giornata oggi non paga nulla, ma è circa un terzo delle presenze di un giorno medio.",ctl("dayFee")+dayHow())
+   +card("Contributo d'accesso per gli escursionisti","Chi visita la città in giornata oggi non paga nulla, ma è circa un terzo delle presenze di un giorno medio.",ctl("dayFee")+ctl("dayU30")+ctl("dayXUE")+ctl("familyExempt")+ctl("enforce")+dayHow())
    +card("Fondo Armonizzatore","Finanziato dal maggior gettito, accompagna chi perde dalla riforma e sostiene il ritorno delle case ai residenti.",ctl("fundCommercial")+ctl("fundTalent")+ctl("guaranteeOn")+ctl("trainCoverage")+ctl("trainCost")+`<div class="figs" id="fundfigs"></div>`)
    +`</div>`
    +card("Transitorio: come si arriva all'obiettivo",`La politica non deve essere operativa a regime dal primo giorno: scegli in quanti anni raggiungere l'obiettivo e i valori di ciascun anno. Dall'anno dell'obiettivo in poi valgono i valori della colonna evidenziata.`,
@@ -153,7 +153,7 @@ function bindPol(){
   const pg=$("#page");
   pg.oninput=e=>{ const t=e.target;
     if(t.dataset.n){ const p=FM.PMAP[t.dataset.n]; let v=parseFloat(t.value); if(!isFinite(v)) return; if(p.pct) v/=100; setLever(p.id,v); return; }
-    if(t.dataset.p){ const p=FM.PMAP[t.dataset.p]; if(p.bool) return; setLever(p.id,parseFloat(t.value)); return; }
+    if(t.dataset.p){ const p=FM.PMAP[t.dataset.p]; if(p.bool) return; setLever(p.id,p.select?t.value:parseFloat(t.value)); return; }
     if(t.dataset.tg){ const p=FM.PMAP[t.dataset.tg]; if(p.bool) return; let v=parseFloat(t.value); if(!isFinite(v)) return; if(p.pct) v/=100; setLever(p.id,v); return; }
     if(t.dataset.plan){ const p=FM.PMAP[t.dataset.plan]; if(p.bool) return; let v=parseFloat(t.value); if(!isFinite(v)) return; if(p.pct) v/=100; setPlanCell(p.id,+t.dataset.y,v); return; }
     if(t.id==="planstart"){ const v=parseInt(t.value,10); if(v>=2025&&v<=2040){ P.plan.start=v; rerenderPlan(); changed(); } } };
@@ -185,13 +185,14 @@ const CH={
   jobs:(c,w)=>{ const h=340; K.columns(c,40,0,w-46,h,[{label:"Posti persi nel turismo",v:-R.jobsLost},{label:"Dividendo speso in città",v:R.pool*P.mpcRes/1e6*P.jobsPerMRes},{label:"Nuovi residenti",v:R.newRes*P.newResSpend/1e6*P.jobsPerMRes},{label:"Spesa del Fondo",v:(R.fComm+R.fTalent)/1e6*P.jobsPerMRes},{label:"Saldo netto",v:R.jobsNet,c:C.navy}],{fmt:v=>(v>=0?"+":MIN)+n0(Math.abs(v)),axisFmt:v=>n0(v),labH:62,maxBw:70}); return h; },
   frontier:(c,w)=>{ const h=Math.round(Math.max(340,Math.min(480,w*.5))); K.frontier(c,0,0,w,h,S); return h; },
   tornado:(c,w)=>K.tornadoChart(c,0,0,w,K.tornadoRows(A.TOR),{labelW:Math.min(230,w*.34),rowH:36})+6,
+  accflow:(c,w)=>{ const h=Math.round(Math.max(380,Math.min(470,w*.36))); K.accessFlow(c,0,0,w,h,P); return h; },
   pareto:(c,w)=>{ const h=Math.round(Math.max(380,Math.min(520,w*.62))); K.pareto(c,0,0,w,h,A.OPT,welMarks()); return h; },
   winA:(c,w)=>K.diverging(c,0,0,w,K.winGroups(FM.welfare(R,P,persp().om)),{labelW:Math.min(240,w*.44),rowH:27,gh:26})+4,
   winB:(c,w)=>{ const e=A.OPT.opt[UI.persp]; return e?K.diverging(c,0,0,w,K.winGroups(FM.welfare(e.R,e.Q,persp().om)),{labelW:Math.min(240,w*.44),rowH:27,gh:26})+4:40; },
   wheat:(c,w)=>{ const i=FM.PERSP.findIndex(p=>p.id===UI.persp); return K.gridHeat(c,0,0,w,A.OPT.heat,{val:z=>z.W[i],labelW:90}); },
   evo:(c,w,el)=>{ const d=K.evoDefs(S).find(x=>x.key===el.dataset.k); const h=Math.round(Math.max(230,Math.min(300,w*.62))); K.trend(c,0,0,w,h,d.o); return h; }
 };
-const CHMIN={pareto:520,winA:420,winB:420,wheat:520,wf:700,ops:440,jobs:480,tax:540,taxmini:300,frontier:500,stake:500,tornado:480,dens:440,load:480,poltrend:420,evo:300};
+const CHMIN={accflow:900,pareto:520,winA:420,winB:420,wheat:520,wf:700,ops:440,jobs:480,tax:540,taxmini:300,frontier:500,stake:500,tornado:480,dens:440,load:480,poltrend:420,evo:300};
 function paintCharts(){
   $$("[data-ch]").forEach(el=>{ const f=CH[el.dataset.ch]; if(!f) return; const w=Math.max(CHMIN[el.dataset.ch]||380,Math.floor(el.clientWidth)||380); const so=new FMD.SvgOut(colorMap); const c=new FMD.Canvas(so); let h=0; try{ h=f(c,w,el); }catch(e){ console.error(el.dataset.ch,e); } el.innerHTML=so.region(w,Math.max(40,h),el.dataset.label); });
 }
@@ -339,6 +340,35 @@ function pgChk(){
    +card("Esito",`${A.SAN.filter(x=>x.s==="ok").length} verifiche superate su ${A.SAN.length}.`,`<div class="chk">${A.SAN.map(x=>`<div class="it"><span class="chip ${x.s}">${lab[x.s]}</span><div><b>${esc(x.t)}.</b> ${esc(x.d)}</div></div>`).join("")}</div>`);
 }
 
+/* ---------- codice d'accesso ---------- */
+function pgAcc(){
+  const on=P.dayFee>0, r=on?R:A.D5, E=A.ENF, rows=K.accessRows(r,P);
+  const tbody=rows.map(x=>[`<b>${esc(x.cat)}</b>`,esc(x.how),x.fee,x.pay?fN(x.L1):"—",x.pay?fM(x.rev):"—"]);
+  const cmp=[["Mancata riscossione",m=>fP(E[m].dayEv,0)],["Contributo dovuto",m=>fM(E[m].dayFeeAssessed)],["…non riscosso",m=>fM(E[m].dayFeeLoss)],["Costo di gestione",m=>fM(E[m].dayOpCost)],["<b>Gettito netto per il Comune</b>",m=>`<b>${fM(E[m].dayFeeNet)}</b>`],["Saldo strutturale complessivo",m=>fM(E[m].saldo)]];
+  return head("Il codice d'accesso",`Il problema degli escursionisti non è la tariffa ma la verifica: Firenze non ha cancelli. La soluzione è un codice digitale unico, gratuito per chi vive, dorme o ha legami con la città, che si controlla in automatico dove i visitatori di giornata devono comunque passare: musei e monumenti, bus turistici, treni. Il bersaglio sono le visite organizzate di massa, non chi torna a casa a trovare la famiglia.${on?"":" Il contributo non è attivo nella politica: i valori sono stimati con €5 di base."}`)
+   +card("Come funziona il sistema","Un registro comunale emette e verifica i codici; i punti di controllo ricevono solo «valido» o «non valido». Senza un codice valido il contributo si aggiunge al biglietto: nessun blocco all'ingresso e nessuna multa per chi è in regola.",ch("accflow","Schema del sistema del codice d'accesso"))
+   +`<div class="g2">`+card("Chi paga e quanto",`Valori annui con le tariffe scelte nella pagina «Politica». Visite e gettito al lordo di evasione e costi di gestione.`,tbl([{h:"Categoria",a:"l"},{h:"Come si riconosce",a:"l",w:1},{h:"Tariffa"},{h:"Visite pagate"},{h:"Dovuto"}],tbody))
+   +card("Verifica automatica o controlli a campione","Stesse tariffe, due sistemi di verifica.",tbl([{h:"",a:"l"},{h:"Codice integrato"+(P.enforce!=="campione"?" ●":"")},{h:"Controlli a campione"+(P.enforce==="campione"?" ●":"")}],cmp.map(c=>[c[0],c[1]("integrato"),c[1]("campione")]))+`<p class="note">Il sistema integrato costa meno perché la verifica avviene dentro sistemi che esistono già (prenotazioni dei musei, permessi ZTL dei bus, biglietti ferroviari) e lascia scoperto soprattutto chi arriva in auto e non entra in nessun museo.</p>`)+`</div>`
+   +`<div class="g3">`+card("Dove si verifica","",`<ul class="read">${[
+      "**Musei civici** (Palazzo Vecchio, Santa Maria Novella, Museo Novecento, Bardini): il Comune può integrare il codice nella biglietteria con una delibera.",
+      "**Musei statali** (Uffizi, Accademia, Bargello, Cappelle Medicee, Pitti) e **Opera del Duomo**: servono convenzioni con il Ministero della Cultura e con l'Opera; il codice si inserisce alla prenotazione nominativa.",
+      "**Bus turistici**: il permesso per la ZTL bus esiste già; l'operatore dichiara i passeggeri e versa il contributo per chi non ha un codice.",
+      "**Treni**: convenzione con Trenitalia e Italo per vendere il contributo insieme ai biglietti di andata e ritorno nella stessa giornata verso Firenze.",
+      "**Crociere, tour operator, guide abilitate**: registrano i gruppi prima dell'arrivo.",
+      "**Controlli a campione** della Polizia municipale nel centro UNESCO, come deterrente per chi sfugge agli altri punti."].map(x=>`<li>${md(x)}</li>`).join("")}</ul>`)
+   +card("Chi non va colpito","",`<ul class="read">${[
+      "**Chi torna a trovare la famiglia**: il familiare residente lo registra come ospite dall'app del Comune, con un tetto di giorni all'anno per evitare abusi.",
+      "**Chi è nato a Firenze o nell'area metropolitana**: riconosciuto in automatico dal codice fiscale, che contiene il comune di nascita (Firenze: D612).",
+      "**Proprietari di casa non residenti**: riconosciuti dall'IMU versata.",
+      "**Pendolari e studenti**: dall'abbonamento ai trasporti o dall'iscrizione.",
+      `Nel modello queste esenzioni riguardano il ${fP(P.dayTies,0)} delle visite soggette e costano ${fM(E.famCost)} di gettito netto all'anno${P.familyExempt?"":" (oggi disattivate nella politica)"}.`].map(x=>`<li>${md(x)}</li>`).join("")}</ul>`)
+   +card("Base giuridica e tutele","",`<ul class="read">${[
+      "**Norma nazionale**: il contributo d'accesso oggi è consentito solo a Venezia (art. 1, c. 1129, L. 145/2018). Serve estenderlo alle città d'arte con flussi oltre una soglia.",
+      "**Diritto UE**: la distinzione per età (under 30) e tra cittadini UE ed extra-UE è ammessa; non lo è una differenza tra cittadini UE in base alla nazionalità. La Corte di giustizia ha già censurato agevolazioni nei musei riservate a residenti e italiani (C-388/01): le esenzioni per residenza e nascita vanno giustificate con la contribuzione ai tributi locali e coperte da un parere.",
+      "**Privacy**: valutazione d'impatto (GDPR, art. 35); i punti di controllo vedono solo l'esito; nessuna traccia degli spostamenti; dati cancellati dopo 12 mesi; i dati di telefonia restano aggregati e servono solo alla statistica.",
+      "**Accesso alla cultura**: il codice non è un biglietto e non vieta l'ingresso; si acquista anche al momento, in biglietteria o online."].map(x=>`<li>${md(x)}</li>`).join("")}</ul>`)+`</div>`;
+}
+
 /* ---------- benessere e ottimo ---------- */
 const persp=()=>FM.PERSP.find(p=>p.id===UI.persp)||FM.PERSP[1];
 const OPTCOL=[["isoSaldo","Stesso saldo, minima perdita","Stesso saldo"],["isoDwl","Stessa perdita, massimo saldo","Stessa perdita"],["res","Ottimo: solo residenti","Residenti"],["bal","Ottimo: bilanciata","Bilanciata"],["eff","Ottimo: efficienza","Efficienza"],["legal","Ottimo a legge vigente","Legge vigente"]];
@@ -402,7 +432,7 @@ function paintDeck(){
   wrap.onkeydown=e=>{ if(e.key==="ArrowRight") show(UI.slide+1); else if(e.key==="ArrowLeft") show(UI.slide-1); };
 }
 
-const PAGES=[["pol","Politica",pgPol],["evo","Evoluzione",pgEvo],["over","Panoramica",pgOver],["tour","Turismo",pgTour],["casa","Casa e operatori",pgCasa],["bud","Bilancio e dividendo",pgBud],["lab","Lavoro",pgLab],["who","Chi paga",pgWho],["wel","Benessere e ottimo",pgWel],["risk","Rischi",pgRisk],["ip","Ipotesi",pgIp],["chk","Verifiche",pgChk],["deck","Presentazione",pgDeck]];
+const PAGES=[["pol","Politica",pgPol],["acc","Codice d'accesso",pgAcc],["evo","Evoluzione",pgEvo],["over","Panoramica",pgOver],["tour","Turismo",pgTour],["casa","Casa e operatori",pgCasa],["bud","Bilancio e dividendo",pgBud],["lab","Lavoro",pgLab],["who","Chi paga",pgWho],["wel","Benessere e ottimo",pgWel],["risk","Rischi",pgRisk],["ip","Ipotesi",pgIp],["chk","Verifiche",pgChk],["deck","Presentazione",pgDeck]];
 if(!PAGES.some(p=>p[0]===UI.page)) UI.page="pol";
 function renderNav(){ $("#pages").innerHTML=PAGES.map((t,i)=>`<button type="button" role="tab" data-page="${t[0]}" aria-selected="${t[0]===UI.page}"><span class="k">${i+1}</span>${t[1]}</button>`).join(""); }
 function renderPage(keepScroll){

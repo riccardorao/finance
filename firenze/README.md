@@ -38,7 +38,9 @@ elasticità crescente con il rincaro e traslazione parziale dell'imposta sull'os
 8. benessere e ottimo: frontiera tra saldo del Comune e perdita di efficienza, vincitori e vinti tra residenti e
    non residenti, combinazioni ottimali per tre prospettive (solo residenti, bilanciata, efficienza complessiva),
    a parità di saldo o di perdita e a legislazione vigente;
-9. mappa delle scelte, sensibilità, incertezza (400 simulazioni), matrice degli effetti, verifiche numeriche.
+9. codice d'accesso per gli escursionisti: tariffe per cittadini UE under 30, UE over 30 ed extra-UE, esenzioni per
+   chi ha legami con Firenze, verifica automatica (musei, bus, treni) o a campione, con costi di gestione;
+10. mappa delle scelte, sensibilità, incertezza (400 simulazioni), matrice degli effetti, verifiche numeriche.
 
 Ogni ipotesi è etichettata come dato, stima, letteratura, regola o ipotesi, con la fonte e la derivazione.
 

@@ -42,6 +42,16 @@ const extremes = [{ tmin: 0, alpha: 0 }, { tmin: 3, alpha: 0 }, { tmin: 30, alph
   { tmin: 100, alpha: 0 }, { tmin: 3, alpha: 1 }, { tmin: 100, alpha: 1 }, { tmin: 100, alpha: 1, cap: 100 }, { tmin: 60, alpha: 0.5, dayFee: 15, u30: 50 },
   { u30: 20 }, { fundCommercial: 40, fundTalent: 40, trainCost: 15000, trainCoverage: 1 }, { guaranteeOn: false, trainCoverage: 0 }];
 extremes.forEach((e, i) => { const P = Object.assign(FM.defaults(), e); FM.resizePlan(P, 1 + (i % 5)); check("estremo " + i, P); });
+// contributo d'accesso: la verifica integrata rende più di quella a campione; le esenzioni costano gettito
+{
+  const mk = (o) => FM.run(Object.assign(FM.defaults(), { dayFee: 5 }, o));
+  const a = mk({ enforce: "integrato" }), b = mk({ enforce: "campione" }), c = mk({ familyExempt: false });
+  if (!(a.dayFeeNet > b.dayFeeNet)) fail("la verifica integrata dovrebbe rendere più dei controlli a campione");
+  if (!(c.dayFeeNet > a.dayFeeNet)) fail("le esenzioni per i legami con Firenze dovrebbero ridurre il gettito");
+  const g = Object.fromEntries(a.dayGroups.map((x) => [x.id, x]));
+  if (!(g.xue.fee > g.o30.fee && g.o30.fee > g.u30.fee)) fail("tariffe per categoria non ordinate");
+  if (Math.abs(a.dayGroups.reduce((s, x) => s + x.rev, 0) - a.dayFeeAssessed) > 1) fail("somma del contributo per categoria");
+}
 // ottimizzazione: ogni ottimo rispetta i vincoli e la frontiera è monotona
 {
   const P = FM.defaults(), O = FM.optimize(P);

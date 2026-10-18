@@ -63,7 +63,11 @@ const PARAMS=[
   {id:"alpha",g:"leve",sub:"Imposta di soggiorno",label:"Aliquota sul prezzo",sym:"α",v:.08,min:0,max:1,step:.005,pct:1,unit:"% del prezzo",hint:"Si applica quando α × prezzo supera il pavimento: oltre quel prezzo l'imposta cresce con il valore del soggiorno."},
   {id:"cap",g:"leve",sub:"Imposta di soggiorno",label:"Tetto per notte",v:0,min:0,max:100,step:1,unit:"€/notte",hint:"0 = nessun tetto. La legge consente oggi al massimo €10 (€12 con la maggiorazione 2026)."},
   {id:"u30",g:"leve",sub:"Imposta di soggiorno",label:"Imposta per i cittadini UE under 30",v:0,min:0,max:50,step:.5,unit:"€/notte",hint:"Importo fisso per notte; 0 = esenti. Si applica al posto di pavimento e aliquota."},
-  {id:"dayFee",g:"leve",sub:"Contributo d'accesso",label:"Contributo per escursionista",v:0,min:0,max:20,step:.5,unit:"€/visita",hint:"Pagato una volta per visita da chi entra in città senza pernottare; 0 = non previsto."},
+  {id:"dayFee",g:"leve",sub:"Contributo d'accesso",label:"Contributo base (cittadini UE over 30)",v:0,min:0,max:20,step:.5,unit:"€/visita",hint:"Pagato una volta per visita da chi entra in città senza pernottare; 0 = non previsto. Le altre tariffe si calcolano da questa."},
+  {id:"dayU30",g:"leve",sub:"Contributo d'accesso",label:"Riduzione per i cittadini UE under 30",v:.5,min:0,max:1,step:.05,pct:1,unit:"% di sconto",hint:"100% = esenti. Criterio di età, come la tariffa ridotta dei musei statali per i cittadini UE tra 18 e 25 anni."},
+  {id:"dayXUE",g:"leve",sub:"Contributo d'accesso",label:"Maggiorazione per i cittadini extra-UE",v:.5,min:0,max:2,step:.05,pct:1,unit:"% in più",hint:"Ammessa dal diritto UE, che vieta solo le differenze tra cittadini europei (precedente: Louvre, dal 2026)."},
+  {id:"familyExempt",g:"leve",sub:"Contributo d'accesso",label:"Esenti i legami con Firenze",v:true,bool:1,hint:"Ospiti registrati da un residente (familiari, amici), nati a Firenze o nella Città metropolitana, proprietari di casa che pagano l'IMU."},
+  {id:"enforce",g:"leve",sub:"Contributo d'accesso",label:"Sistema di verifica",v:"integrato",select:[["integrato","Codice digitale verificato in automatico"],["campione","Solo controlli a campione (come Venezia)"]],hint:"Il codice integrato si verifica alla prenotazione di musei e monumenti, sui bus turistici e con i vettori ferroviari."},
   {id:"fundCommercial",g:"leve",sub:"Fondo Armonizzatore",label:"Riconversione commerciale",v:6,min:0,max:40,step:.5,unit:"€ mln/anno",hint:"Botteghe, librerie, servizi di vicinato al posto del commercio solo turistico."},
   {id:"fundTalent",g:"leve",sub:"Fondo Armonizzatore",label:"Imprese e talenti",v:8,min:0,max:40,step:.5,unit:"€ mln/anno",hint:"Ricerca, tecnologia, manifattura avanzata."},
   {id:"guaranteeOn",g:"leve",sub:"Fondo Armonizzatore",label:"Garanzia pubblica sugli affitti a residenti",v:true,bool:1,hint:"Il Fondo copre la morosità dei contratti di lungo periodo a residenti: riduce il rischio percepito dai proprietari."},
@@ -80,12 +84,23 @@ const PARAMS=[
   {id:"recordedNights",g:"Turismo",label:"Presenze registrate (ISTAT)",v:11.5,step:.1,unit:"mln",kind:"dato",src:"cst26",note:"Presenze ISTAT 2025, locazioni turistiche incluse; servono al requisito di legge delle 20 volte i residenti."},
   {id:"minorShare",g:"Turismo",label:"Notti di minori esenti",v:.08,step:.01,pct:1,unit:"%",kind:"ipotesi",note:"Gli under 12 sono esenti: circa una notte su dodici in una città d'arte con forte presenza di famiglie."},
   {id:"epsConvex",g:"Turismo",label:"Aumento dell'elasticità per rincari forti",v:3,step:.25,unit:"κ",kind:"ipotesi",note:"Elasticità = ε·(1 + κ·|Δ log prezzo|): con rincari ampi i visitatori valutano altre destinazioni. Senza questo termine il gettito crescerebbe senza limite."},
-  {id:"dayVisitors",g:"Turismo",label:"Escursionisti all'anno",v:8,step:.1,unit:"mln",kind:"stima",src:["cstday", "day"],note:"Stima del Comune su dati di telefonia mobile; Federalberghi indica 5,6 mln. Variato tra 5,6 e 8 mln nell'analisi di incertezza."},
-  {id:"dayCost",g:"Turismo",label:"Costo medio di una gita giornaliera",v:60,step:5,unit:"€",kind:"ipotesi",note:"Treno, pranzo, ingressi."},
-  {id:"dayElast",g:"Turismo",label:"Elasticità degli escursionisti al costo",v:-.6,step:.05,unit:"",kind:"ipotesi",note:"Una gita costa circa €60: un contributo di €5 è un rincaro dell'8%, cui corrisponde un calo delle visite di circa il 5%."},
-  {id:"dayLiable",g:"Turismo",label:"Escursionisti soggetti al contributo",v:0.65,step:.05,pct:1,unit:"%",kind:"ipotesi",note:"Esclusi residenti della Città metropolitana, pendolari per lavoro e studio, minori di 14 anni: i dati di telefonia contano anche i visitatori toscani."},
-  {id:"dayEvasion",g:"Turismo",label:"Mancata riscossione del contributo",v:.15,step:.05,pct:1,unit:"%",kind:"ipotesi",note:"Controlli a campione come a Venezia (circa 140 addetti al giorno, sanzioni da €50 a €300): si assume che sfugga una visita su sette."},
-  {id:"daySpend",g:"Turismo",label:"Spesa di un escursionista in città",v:60,step:5,unit:"€",kind:"stima",src:"irpettur",note:"Un turista spende in media €133 al giorno in Toscana, alloggio incluso; un escursionista non paga l'alloggio."},
+  {id:"dayVisitors",g:"Escursionisti",label:"Escursionisti all'anno",v:8,step:.1,unit:"mln",kind:"stima",src:["cstday", "day"],note:"Stima del Comune su dati di telefonia mobile; Federalberghi indica 5,6 mln. Variato tra 5,6 e 8 mln nell'analisi di incertezza."},
+  {id:"dayCost",g:"Escursionisti",label:"Costo di una gita: cittadini UE over 30",v:60,step:5,unit:"€",kind:"ipotesi",note:"Treno, pranzo, ingressi."},
+  {id:"dayElast",g:"Escursionisti",label:"Elasticità alla spesa: UE over 30",v:-.6,step:.05,unit:"",kind:"ipotesi",note:"Una gita costa circa €60: un contributo di €5 è un rincaro dell'8%, cui corrisponde un calo delle visite di circa il 5%."},
+  {id:"dayLiable",g:"Escursionisti",label:"Escursionisti soggetti al contributo",v:0.65,step:.05,pct:1,unit:"%",kind:"ipotesi",note:"Esclusi residenti della Città metropolitana, pendolari per lavoro e studio, minori di 14 anni: i dati di telefonia contano anche i visitatori toscani."},
+  {id:"dayEvasion",g:"Escursionisti",label:"Mancata riscossione: controlli a campione",v:.15,step:.05,pct:1,unit:"%",kind:"ipotesi",note:"Senza punti di verifica automatici sfugge chi non incontra un controllore: Venezia schiera circa 140 addetti al giorno con sanzioni da €50 a €300."},
+  {id:"daySpend",g:"Escursionisti",label:"Spesa di un escursionista in città",v:60,step:5,unit:"€",kind:"stima",src:"irpettur",note:"Un turista spende in media €133 al giorno in Toscana, alloggio incluso; un escursionista non paga l'alloggio."},
+  {id:"dayTies",g:"Escursionisti",label:"Visite di chi ha legami con Firenze",v:.06,step:.01,pct:1,unit:"% dei soggetti",kind:"ipotesi",note:"Fiorentini trasferiti che tornano dalla famiglia, ospiti di residenti, proprietari di seconde case: esenti se l'esenzione è attiva."},
+  {id:"dayMixU30",g:"Escursionisti",label:"Quota di cittadini UE under 30",v:.15,step:.01,pct:1,unit:"% dei soggetti",kind:"ipotesi",note:"Gite scolastiche e universitarie, giovani in viaggio: gli under 14 sono già esenti."},
+  {id:"dayMixXUE",g:"Escursionisti",label:"Quota di cittadini extra-UE",v:.40,step:.01,pct:1,unit:"% dei soggetti",kind:"ipotesi",note:"Gite in giornata da Roma e dalle crociere di Livorno inserite in itinerari a lungo raggio; i pernottanti sono stranieri per l'84% (ISTAT 2025)."},
+  {id:"dayCostU30",g:"Escursionisti",label:"Costo di una gita: UE under 30",v:40,step:5,unit:"€",kind:"ipotesi",note:"Treno regionale o pullman, pranzo economico."},
+  {id:"dayCostXUE",g:"Escursionisti",label:"Costo di una gita: extra-UE",v:110,step:5,unit:"€",kind:"ipotesi",note:"Escursione organizzata da Roma o dal porto di Livorno: €90–150 a persona."},
+  {id:"dayElastU30",g:"Escursionisti",label:"Elasticità alla spesa: UE under 30",v:-.9,step:.05,unit:"",kind:"ipotesi",note:"Budget limitato e alternative vicine (Siena, Pisa, Bologna)."},
+  {id:"dayElastXUE",g:"Escursionisti",label:"Elasticità alla spesa: extra-UE",v:-.3,step:.05,unit:"",kind:"ipotesi",note:"La gita è una tappa di un viaggio intercontinentale: il contributo pesa poco sul costo totale."},
+  {id:"dayEvasionInt",g:"Escursionisti",label:"Mancata riscossione: codice integrato",v:.06,step:.01,pct:1,unit:"%",kind:"ipotesi",note:"Sfugge chi arriva in auto e non entra in musei o monumenti; i controlli a campione nel centro restano come deterrente."},
+  {id:"opCostSample",g:"Escursionisti",label:"Costo di gestione: controlli a campione",v:6,step:.5,unit:"€ mln/anno",kind:"stima",src:"venezia",note:"Venezia ha speso circa €3 mln nel 2024 per 29 giornate di applicazione; tutto l'anno servono più addetti, ma con contratti stabili."},
+  {id:"opCostInt",g:"Escursionisti",label:"Costo di gestione: codice integrato",v:3,step:.5,unit:"€ mln/anno",kind:"ipotesi",note:"Piattaforma, integrazione con biglietterie e vettori, assistenza, controlli residui."},
+  {id:"opCostPct",g:"Escursionisti",label:"Commissioni di pagamento e distribuzione",v:.03,step:.005,pct:1,unit:"% dell'incasso",kind:"ipotesi",note:"Commissioni sulle carte e compensi ai vettori che riscuotono per conto del Comune."},
   {id:"beltReturn",g:"Turismo",label:"Ospiti della cintura che tornano in centro",v:.85,step:.05,pct:1,unit:"%",kind:"ipotesi",note:"Chi dorme a Scandicci, Sesto o Bagno a Ripoli viene a Firenze per visitarla: rientra quasi sempre in centro di giorno."},
   {id:"beltPriceRatio",g:"Turismo",label:"Prezzo in cintura rispetto a Firenze",v:.6,step:.05,pct:1,unit:"%",kind:"ipotesi",note:"Le strutture della cintura costano in media il 40% in meno di quelle del capoluogo."},
   {id:"beltTax",g:"Turismo",label:"Imposta media nei comuni della cintura",v:2.5,step:.5,unit:"€/notte",kind:"ipotesi",note:"Tariffe dei comuni della cintura, tra €1 e €5 per notte."},
@@ -165,6 +180,7 @@ const PMAP=Object.fromEntries(PARAMS.map(p=>[p.id,p]));
 // gruppi di ipotesi, nell'ordine in cui sono presentati
 const GROUPS=[
   {id:"Turismo",title:"Domanda turistica",intro:"Quanti visitatori arrivano, quanto pagano oggi e come reagiscono al prezzo. Gettito e presenze sono dati ufficiali; i comportamenti vengono dalla letteratura empirica e sono calibrati in modo da riprodurre il gettito osservato."},
+  {id:"Escursionisti",title:"Escursionisti e contributo d'accesso",intro:"Quanti visitano la città in giornata, chi di loro pagherebbe, come reagirebbe al contributo e quanto costa riscuoterlo con ciascun sistema di verifica."},
   {id:"Mercato e riscossione",title:"Mercato e riscossione",intro:"Come l'imposta si ripartisce tra ospite e gestore e quanta parte del maggior gettito resta davvero al Comune."},
   {id:"Operatori",title:"Operatori",intro:"Margini di alberghi, ristorazione e commercio: servono a misurare chi sopporta il costo della riforma."},
   {id:"Casa",title:"Casa",intro:"Quando conviene a un proprietario passare dall'affitto breve alla locazione a residenti, e che cosa succede a canoni e prezzi quando lo fa."},
@@ -283,11 +299,16 @@ function run(P,ph,opt){
   const incr=G-base, evasionLoss=P.evasion*Math.max(0,incr), Gn=G-evasionLoss;
   const levy=P.stateLevy*Math.max(0,Gn-base), net=Gn-levy;
   /* escursionisti e contributo d'accesso */
-  const dayV0=P.dayVisitors*1e6, L0=dayV0*P.dayLiable, Nl=dayV0-L0, fee=opt.sq?0:P.dayFee;
-  const ratio=fee>0?(P.dayCost+fee)/P.dayCost:1;
-  const L1=L0*Math.pow(ratio,P.dayElast), dayV1=Nl+L1;
-  const dayFeeAssessed=fee*L1, dayFeeLoss=dayFeeAssessed*P.dayEvasion, dayFeeNet=dayFeeAssessed-dayFeeLoss;
-  const csDay=-fee*(L0+L1)/2;
+  // tre categorie di escursionisti soggetti, ciascuna con la sua tariffa, il suo costo della gita e la sua elasticità
+  const dayV0=P.dayVisitors*1e6, L0=dayV0*P.dayLiable*(P.familyExempt?1-P.dayTies:1), Nl=dayV0-L0, fee=opt.sq?0:P.dayFee;
+  const integ=P.enforce!=="campione", dayEv=integ?P.dayEvasionInt:P.dayEvasion;
+  const dayGroups=[["u30","Cittadini UE under 30",P.dayMixU30,fee*(1-P.dayU30),P.dayCostU30,P.dayElastU30],["o30","Cittadini UE over 30",1-P.dayMixU30-P.dayMixXUE,fee,P.dayCost,P.dayElast],["xue","Cittadini extra-UE",P.dayMixXUE,fee*(1+P.dayXUE),P.dayCostXUE,P.dayElastXUE]]
+    .map(([id,label,mix,f,cost,el])=>{ const l0=L0*mix, l1=l0*Math.pow(f>0?(cost+f)/cost:1,el); return {id,label,mix,fee:f,L0:l0,L1:l1,rev:f*l1,dwl:(l0-l1)*(f/2+P.daySpend*P.cmComp),cs:-f*(l0+l1)/2}; });
+  const L1=dayGroups.reduce((a,g)=>a+g.L1,0), dayV1=Nl+L1;
+  const dayFeeAssessed=dayGroups.reduce((a,g)=>a+g.rev,0), dayFeeLoss=dayFeeAssessed*dayEv;
+  const dayOpCost=dayFeeAssessed>0?(integ?P.opCostInt:P.opCostSample)*1e6+P.opCostPct*(dayFeeAssessed-dayFeeLoss):0;
+  const dayFeeNet=dayFeeAssessed-dayFeeLoss-dayOpCost;
+  const csDay=dayGroups.reduce((a,g)=>a+g.cs,0);
   /* visitatori e spesa */
   const beltReturned=A.belt*P.beltReturn;
   const vdB=NB+dayV0, vdN=nNew+dayV1+beltReturned, vdChg=vdN/vdB-1;
@@ -357,7 +378,7 @@ function run(P,ph,opt){
   const beltTaxRev=A.belt*P.beltTax, beltProfit=A.beltRev*cmH;
   /* benessere: chi paga e chi riceve */
   const cs=A.cs+csDay;
-  const dwlDay=(L0-L1)*(fee/2+P.daySpend*P.cmComp);
+  const dwlDay=dayGroups.reduce((a,g)=>a+g.dwl,0);
   const dwl=A.dwl+dwlDay;
   const st_=[
     {id:"tour",  label:"Turisti ed escursionisti",              v:cs,                       res:0, kind:"paga"},
@@ -380,7 +401,7 @@ function run(P,ph,opt){
   const publicRaised=(Gn-base)+dayFeeNet;                 // maggior gettito riscosso (Comune + Stato)
   const mcpf=publicRaised>0?(publicRaised+Math.max(0,dwl))/publicRaised:NaN;
   Object.assign(R,{G,base,incr,evasionLoss,Gn,levy,net,dTax,nB:NB,nNew,nChg:nNew/NB-1,gained:A.gained,lostTot:A.lost,belt:A.belt,beltReturned,
-    vdB,vdN,vdChg,dayV0,dayV1,L0,L1,fee,dayFeeAssessed,dayFeeNet,dayFeeLoss,csDay,
+    vdB,vdN,vdChg,dayV0,dayV1,L0,L1,fee,dayGroups,dayEv,dayOpCost,dayFeeAssessed,dayFeeNet,dayFeeLoss,csDay,
     spendO,spendN,dSpend,dComp,jobsLost,vaChg,accO:A.accO,
     dPiHotel,dPiAptContr,hotelBaseProfit,compBase,noiBase,noiDrop,revA0:A.revA0,revH0:A.revH0,
     c0,c1,thr,share,shareStar,unitsStar,units,dArr,toRes,newResGross,newRes,rentChg,priceChg,annualRent,Lnet,strLandlords,llSwitch,llStay,strNoiBase,tenantGain,ownerHomes,ownerWealth,
