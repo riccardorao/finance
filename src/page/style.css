@@ -445,7 +445,7 @@ ul.criteria li span, ul.rejected li span { color: var(--ink2); }
 /* book */
 .book-h, .pos-row { display: grid; grid-template-columns: minmax(104px, 0.8fr) 66px 58px 74px 84px 92px 54px 54px 54px 214px 14px; gap: 12px; align-items: center; }
 .book-h { padding: 12px 18px; border-bottom: 1px solid var(--line2); font: 500 10.5px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink3); align-items: end; }
-.book-h span:nth-child(n+2) { text-align: right; } 
+.book-h span:nth-child(n+2) { text-align: right; } .book-h span:nth-child(10) { text-align: left; } 
 .pos-row .c-na { grid-column: span 3; text-align: center; }
 .pos-row .n.pos { color: var(--pos); } .pos-row .n.neg { color: var(--neg); }
 .posn { border-bottom: 1px solid var(--line); }
@@ -462,7 +462,7 @@ ul.criteria li span, ul.rejected li span { color: var(--ink2); }
 .cons .rt { display: inline-block; font: 500 10.5px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; border-radius: 3px; padding: 1px 6px; border: 1px solid var(--line2); color: var(--ink2); white-space: nowrap; }
 .cons .rt.pos { color: var(--pos); border-color: color-mix(in srgb, var(--pos-fill) 60%, transparent); }
 .cons .rt.neg { color: var(--neg); border-color: color-mix(in srgb, var(--neg-fill) 60%, transparent); }
-.pos-row .cons { text-align: right; white-space: nowrap; }
+.pos-row .cons { text-align: left; white-space: nowrap; }
 .pos-row .cons small { display: inline; margin: 0 0 0 8px; font-variant-numeric: tabular-nums; }
 .cons small b { font-weight: 600; }
 .chev { width: 9px; height: 9px; border-right: 1.5px solid var(--ink3); border-bottom: 1.5px solid var(--ink3); transform: rotate(45deg); justify-self: end; margin-top: -4px; transition: transform 0.15s; }
