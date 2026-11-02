@@ -443,7 +443,7 @@ ul.criteria li span, ul.rejected li span { color: var(--ink2); }
 .lesson .k, .kill .k { display: block; font: 500 11px var(--mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--accent); margin-bottom: 2px; }
 
 /* book */
-.book-h, .pos-row { display: grid; grid-template-columns: minmax(104px, 0.6fr) 66px 58px 74px 84px 92px 54px 54px 54px minmax(214px, 1.4fr) 14px; gap: 12px; align-items: center; }
+.book-h, .pos-row { display: grid; grid-template-columns: minmax(104px, 0.6fr) 66px 58px 74px 84px 92px 54px 54px 54px minmax(238px, 1.4fr) 14px; gap: 12px; align-items: center; }
 .book-h { padding: 12px 18px; border-bottom: 1px solid var(--line2); font: 500 10.5px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink3); align-items: end; }
 .book-h span:nth-child(n+2) { text-align: right; } .book-h span:nth-child(10) { text-align: left; } 
 .pos-row .c-na { grid-column: span 3; text-align: center; }
@@ -463,11 +463,12 @@ ul.criteria li span, ul.rejected li span { color: var(--ink2); }
 .cons .rt.pos { color: var(--pos); border-color: color-mix(in srgb, var(--pos-fill) 60%, transparent); }
 .cons .rt.neg { color: var(--neg); border-color: color-mix(in srgb, var(--neg-fill) 60%, transparent); }
 .pos-row .cons { text-align: left; white-space: nowrap; }
+.pos-row .cons, .book-h span:nth-child(10) { padding-left: 24px; }
 .pos-row .cons small { display: inline; margin: 0 0 0 8px; font-variant-numeric: tabular-nums; }
 .cons small b { font-weight: 600; }
 .chev { width: 9px; height: 9px; border-right: 1.5px solid var(--ink3); border-bottom: 1.5px solid var(--ink3); transform: rotate(45deg); justify-self: end; margin-top: -4px; transition: transform 0.15s; }
 .posn.open .chev { transform: rotate(-135deg); margin-top: 4px; }
-@media (max-width: 1120px) { .book-h, .pos-row { grid-template-columns: minmax(100px, 0.6fr) 66px 74px 84px 92px 54px 54px 54px minmax(206px, 1.4fr) 14px; } .c-d { display: none; } }
+@media (max-width: 1120px) { .book-h, .pos-row { grid-template-columns: minmax(100px, 0.6fr) 66px 74px 84px 92px 54px 54px 54px minmax(230px, 1.4fr) 14px; } .c-d { display: none; } }
 @media (max-width: 860px) { .book-h, .pos-row { grid-template-columns: minmax(0, 1.4fr) 62px 68px 68px 14px; gap: 8px; } .c-d, .c-m, .pos-row .nm small { display: none; } .pos-row, .book-h { padding-inline: 14px; } }
 .book-f { padding: 10px 18px 12px; } .book-f .foot-n { margin: 0; }
 .pos-d { padding: 4px 18px 20px; background: var(--accent-soft); }
