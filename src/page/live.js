@@ -166,6 +166,10 @@ async function watchResearch() {
       const o = {}; snap.docs.forEach((d) => { if (d.exists) o[d.id] = d.data(); });
       state.commentary = o; if (M) renderBook();
     }, () => { state.dbReady = false; if (M) renderBook(); });
+    db.collection('consensus').onSnapshot((snap) => {
+      const o = {}; snap.docs.forEach((d) => { if (d.exists) o[d.id] = d.data(); });
+      state.consensus = o; if (M) render();
+    }, () => { /* the targets built into the page stay */ });
     db.collection('judgement').onSnapshot((snap) => {
       const o = {}; snap.docs.forEach((d) => { if (d.exists) o[d.id] = d.data(); });
       state.judgement = o; if (M) renderBook();

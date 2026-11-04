@@ -79,8 +79,9 @@ function chart(isin) {
   });
   await page.addInitScript((first) => {
     const jdocs = [{ id: first, exists: true, data: () => ({ updatedAt: new Date().toISOString(), stance: 'strengthened', thesis: 'JUDGED THESIS', kill: 'JUDGED KILL', assessment: 'Assess <i>x</i>', signals: [{ text: 'Sig one', source: 'Co', url: 'javascript:1' }] }) }];
+    const cdocs = [{ id: first, exists: true, data: () => ({ updatedAt: new Date().toISOString(), rating: 'Hold', analysts: 12, avg: 1, high: 2, low: 0.5, fx: 1 }) }];
     const docs = [{ id: first, exists: true, data: () => ({ updatedAt: new Date().toISOString(), headline: 'Test headline <b>x</b>', items: [{ date: '2026-10-01', text: 'Item one <script>', source: 'Src', url: 'https://example.com/a' }, { date: '2026-09-30', text: 'Bad link', source: 'Evil', url: 'javascript:alert(1)' }] }) }];
-    window.claude = { use: async (n) => (n === 'mcp' ? { callTool: (s, t, i) => window.__call(s, t, i) } : n === 'db' ? { doc: () => ({ get: async () => { const d = await window.__dbget(); return { exists: !!d, data: () => d }; }, set: (d) => window.__dbset(d) }), collection: (c) => ({ onSnapshot: (next) => { setTimeout(() => next({ docs: c === 'judgement' ? jdocs : docs }), 50); return () => {}; } }) } : null) };
+    window.claude = { use: async (n) => (n === 'mcp' ? { callTool: (s, t, i) => window.__call(s, t, i) } : n === 'db' ? { doc: () => ({ get: async () => { const d = await window.__dbget(); return { exists: !!d, data: () => d }; }, set: (d) => window.__dbset(d) }), collection: (c) => ({ onSnapshot: (next) => { setTimeout(() => next({ docs: c === 'judgement' ? jdocs : c === 'consensus' ? cdocs : docs }), 50); return () => {}; } }) } : null) };
   }, FIRST);
   await page.goto('file://' + path.resolve(process.argv[4] || path.join(root, 'test-output', '_wrapped.html')));
   await page.waitForTimeout(1500);
@@ -108,7 +109,7 @@ function chart(isin) {
     rows: [...document.querySelectorAll('#t-book .pos-row')].map((r) => r.querySelector('.nm b').textContent + ' ' + r.querySelector('.n b').textContent + ' ' + r.querySelector('.cons').textContent.trim()),
   }));
   console.log(scenario, 'saved', firstSave, JSON.stringify(reload), JSON.stringify(out, null, 1), errs.length ? '\nERRORS ' + errs.join('\n') : '\nno errors');
-  const bad = errs.length || (scenario === 'ok' && (!out.judged || !/Bear\|Base\|Bull/.test(out.cols))) || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && (out.historyTo !== '2026-10-02' || firstSave !== '2026-10-02' || reload.saves < 2 || reload.historyTo !== '2026-10-02')) || (scenario !== 'ok' && saves > 0 && scenario === 'denied');
+  const bad = errs.length || (scenario === 'ok' && (!out.judged || !out.rows.some((r) => /Hold/.test(r) && /target −/.test(r)) || !/Bear\|Base\|Bull/.test(out.cols))) || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && (out.historyTo !== '2026-10-02' || firstSave !== '2026-10-02' || reload.saves < 2 || reload.historyTo !== '2026-10-02')) || (scenario !== 'ok' && saves > 0 && scenario === 'denied');
   await browser.close();
   process.exit(bad ? 1 : 0);
 })();
