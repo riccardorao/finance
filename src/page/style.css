@@ -603,3 +603,4 @@ ul.rules { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 8px; font-si
 .sl-r { color: var(--ink2); }
 .sl-u { text-align: right; font-weight: 600; color: var(--pos); white-space: nowrap; font-variant-numeric: tabular-nums; }
 @media (max-width: 640px) { .sl-row { grid-template-columns: 22px 22px minmax(0, 1fr) auto; padding-inline: 14px; } .sl-r { grid-column: 3 / -1; grid-row: 2; } }
+@media (max-width: 640px) { .idea .ih { grid-template-columns: auto auto minmax(0, 1fr); } .idea .ih .edge-t { grid-column: 3; justify-self: start; } }
