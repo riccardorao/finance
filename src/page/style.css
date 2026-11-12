@@ -601,12 +601,14 @@ ul.rules { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 8px; font-si
 .idea .if p { margin: 1px 0 0; font-size: 13px; color: var(--ink2); }
 .idea .srcs { margin-top: 10px; }
 .sl { margin-top: 14px; }
-.sl-row { display: grid; grid-template-columns: 22px 22px minmax(140px, 220px) minmax(0, 1fr) minmax(90px, auto); gap: 12px; align-items: center; padding: 9px 18px; border-top: 1px solid var(--line); font-size: 13px; }
+.sl-row, .sl-h { display: grid; grid-template-columns: 22px 22px minmax(140px, 220px) minmax(0, 1fr) 64px 56px 64px; gap: 12px; align-items: center; padding: 9px 18px; border-top: 1px solid var(--line); font-size: 13px; }
+.sl-h { border-top: 0; font: 600 12.5px var(--font); padding-block: 14px 8px; } .sl-h span:nth-child(5), .sl-h span:nth-child(6) { text-align: right; font: 500 10.5px var(--mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink3); }
+.sl-m { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 .sl-n { font: 600 11px var(--mono); color: var(--ink3); text-align: right; }
 .sl-nm small { font: 500 11.5px var(--mono); color: var(--ink3); }
 .sl-r { color: var(--ink2); }
 .sl-u { text-align: right; font-weight: 600; color: var(--pos); white-space: nowrap; font-variant-numeric: tabular-nums; }
-@media (max-width: 640px) { .sl-row { grid-template-columns: 22px 22px minmax(0, 1fr) auto; padding-inline: 14px; } .sl-r { grid-column: 3 / -1; grid-row: 2; } }
+@media (max-width: 640px) { .sl-row, .sl-h { grid-template-columns: 22px 22px minmax(0, 1fr) 48px 44px; padding-inline: 14px; } .sl-h span:nth-child(3) { grid-column: 1 / 4; } .sl-r { grid-column: 3 / -1; grid-row: 2; } .sl-row > span:last-child { grid-column: 3 / -1; grid-row: 3; } .sl-row > span:last-child:empty { display: none; } }
 @media (max-width: 640px) { .idea .ih { grid-template-columns: auto auto minmax(0, 1fr); } .idea .ih .edge-t { grid-column: 3; justify-self: start; } }
 
 /* ================= app shell ================= */
@@ -685,3 +687,45 @@ ul.rules { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 8px; font-si
   .bar2 .ctl { width: 100%; } .bar2 .ctl .seg { flex: 1; }
 }
 .main .kpi .v { font-size: clamp(21px, 2.3vw, 30px); }
+
+/* valuation tiles */
+.mx { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; margin-top: 12px; }
+.mx .m { display: grid; gap: 1px; min-width: 150px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--inset); }
+.mx .m .k { font: 500 10.5px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink3); }
+.mx .m b { font: 600 24px var(--font); font-variant-numeric: tabular-nums; }
+.mx .m small { font-size: 11.5px; color: var(--ink3); }
+.mx .btn { align-self: center; margin-left: auto; }
+.m.good b, .sl-m.good { color: var(--pos); } .m.ok b, .sl-m.ok { color: var(--ink); } .m.hi b, .sl-m.hi { color: var(--warn); }
+.m.good { border-color: color-mix(in srgb, var(--pos) 35%, transparent); } .m.hi { border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+.mb { display: inline-block; width: 8px; height: 8px; border-radius: 50%; } .mb.good { background: var(--pos); } .mb.ok { background: var(--ink); } .mb.hi { background: var(--warn); }
+
+/* trading */
+.btn.buy { background: var(--pos); border-color: var(--pos); color: #fff; } .btn.sell { background: var(--neg); border-color: var(--neg); color: #fff; }
+.btn.buy:hover, .btn.sell:hover { filter: brightness(1.08); background-color: inherit; }
+.btn.buy:hover { background: var(--pos); } .btn.sell:hover { background: var(--neg); }
+.btn.sm { padding: 3px 12px; font-size: 12.5px; }
+.pd-act { display: flex; gap: 8px; margin: 8px 0 4px; }
+#trade[hidden] { display: none; }
+.tk-back { position: fixed; inset: 0; background: rgba(5, 12, 18, 0.45); z-index: 80; }
+.tk { position: fixed; z-index: 81; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; background: var(--panel); border: 1px solid var(--line2); border-radius: 12px; padding: 18px 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25); display: grid; gap: 14px; }
+.tk-hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.tk-hd h3 { margin: 2px 0 0; font: 600 18px var(--font); }
+.tk-hd .lbl { font: 500 10.5px var(--mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink3); }
+.tk-x { border: 0; background: none; font-size: 22px; line-height: 1; color: var(--ink3); padding: 2px 6px; }
+.tk-seg { justify-self: start; }
+.tk-seg button[data-side="buy"][aria-pressed="true"] { background: var(--pos); color: #fff; } .tk-seg button[data-side="sell"][aria-pressed="true"] { background: var(--neg); color: #fff; }
+.tk-grid { display: grid; gap: 10px 14px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.tk-f { display: grid; gap: 4px; font-size: 12.5px; color: var(--ink2); }
+.tk-f input, .tk-f select { border: 1px solid var(--line2); border-radius: 6px; background: var(--panel); padding: 7px 9px; font-size: 14px; color: var(--ink); width: 100%; }
+.tk-sum { display: flex; gap: 18px; color: var(--ink2); font-size: 13px; } .tk-sum b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.tk-act { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.tk-msg { margin: 0; color: var(--warn); font-size: 13px; }
+.tk-note { margin: 0; color: var(--ink2); font-size: 13px; }
+.tk-ok { margin: 0; color: var(--pos); font-weight: 600; }
+.tk-review { border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; background: var(--inset); }
+dl.rv { margin: 0; display: grid; } dl.rv > div { display: grid; grid-template-columns: minmax(120px, 40%) minmax(0, 1fr); gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+dl.rv > div:last-child { border-bottom: 0; } dl.rv dt { color: var(--ink3); } dl.rv dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+dl.rv.sub > div { grid-template-columns: minmax(90px, 40%) minmax(0, 1fr); padding: 3px 0; border-bottom: 0; }
+ul.rv-l { margin: 0; padding-left: 16px; }
+.tk-ack { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 13px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--warn) 7%, transparent); }
+.tk-ack input { margin-top: 3px; }

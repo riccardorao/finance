@@ -198,7 +198,7 @@ async function boot() {
   $('#btn-refresh').addEventListener('click', liveRefresh);
   try {
     const mcp = window.claude && window.claude.use ? await window.claude.use('mcp') : null;
-    if (mcp) { MCP = mcp; state.canLive = true; renderHeader(); liveRefresh(); }
+    if (mcp) { MCP = mcp; state.canLive = true; render(); liveRefresh(); }
   } catch (e) { /* stay on the snapshot */ }
 }
 boot();

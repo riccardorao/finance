@@ -233,8 +233,9 @@ function positionDetail(h) {
   const web = liveResearch(h);
   const news = web != null ? web : c ? `<ul class="news">${c.news.slice(0, 3).map((n) => `<li><time>${esc(newsDate(n[0]))}</time><span>${esc(n[1])}</span></li>`).join('')}</ul>` : '';
   const srcs = (c ? c.sources : []).concat(cons ? [cons.src] : []).map((x) => { const u = safeUrl(x.u); return u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>` : ''; }).join('');
+  const act = canTrade() ? `<div class="pd-act"><button class="btn buy" data-trade="buy" data-isin="${esc(h.isin)}" data-name="${esc(h.name)}">Buy more</button><button class="btn sell" data-trade="sell" data-isin="${esc(h.isin)}" data-name="${esc(h.name)}">Sell</button></div>` : '';
   return `<div class="pd">
-    <div class="pd-main">
+    <div class="pd-main">${act}
       ${cv.thesis ? `<p class="pd-thesis">${esc(cv.thesis)}</p>` : c ? `<p class="pd-thesis">${esc(c.tagline)}</p>` : ''}
       ${cv.kill ? `<div class="kill"><span class="k">Kill-switch</span><p>${esc(cv.kill)}</p></div>` : ''}
       ${judgementBlock(jd)}
@@ -347,24 +348,32 @@ function ideasData() {
   return ok(db) && (!ok(base) || String(db.asOf || '') >= String(base.asOf || '')) ? db : ok(base) ? base : null;
 }
 const EDGE_CLS = { Patience: 'e-pat', Informational: 'e-inf', Catalyst: 'e-cat' };
+// valuation at a glance: forward P/E and PEG, coloured by how demanding they are
+// orders are offered only where the page carries the order ticket (the personal edition) and the connector answers
+const canTrade = () => state.canLive && typeof openTrade === 'function';
+const noCons = (t) => String(t || '').split(/;\s*/).filter((c) => !/consensus|price target|analyst target|upside/i.test(c)).join('; ');
+const peBand = (x) => (x == null ? '' : x < 15 ? 'good' : x <= 30 ? 'ok' : 'hi');
+const pegBand = (x) => (x == null ? '' : x < 1 ? 'good' : x <= 2 ? 'ok' : 'hi');
+const mult = (x, d) => (x == null ? 'n/a' : (+x).toFixed(d));
 function renderIdeas() {
   const root = $('#t-ideas'); if (!root) return;
   const O = ideasData();
   if (!O) { root.innerHTML = '<p class="empty">No opportunities researched yet.</p>'; return; }
   const field = (k, v) => (v ? `<div class="if"><span class="k">${k}</span><p>${esc(v)}</p></div>` : '');
   const rest = Array.isArray(O.shortlist) ? O.shortlist.slice(0, 15) : [];
+  const buy = (x) => (canTrade() && x.isin ? `<button class="btn buy sm" data-trade="buy" data-isin="${esc(x.isin)}" data-name="${esc(x.name)}">Buy</button>` : '');
   root.innerHTML = `
-  <div class="bar2"><div><h2>Opportunities</h2><div class="chips"><span class="chip">Top 5 of ${5 + rest.length} screened</span><span class="chip">Researched ${esc(dfmt(String(O.asOf).slice(0, 10)))}</span><span class="chip">New screen every Monday</span><span class="chip muted">Research, not advice</span></div></div></div>
+  <div class="bar2"><div><h2>Opportunities</h2><div class="chips"><span class="chip">Top 5 of ${5 + rest.length} screened</span><span class="chip">Researched ${esc(dfmt(String(O.asOf).slice(0, 10)))}</span><span class="chip">New screen every Monday</span></div></div>
+    <div class="chips"><span class="chip"><i class="mb good"></i>cheap</span><span class="chip"><i class="mb ok"></i>fair</span><span class="chip"><i class="mb hi"></i>demanding</span></div></div>
   <div class="ideas">${O.ideas.slice(0, 5).map((x, i) => `
     <article class="idea panel">
       <div class="ih"><span class="rk">${i + 1}</span>${logoTag(x.isin, x.name, x.logo, 34)}<div><h3>${esc(x.name)} <small>${esc(x.ticker || '')}${x.exchange ? ' · ' + esc(x.exchange) : ''}</small></h3><p class="ol">${esc(x.oneLiner || '')}</p></div>${x.edge ? `<span class="edge-t">${esc(x.edge)}</span>` : ''}</div>
-      ${x.upside ? `<p class="up">${esc(x.upside)}</p>` : ''}
-      ${Array.isArray(x.why) && x.why.length ? `<ul class="why">${x.why.slice(0, 4).map((w) => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
-      <div class="ifs">${field('Catalyst', x.catalyst)}${field('Valuation', x.valuation)}${field('Risks', x.risks)}${field('Kill-switch', x.kill)}${field('Why this one', x.fit)}</div>
-      ${Array.isArray(x.sources) && x.sources.length ? `<div class="srcs">${x.sources.slice(0, 5).map((s) => { const u = safeUrl(s.u); return u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(s.t || 'Source')}</a>` : ''; }).join('')}</div>` : ''}
+      <div class="mx"><div class="m ${peBand(x.fwdPE)}"><span class="k">Forward P/E</span><b>${mult(x.fwdPE, 1)}</b><small>price ÷ next year's earnings</small></div><div class="m ${pegBand(x.peg)}"><span class="k">PEG</span><b>${mult(x.peg, 2)}</b><small>P/E ÷ earnings growth · under 1 is cheap</small></div>${buy(x)}</div>
+      ${Array.isArray(x.why) && x.why.length ? `<ul class="why">${x.why.map(noCons).filter(Boolean).slice(0, 4).map((w) => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
+      <div class="ifs">${field('Catalyst', x.catalyst)}${field('Risks', x.risks)}${field('Kill-switch', x.kill)}</div>
     </article>`).join('')}</div>
-  ${rest.length ? `<div class="panel flat sl"><div class="ph"><h3>Also on this week's shortlist</h3></div>${rest.map((x, i) => `
-    <div class="sl-row"><span class="sl-n">${i + 6}</span>${logoTag(x.isin, x.name, x.logo, 22)}<span class="sl-nm"><b>${esc(x.name)}</b> <small>${esc(x.ticker || '')}</small></span><span class="sl-r">${esc(x.reason || '')}</span><span class="sl-u">${esc(x.upside || '')}</span></div>`).join('')}</div>` : ''}`;
+  ${rest.length ? `<div class="panel flat sl"><div class="sl-h"><span></span><span></span><span>Also screened this week</span><span></span><span>Fwd P/E</span><span>PEG</span><span></span></div>${rest.map((x, i) => `
+    <div class="sl-row"><span class="sl-n">${i + 6}</span>${logoTag(x.isin, x.name, x.logo, 22)}<span class="sl-nm"><b>${esc(x.name)}</b> <small>${esc(x.ticker || '')}</small></span><span class="sl-r">${esc(noCons(x.reason))}</span><span class="sl-m ${peBand(x.fwdPE)}">${mult(x.fwdPE, 1)}</span><span class="sl-m ${pegBand(x.peg)}">${mult(x.peg, 2)}</span><span>${buy(x)}</span></div>`).join('')}</div>` : ''}`;
 }
 
 function renderNotes() { $('#notes').innerHTML = ''; }

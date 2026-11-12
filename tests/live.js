@@ -66,6 +66,9 @@ function chart(isin) {
   page.on('console', (m) => { if (m.type() === 'error' && !/ERR_FAILED/.test(m.text())) errs.push(m.text()); });
   await page.route('**/*', (r) => (r.request().url().startsWith('file:') ? r.continue() : r.abort()));
   let store = null, saves = 0;
+  // orders: Scalable's preview and submit, as the connector returns them
+  const SUBMISSION = { executionIntent: { portfolioId: 'p1', side: 'buy', isin: 'X', venue: 'MUNC', currency: 'EUR', numberOfShares: '2', orderType: 'market', limitPrice: null, stopPrice: null, appropriatenessId: null, acknowledgedWarningVersion: null }, confirmationContext: { requiredAcknowledgementIds: ['acknowledge_appropriateness_warning'] }, confirmationProof: 'c1.a.AAAAAAAAAAAAAAAAAAAAAA.BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB' };
+  const submits = [];
   await page.exposeFunction('__dbget', async () => store);
   await page.exposeFunction('__dbset', async (d) => { store = d; saves++; });
   await page.exposeFunction('__call', async (server, tool, input) => {
@@ -75,6 +78,8 @@ function chart(isin) {
     if (tool === 'get_security_quote') return { payload: quote(input.isin) };
     if (tool === 'get_security_chart') return { payload: chart(input.isin) };
     if (payloads[tool]) return { payload: payloads[tool]() };
+    if (tool === 'preview_buy_order') return { payload: { userReview: { order: `Buy ${input.quantity.shares} shares at market`, estimatedTotal: '€311.10', costs: { orderFee: '€0.99' } }, submission: SUBMISSION, acknowledgements: [{ id: 'acknowledge_appropriateness_warning', text: 'TEST WARNING: this product may not be appropriate for you.' }], expiresAt: new Date(Date.now() + 600000).toISOString() } };
+    if (tool === 'submit_buy_order') { submits.push(input); return { payload: { orderId: 'o1', transactionReference: 'REF123' } }; }
     throw { code: 'bad_request' };
   });
   await page.addInitScript((first) => {
@@ -108,8 +113,23 @@ function chart(isin) {
     book: document.getElementById('mh-value').textContent,
     rows: [...document.querySelectorAll('#t-book .pos-row')].map((r) => { const n = r.querySelectorAll('.n'); return [r.querySelector('.nm b').textContent, n[0].textContent.trim(), n[1].textContent.trim(), n[5] ? n[5].textContent.trim() : ''].join(' '); }),
   }));
+  // send an order: ticket, Scalable's review, the statement ticked, confirm; the submission goes back unchanged, once
+  let trade = null;
+  if (scenario === 'ok') {
+    const step = async (sel) => { await page.click(sel); await page.waitForTimeout(150); };
+    await step(`#t-book .pd-act [data-trade="buy"]`);
+    await page.fill('#tk-shares', '2');
+    await step('[data-tk="review"]'); await page.waitForTimeout(200);
+    const before = await page.evaluate(() => ({ review: document.querySelector('.tk-review').innerText, warn: document.querySelector('.tk-ack').innerText, sendDisabled: document.querySelector('[data-tk="send"]').disabled }));
+    await step('[data-ack="acknowledge_appropriateness_warning"]');
+    const enabled = await page.evaluate(() => !document.querySelector('[data-tk="send"]').disabled);
+    await step('[data-tk="send"]'); await page.waitForTimeout(200);
+    const done = await page.evaluate(() => document.querySelector('.tk').innerText);
+    trade = { ...before, enabled, done: /REF123/.test(done), submits: submits.length, same: submits[0] && JSON.stringify(submits[0].submission) === JSON.stringify(SUBMISSION), acks: submits[0] && submits[0].acknowledgementIds.join(',') };
+  }
+  console.log(scenario, 'trade', JSON.stringify(trade));
   console.log(scenario, 'saved', firstSave, JSON.stringify(reload), JSON.stringify(out, null, 1), errs.length ? '\nERRORS ' + errs.join('\n') : '\nno errors');
-  const bad = errs.length || (scenario === 'ok' && (!out.judged || !out.rows.some((r) => / 123 /.test(r) && /−9\d%$/.test(r)) || !/^Position\|Consensus\|Value\|1D\|Total return \(%\)\|Total return \(€\)\|Bull case\|Bear case\|$/.test(out.cols))) || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && (out.historyTo !== '2026-10-02' || firstSave !== '2026-10-02' || reload.saves < 2 || reload.historyTo !== '2026-10-02')) || (scenario !== 'ok' && saves > 0 && scenario === 'denied');
+  const bad = errs.length || (scenario === 'ok' && (!trade || !/€311\.10/.test(trade.review) || !/€0\.99/.test(trade.review) || !/TEST WARNING/.test(trade.warn) || !trade.sendDisabled || !trade.enabled || !trade.done || trade.submits !== 1 || !trade.same || trade.acks !== 'acknowledge_appropriateness_warning')) || (scenario === 'ok' && (!out.judged || !out.rows.some((r) => / 123 /.test(r) && /−9\d%$/.test(r)) || !/^Position\|Consensus\|Value\|1D\|Total return \(%\)\|Total return \(€\)\|Bull case\|Bear case\|$/.test(out.cols))) || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && (out.historyTo !== '2026-10-02' || firstSave !== '2026-10-02' || reload.saves < 2 || reload.historyTo !== '2026-10-02')) || (scenario !== 'ok' && saves > 0 && scenario === 'denied');
   await browser.close();
   process.exit(bad ? 1 : 0);
 })();
