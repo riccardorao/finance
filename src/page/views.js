@@ -172,26 +172,25 @@ function renderBook() {
   <div class="lede"><div><p class="kicker">Portfolio</p><h2>What I own: ${M.H.length} positions worth ${fmtEUR0(V)}, ${ytd >= 0 ? 'up' : 'down'} ${fmtEUR0(Math.abs(ytd))} this year</h2><p>Tap a stock to see why I own it, what would make me sell, and the bull and bear case.</p></div>
     <div class="seg" role="group" aria-label="Share-price period">${BOOK_PERIODS.map(([k, l]) => `<button data-bp="${k}" aria-pressed="${k === bp}">${k}</button>`).join('')}</div></div>
   <div class="panel flat">
-    <div class="book-h"><span>Position</span><span>${bp}</span><span class="c-d">Weight</span><span>Value</span><span class="c-m">Return €</span><span>Return %</span><span class="c-m">Bear</span><span class="c-m">Base</span><span class="c-m">Bull</span><span class="c-m">Analysts</span><span></span></div>
+    <div class="book-h"><span>Position</span><span class="c-m">Analysts</span><span>Value</span><span>${bp}</span><span>Return %</span><span class="c-m">Return €</span><span class="c-m">Bear</span><span class="c-m">Bull</span><span></span></div>
     ${M.H.map((h) => {
       const sc = h.sc, cons = h.research && h.research.cons, open = state.open === h.isin;
-      const mid = sc ? expOf(sc, PRESETS.analyst.p) : null; // 25% bear, 50% average target, 25% bull
+      const cnt = (x) => (typeof x === 'number' && x >= 0 ? x : null), votes = cons ? [cnt(cons.sell), cnt(cons.hold), cnt(cons.buy)] : [null, null, null];
       return `<div class="posn${open ? ' open' : ''}" data-i="${h.isin}">
         <button class="pos-row" aria-expanded="${open}" aria-controls="pd-${h.isin}">
           <span class="nm"><b>${esc(h.name)}</b><small>${esc(h.ticker || '')}</small></span>
-          <span class="n">${pc(h, bp)}</span>
-          <span class="n c-d">${(h.weight * 100).toFixed(1)}%</span>
+          <span class="n c-m votes">${votes.every((v) => v != null) ? `<span role="img" aria-label="${votes[0]} sell, ${votes[1]} hold, ${votes[2]} buy"><b class="neg">${votes[0]}</b><b>${votes[1]}</b><b class="pos">${votes[2]}</b></span>` : '<span class="muted">–</span>'}</span>
           <span class="n"><b>${fmtEUR0(h.value)}</b></span>
-          <span class="n c-m"><b>${h.pnl != null ? eur0Span(h.pnl) : '–'}</b></span>
+          <span class="n">${pc(h, bp)}</span>
           <span class="n"><b>${h.pnl != null ? pctSpan(h.pnlPct, 1) : '–'}</b></span>
-          ${sc ? `<span class="n c-m neg">${fmtSignedPct(sc.bear, 0)}</span><span class="n c-m ${mid >= 0 ? 'pos' : 'neg'}">${fmtSignedPct(mid, 0)}</span><span class="n c-m pos">${fmtSignedPct(sc.bull, 0)}</span>` : '<span class="c-m c-na"><small class="muted">no analyst coverage</small></span>'}
-          <span class="c-m cons">${cons && sc ? `<span class="rt ${ratingCls(cons.rating)}">${esc(cons.rating)}</span><small>target <b class="${cls(sc.base)}">${fmtSignedPct(sc.base, 0)}</b></small>` : '<small class="muted">–</small>'}</span>
+          <span class="n c-m"><b>${h.pnl != null ? eur0Span(h.pnl) : '–'}</b></span>
+          ${sc ? `<span class="n c-m ${sc.bear >= 0 ? 'pos' : 'neg'}">${fmtSignedPct(sc.bear, 0)}</span><span class="n c-m ${sc.bull >= 0 ? 'pos' : 'neg'}">${fmtSignedPct(sc.bull, 0)}</span>` : '<span class="c-m c-na"><small class="muted">no coverage</small></span>'}
           <span class="chev" aria-hidden="true"></span>
         </button>
         <div class="pos-d" id="pd-${h.isin}" ${open ? '' : 'hidden'}>${open ? positionDetail(h) : ''}</div>
       </div>`;
     }).join('')}
-    <div class="book-f"><span class="foot-n">Value: what the position is worth today. Weight: its share of the portfolio. The first number column shows the change in the share price in euro over the period picked above. Return € and %: gain or loss on what I still hold, against what I paid. Bear, Base and Bull: the 12-month outcome against today's price. Bear is the downside case, Bull the highest analyst target, and Base the weighted outcome (25% bear, 50% average analyst target, 25% bull). Analysts: consensus rating, then the upside to the average 12-month target.${M.D.excluded && M.D.excluded.n ? ` ${M.D.excluded.n} leveraged or crypto position${M.D.excluded.n > 1 ? 's' : ''} (${fmtEUR0(M.D.excluded.value)}) ${M.D.excluded.n > 1 ? 'are' : 'is'} not shown.` : ''}</span></div>
+    <div class="book-f"><span class="foot-n">Analysts: how many analysts rate the stock sell (red), hold (black) and buy (green). Value: what the position is worth at the last close. The next column is the change in the share price in euro over the period picked above. Return % and €: gain or loss on what I still hold, against what I paid. Bear and Bull: the 12-month outcome against the last close; Bear is the lower of the lowest analyst target and a repeat of the past year's worst fall, Bull the highest analyst target.${M.D.excluded && M.D.excluded.n ? ` ${M.D.excluded.n} leveraged or crypto position${M.D.excluded.n > 1 ? 's' : ''} (${fmtEUR0(M.D.excluded.value)}) ${M.D.excluded.n > 1 ? 'are' : 'is'} not shown.` : ''}</span></div>
   </div>`;
 
   $$('#t-book [data-bp]').forEach((b) => b.addEventListener('click', () => { state.bp = b.dataset.bp; renderBook(); }));
@@ -326,6 +325,32 @@ function renderRisk() {
 }
 
 /* ---------- notes ---------- */
+/* =====================================================================
+   OPPORTUNITIES: five stocks not yet owned that fit the mandate. Built into the page, and replaced by
+   the database document opportunities/current when the research routine has written a newer one.
+   ===================================================================== */
+function ideasData() {
+  const db = state.dbReady ? state.opportunities : null, base = M.D.opportunities;
+  const ok = (o) => o && Array.isArray(o.ideas) && o.ideas.length;
+  return ok(db) && (!ok(base) || String(db.asOf || '') >= String(base.asOf || '')) ? db : ok(base) ? base : null;
+}
+const EDGE_CLS = { Patience: 'e-pat', Informational: 'e-inf', Catalyst: 'e-cat' };
+function renderIdeas() {
+  const root = $('#t-ideas'); if (!root) return;
+  const O = ideasData();
+  if (!O) { root.innerHTML = '<p class="empty">No opportunities researched yet.</p>'; return; }
+  const field = (k, v) => (v ? `<div class="if"><span class="k">${k}</span><p>${esc(v)}</p></div>` : '');
+  root.innerHTML = `
+  <div class="lede"><div><p class="kicker">Opportunities</p><h2>Five stocks I would buy next, and why</h2><p>Picked against the mandate: one declared edge each, return on capital, a visible catalyst, owners with skin in the game, and a price that does not already assume the catalyst. None of them is owned today. Researched ${esc(dfmt(String(O.asOf).slice(0, 10)))}. Research, not advice.</p></div></div>
+  <div class="ideas">${O.ideas.slice(0, 5).map((x, i) => `
+    <article class="idea panel">
+      <div class="ih"><span class="rk">${i + 1}</span><div><h3>${esc(x.name)} <small>${esc(x.ticker || '')}${x.exchange ? ' · ' + esc(x.exchange) : ''}</small></h3><p class="ol">${esc(x.oneLiner || '')}</p></div>${x.edge ? `<span class="edge-t ${EDGE_CLS[x.edge] || ''}">${esc(x.edge)}</span>` : ''}</div>
+      ${Array.isArray(x.why) && x.why.length ? `<ul class="why">${x.why.slice(0, 4).map((w) => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
+      <div class="ifs">${field('Catalyst', x.catalyst)}${field('Valuation', x.valuation)}${field('Risks', x.risks)}${field('Kill-switch', x.kill)}${field('Mandate fit', x.fit)}</div>
+      ${Array.isArray(x.sources) && x.sources.length ? `<div class="srcs">${x.sources.slice(0, 5).map((s) => { const u = safeUrl(s.u); return u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(s.t || 'Source')}</a>` : ''; }).join('')}</div>` : ''}
+    </article>`).join('')}</div>`;
+}
+
 function renderNotes() {
   const D = M.D;
   $('#notes').innerHTML = `<div class="foot">

@@ -16,6 +16,7 @@ const body = `
   <section class="tabpage" id="t-record" role="tabpanel" aria-labelledby="tab-record" hidden></section>
   <section class="tabpage" id="t-book" role="tabpanel" aria-labelledby="tab-book" hidden></section>
   <section class="tabpage" id="t-risk" role="tabpanel" aria-labelledby="tab-risk" hidden></section>
+  <section class="tabpage" id="t-ideas" role="tabpanel" aria-labelledby="tab-ideas" hidden></section>
   <div id="notes"></div>
 </div>
 <div id="tip" role="tooltip"></div>`;

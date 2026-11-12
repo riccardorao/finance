@@ -170,6 +170,10 @@ async function watchResearch() {
       const o = {}; snap.docs.forEach((d) => { if (d.exists) o[d.id] = d.data(); });
       state.consensus = o; if (M) render();
     }, () => { /* the targets built into the page stay */ });
+    db.collection('opportunities').onSnapshot((snap) => {
+      const d = snap.docs.find((x) => x.id === 'current' && x.exists);
+      state.opportunities = d ? d.data() : null; if (M) renderIdeas();
+    }, () => { /* the built-in ideas stay */ });
     db.collection('judgement').onSnapshot((snap) => {
       const o = {}; snap.docs.forEach((d) => { if (d.exists) o[d.id] = d.data(); });
       state.judgement = o; if (M) renderBook();
@@ -179,9 +183,10 @@ async function watchResearch() {
 }
 function render() {
   M = buildModel(DATA_ACTIVE);
-  renderHeader(); renderTabs(); renderRecord(); renderBook(); renderRisk(); renderNotes();
+  renderHeader(); renderTabs(); renderRecord(); renderBook(); renderRisk(); renderIdeas(); renderNotes();
 }
 async function boot() {
+  if (DATA.opportunities) TABS.push(['ideas', 'Opportunities']);
   DATA_SNAP = prepare(DATA); DATA_ACTIVE = DATA_SNAP;
   // always open on the Portfolio tab, whatever the link's hash or the last visit
   state.tab = 'book';

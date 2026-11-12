@@ -79,7 +79,7 @@ function chart(isin) {
   });
   await page.addInitScript((first) => {
     const jdocs = [{ id: first, exists: true, data: () => ({ updatedAt: new Date().toISOString(), stance: 'strengthened', thesis: 'JUDGED THESIS', kill: 'JUDGED KILL', assessment: 'Assess <i>x</i>', signals: [{ text: 'Sig one', source: 'Co', url: 'javascript:1' }] }) }];
-    const cdocs = [{ id: first, exists: true, data: () => ({ updatedAt: new Date().toISOString(), rating: 'Hold', analysts: 12, avg: 1, high: 2, low: 0.5, fx: 1 }) }];
+    const cdocs = [{ id: first, exists: true, data: () => ({ updatedAt: new Date().toISOString(), rating: 'Hold', analysts: 6, buy: 3, hold: 2, sell: 1, avg: 1, high: 2, low: 0.5, fx: 1 }) }];
     const docs = [{ id: first, exists: true, data: () => ({ updatedAt: new Date().toISOString(), headline: 'Test headline <b>x</b>', items: [{ date: '2026-10-01', text: 'Item one <script>', source: 'Src', url: 'https://example.com/a' }, { date: '2026-09-30', text: 'Bad link', source: 'Evil', url: 'javascript:alert(1)' }] }) }];
     window.claude = { use: async (n) => (n === 'mcp' ? { callTool: (s, t, i) => window.__call(s, t, i) } : n === 'db' ? { doc: () => ({ get: async () => { const d = await window.__dbget(); return { exists: !!d, data: () => d }; }, set: (d) => window.__dbset(d) }), collection: (c) => ({ onSnapshot: (next) => { setTimeout(() => next({ docs: c === 'judgement' ? jdocs : c === 'consensus' ? cdocs : docs }), 50); return () => {}; } }) } : null) };
   }, FIRST);
@@ -98,7 +98,7 @@ function chart(isin) {
   const out = await page.evaluate(() => ({
     latest: ((document.querySelector('#t-book .pd-side') || {}).innerText || '').split('\n').filter((l) => /Test headline|Item one|Bad link|LATEST/i.test(l)),
     links: [...document.querySelectorAll('#t-book .news a')].map((a) => a.href),
-    judged: (() => { const t = (document.querySelector('#t-book .pd') || {}).innerText || ''; return /JUDGED THESIS/.test(t) && /JUDGED KILL/.test(t) && /strengthened/i.test(t) && !/draft/i.test(t) && /Assess <i>x<\/i>/.test(t); })(),
+    judgedT: ((document.querySelector('#t-book .pd') || {}).innerText || '').slice(0, 400), judged: (() => { const t = (document.querySelector('#t-book .pd') || {}).innerText || ''; return /JUDGED THESIS/.test(t) && /JUDGED KILL/.test(t) && /strengthened/i.test(t) && !/draft/i.test(t) && /Assess <i>x<\/i>/.test(t); })(),
     cols: [...document.querySelectorAll('#t-book .book-h span')].map((e) => e.textContent).join('|'),
     injected: document.querySelectorAll('#t-book .news script, #t-book .pd-side b b').length,
     status: document.getElementById('status-text').textContent,
@@ -106,10 +106,10 @@ function chart(isin) {
     historyTo: (() => { const p = M.perf.pts; return new Date(p[p.length - 1].t).toISOString().slice(0, 10); })(),
     historyFrom: (() => { const p = M.perf.pts; return new Date(p[0].t).toISOString().slice(0, 10); })(),
     book: document.getElementById('mh-value').textContent,
-    rows: [...document.querySelectorAll('#t-book .pos-row')].map((r) => r.querySelector('.nm b').textContent + ' ' + r.querySelector('.n b').textContent + ' ' + r.querySelector('.cons').textContent.trim()),
+    rows: [...document.querySelectorAll('#t-book .pos-row')].map((r) => { const n = r.querySelectorAll('.n'); return [r.querySelector('.nm b').textContent, n[0].textContent.trim(), n[1].textContent.trim(), n[6] ? n[6].textContent.trim() : ''].join(' '); }),
   }));
   console.log(scenario, 'saved', firstSave, JSON.stringify(reload), JSON.stringify(out, null, 1), errs.length ? '\nERRORS ' + errs.join('\n') : '\nno errors');
-  const bad = errs.length || (scenario === 'ok' && (!out.judged || !out.rows.some((r) => /Hold/.test(r) && /target −/.test(r)) || !/Bear\|Base\|Bull/.test(out.cols))) || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && (out.historyTo !== '2026-10-02' || firstSave !== '2026-10-02' || reload.saves < 2 || reload.historyTo !== '2026-10-02')) || (scenario !== 'ok' && saves > 0 && scenario === 'denied');
+  const bad = errs.length || (scenario === 'ok' && (!out.judged || !out.rows.some((r) => / 123 /.test(r) && /−9\d%$/.test(r)) || !/^Position\|Analysts\|Value\|1D\|Return %\|Return €\|Bear\|Bull\|$/.test(out.cols))) || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && (out.historyTo !== '2026-10-02' || firstSave !== '2026-10-02' || reload.saves < 2 || reload.historyTo !== '2026-10-02')) || (scenario !== 'ok' && saves > 0 && scenario === 'denied');
   await browser.close();
   process.exit(bad ? 1 : 0);
 })();

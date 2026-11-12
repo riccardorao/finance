@@ -17,7 +17,7 @@ const dayMs = (s) => Date.parse(s.length === 10 ? s + 'T12:00:00Z' : s.length ==
 
 /* ---------- state ---------- */
 const TABS = [['book', 'Portfolio'], ['record', 'Performance'], ['risk', 'Outlook']];
-const state = { tab: 'book', bp: '1D', bench: 'SPX', tf: '1Y', measure: 'twr', hz: 12, open: null, preset: 'analyst', mode: 'snapshot', statusMsg: '', tableView: {}, commentary: {}, judgement: {}, consensus: {}, dbReady: false };
+const state = { tab: 'book', bp: '1D', bench: 'SPX', tf: '1Y', measure: 'twr', hz: 12, open: null, preset: 'analyst', mode: 'snapshot', statusMsg: '', tableView: {}, commentary: {}, judgement: {}, consensus: {}, opportunities: null, dbReady: false };
 /* scenario probabilities: bull, base, bear */
 const PRESETS = { analyst: { label: 'Consensus', p: [0.25, 0.5, 0.25] }, cautious: { label: 'Cautious', p: [0.15, 0.45, 0.4] }, stress: { label: 'Stress', p: [0.05, 0.35, 0.6] } };
 const REF_MU = 0.07; // assumed long-run annual return for the benchmark reference
@@ -62,12 +62,14 @@ function alignSeries(ser, ids) {
 /* The daily routine saves each stock's latest analyst consensus (targets in dollars, rating, analyst count and the
    euro per dollar rate) in the database. Where a valid document exists it replaces the targets built into the page,
    so the bear, base and bull cases and the Outlook follow the latest consensus. */
+// buy, hold and sell counts are taken only as a consistent set
+const cnts = (c, old) => (['buy', 'hold', 'sell'].every((k) => Number.isInteger(c[k]) && c[k] >= 0) ? { buy: c.buy, hold: c.hold, sell: c.sell } : { buy: old.buy, hold: old.hold, sell: old.sell });
 function withConsensus(h) {
   const c = state.dbReady ? state.consensus[h.isin] : null, r = h.research;
   const ok = (x) => typeof x === 'number' && isFinite(x) && x > 0;
   if (!c || !r || !r.cons || !ok(c.avg) || !ok(c.high) || !ok(c.low) || !ok(c.fx) || c.low > c.avg || c.avg > c.high) return r;
   return { ...r, refEur: c.fx, cons: { ...r.cons, refUsd: 1, avg: c.avg, high: c.high, low: c.low,
-    rating: typeof c.rating === 'string' && c.rating ? c.rating.slice(0, 24) : r.cons.rating, analysts: ok(c.analysts) ? Math.round(c.analysts) : r.cons.analysts, live: c.updatedAt || true } };
+    rating: typeof c.rating === 'string' && c.rating ? c.rating.slice(0, 24) : r.cons.rating, analysts: ok(c.analysts) ? Math.round(c.analysts) : r.cons.analysts, ...cnts(c, r.cons), live: c.updatedAt || true } };
 }
 function buildModel(D) {
   const asOf = Date.parse(D.meta.asOf);

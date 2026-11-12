@@ -1,4 +1,4 @@
-// Qualitative research and sell-side consensus per company, retrieved 1-2 Oct 2026.
+// Qualitative research per company, retrieved 1-2 Oct 2026; sell-side consensus refreshed 12 Nov 2026 (StockAnalysis).
 // Targets are 12-month analyst targets in US dollars; refUsd is the share price the upside figures were measured against.
 module.exports = {
   US67066G1040: {
@@ -8,7 +8,7 @@ module.exports = {
     competitors: ['AMD (Instinct GPUs)', 'Broadcom and Marvell (custom AI chips)', 'Google TPU, Amazon Trainium (in-house silicon)', 'Intel'],
     bull: 'AI capex keeps compounding into 2027, new platforms ship on time, China sales reopen and the $235bn buyback supports the share count.',
     bear: 'Hyperscalers slow spending or shift to in-house chips, margins slip from 75%, and the multiple compresses with the AI trade.',
-    cons: { rating: 'Strong Buy', analysts: 61, refUsd: 230.85, avg: 327.7, low: 180, high: 515, src: { t: 'StockAnalysis consensus', u: 'https://stockanalysis.com/stocks/nvda/forecast/' } },
+    cons: { rating: 'Strong Buy', analysts: 62, buy: 55, hold: 6, sell: 1, refUsd: 173.0785, avg: 311.51, low: 180, high: 515, src: { t: 'StockAnalysis consensus, 2026-11-12', u: 'https://stockanalysis.com/stocks/nvda/forecast/' } },
   },
   US8740391003: {
     industry: 'Semiconductors · Contract manufacturing (foundry)',
@@ -17,7 +17,7 @@ module.exports = {
     competitors: ['Samsung Foundry', 'Intel Foundry', 'SMIC (China)', 'GlobalFoundries and UMC (mature nodes)'],
     bull: 'AI demand keeps exceeding capacity, pricing rises on 2nm and packaging, and overseas fabs ramp without denting margins.',
     bear: 'Taiwan geopolitical shock, tariffs on chips, or an AI order pause that leaves heavy capex under-used.',
-    cons: { rating: 'Strong Buy', analysts: 21, refUsd: 459.2, avg: 552.26, low: 440, high: 700, src: { t: 'FinanceFeeds: TSM targets $440–700', u: 'https://financefeeds.com/tsm-stock-bull-bear-analyst-targets-ai-chip/' } },
+    cons: { rating: 'Strong Buy', analysts: 21, buy: 20, hold: 1, sell: 0, refUsd: 411.8, avg: 586.69, low: 440, high: 1000, src: { t: 'StockAnalysis consensus, 2026-11-11', u: 'https://stockanalysis.com/stocks/tsm/forecast/' } },
   },
   US02079K3059: {
     industry: 'Internet · Search, advertising and cloud',
@@ -26,7 +26,7 @@ module.exports = {
     competitors: ['Microsoft and OpenAI (AI assistants, Azure)', 'Meta (advertising)', 'Amazon (AWS cloud, retail ads)', 'Perplexity and other AI search'],
     bull: 'Cloud keeps accelerating, Gemini monetises inside Search without hurting ad revenue, and capex returns become visible.',
     bear: 'AI assistants erode search share, capex keeps rising faster than revenue, and antitrust remedies bite.',
-    cons: { rating: 'Strong Buy', analysts: 54, refUsd: 338.8, avg: 429.36, low: 340, high: 515, refNote: 'reference price converted from euro', src: { t: 'Investing.com consensus', u: 'https://www.investing.com/equities/google-inc-consensus-estimates' } },
+    cons: { rating: 'Strong Buy', analysts: 58, buy: 53, hold: 5, sell: 0, refUsd: 292.3496, avg: 400.37, low: 300, high: 500, src: { t: 'StockAnalysis consensus, 2026-11-06', u: 'https://stockanalysis.com/stocks/googl/forecast/' } },
   },
   US5324571083: {
     industry: 'Pharmaceuticals · Obesity and diabetes (GLP-1)',
@@ -35,7 +35,7 @@ module.exports = {
     competitors: ['Novo Nordisk (Wegovy, oral semaglutide)', 'Amgen (MariTide)', 'Pfizer (via Metsera)', 'Roche, Viking Therapeutics'],
     bull: 'Foundayo becomes the mass-market pill, retatrutide extends the lead, and payers widen obesity coverage.',
     bear: 'US price cuts or coverage limits, safety findings, and Novo winning back share on price.',
-    cons: { rating: 'Buy', analysts: null, refUsd: 1150, avg: 1392.5, low: 850, high: 1600, refNote: 'median target; reference price converted from euro', src: { t: 'Yahoo Finance: price target boost', u: 'https://finance.yahoo.com/markets/stocks/articles/eli-lilly-lly-gets-big-155107945.html' } },
+    cons: { rating: 'Buy', analysts: 31, buy: 25, hold: 4, sell: 2, refUsd: 1431.9005, avg: 1460, low: 940, high: 1690, src: { t: 'StockAnalysis consensus, 2026-11-10', u: 'https://stockanalysis.com/stocks/lly/forecast/' } },
   },
   US5951121038: {
     industry: 'Semiconductors · Memory (DRAM, HBM, NAND)',
@@ -44,7 +44,7 @@ module.exports = {
     competitors: ['SK Hynix', 'Samsung', 'CXMT (China)', 'Kioxia and SanDisk (NAND)'],
     bull: 'Memory stays tight through 2027, HBM4 share gains with Nvidia, and record margins hold longer than in past cycles.',
     bear: 'The cycle turns: rivals add capacity, Chinese supply grows and prices fall, as in the 28.7% drop in July.',
-    cons: { rating: 'Strong Buy', analysts: 49, refUsd: 1065.1, avg: 1533.8, low: 1100, high: 2100, src: { t: 'Benzinga: analysts lift targets', u: 'https://www.benzinga.com/analyst-stock-ratings/analyst-color/26/10/62120688/micron-stock-erases-post-earnings-losses-analyst-price-targets' } },
+    cons: { rating: 'Strong Buy', analysts: 49, buy: 45, hold: 4, sell: 0, refUsd: 808.2577, avg: 1562, low: 361, high: 3000, src: { t: 'StockAnalysis consensus, 2026-11-09', u: 'https://stockanalysis.com/stocks/mu/forecast/' } },
   },
   US92537N1081: {
     industry: 'Industrials · Data-centre power and cooling',
@@ -53,7 +53,7 @@ module.exports = {
     competitors: ['Schneider Electric', 'Eaton', 'ABB', 'nVent, Munters and Johnson Controls (cooling)'],
     bull: 'The July revenue miss proves temporary, liquid cooling scales with each GPU generation and orders stay ahead of shipments.',
     bear: 'Project delays repeat, hyperscaler concentration hurts pricing and the high beta works in reverse.',
-    cons: { rating: 'Moderate Buy', analysts: 29, refUsd: 246.55, avg: 357.08, low: 260, high: 500, src: { t: 'MarketBeat consensus', u: 'https://www.marketbeat.com/stocks/NYSE/VRT/forecast/' } },
+    cons: { rating: 'Strong Buy', analysts: 31, buy: 27, hold: 4, sell: 0, refUsd: 205.7357, avg: 334.29, low: 240, high: 427, src: { t: 'StockAnalysis consensus, 2026-11-11', u: 'https://stockanalysis.com/stocks/vrt/forecast/' } },
   },
   CA2926717083: {
     industry: 'Energy and materials · Uranium and rare earths',
@@ -62,7 +62,7 @@ module.exports = {
     competitors: ['Cameco, Kazatomprom, Uranium Energy (uranium)', 'Lynas, MP Materials, Iluka (rare earths)', 'Chinese processors'],
     bull: 'Uranium contract prices rise, rare-earth sales to Western magnet makers start, and the Vacuumschmelze deal closes on good terms.',
     bear: 'Uranium keeps sliding, acquisitions strain the balance sheet and rare-earth revenue arrives late.',
-    cons: { rating: 'Moderate Buy', analysts: 7, refUsd: 10.78, avg: 21.85, low: 16, high: 29.25, refNote: 'targets look stale after the September fall; reference price converted from euro', src: { t: 'MarketBeat consensus', u: 'https://www.marketbeat.com/stocks/NYSEAMERICAN/UUUU/forecast/' } },
+    cons: { rating: 'Strong Buy', analysts: 7, buy: 7, hold: 0, sell: 0, refUsd: 6.904, avg: 18.88, low: 14, high: 22.5, src: { t: 'StockAnalysis consensus, 2026-11-06', u: 'https://stockanalysis.com/stocks/uuuu/forecast/' } },
   },
   US5533681012: {
     industry: 'Materials · Rare earths and magnets',
@@ -71,6 +71,6 @@ module.exports = {
     competitors: ['China Northern Rare Earth', 'Lynas Rare Earths', 'Iluka, USA Rare Earth, Energy Fuels', 'Chinese magnet makers'],
     bull: 'Magnet output ramps on schedule, China export curbs keep Western prices high and new customers sign.',
     bear: 'China eases curbs and prices fall, the magnet ramp slips, or the Shenghe ownership issue escalates.',
-    cons: { rating: 'Strong Buy', analysts: 19, refUsd: 45.72, avg: 74.29, low: 57, high: 100, src: { t: 'StockAnalysis consensus', u: 'https://stockanalysis.com/stocks/mp/forecast/' } },
+    cons: { rating: 'Strong Buy', analysts: 19, buy: 19, hold: 0, sell: 0, refUsd: 36.5922, avg: 67.5, low: 40, high: 100, src: { t: 'StockAnalysis consensus, 2026-11-10', u: 'https://stockanalysis.com/stocks/mp/forecast/' } },
   },
 };
