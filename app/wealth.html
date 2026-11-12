@@ -1,0 +1,576 @@
+<title>Patrimonium</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: a dark instrument rail on the left, one working surface on the right; every view opens with its answer,
+   then the detail. Verdigris marks what you own; brass marks what Premium values for you. */
+:root {
+  --paper: #f3f6f5; --surface: #ffffff; --inset: #eef2f0; --ink: #10201b; --ink2: #475953; --ink3: #7a8a84;
+  --line: #dfe6e3; --line2: #cbd5d1; --accent: #1d6b5c; --accent-soft: rgba(29, 107, 92, 0.1); --brass: #9c7728; --brass-soft: rgba(156, 119, 40, 0.12);
+  --pos: #15803d; --neg: #c42d2d; --warn: #b26f00;
+  --rail: #0e1a17; --rail-ink: #e6eeeb; --rail-ink2: #8fa19b; --rail-hi: rgba(255, 255, 255, 0.07);
+  --c-eq: #2f6fd0; --c-bond: #7a5cc7; --c-cash: #8a9a94; --c-re: #c4743a; --c-pm: #1f8f78; --c-alt: #b5527f; --c-crypto: #d0951a; --c-pen: #4f7fa3;
+  --display: "Fraunces", Georgia, "Times New Roman", serif; --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #0c1311; --surface: #131c19; --inset: #19241f; --ink: #e8efec; --ink2: #a8b7b1; --ink3: #7b8b85; --line: #22302b; --line2: #304039;
+  --accent: #3fae96; --accent-soft: rgba(63, 174, 150, 0.14); --brass: #d6ad55; --brass-soft: rgba(214, 173, 85, 0.14); --pos: #3fb950; --neg: #f27272; --warn: #e0a339;
+  --rail: #070c0b; --rail-hi: rgba(255, 255, 255, 0.06);
+  --c-eq: #4a8be6; --c-bond: #9a83e0; --c-cash: #8a9a94; --c-re: #d98a52; --c-pm: #35a88f; --c-alt: #d06e9a; --c-crypto: #e0a93a; --c-pen: #6f9cc0; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --paper: #0c1311; --surface: #131c19; --inset: #19241f; --ink: #e8efec; --ink2: #a8b7b1; --ink3: #7b8b85; --line: #22302b; --line2: #304039;
+  --accent: #3fae96; --accent-soft: rgba(63, 174, 150, 0.14); --brass: #d6ad55; --brass-soft: rgba(214, 173, 85, 0.14); --pos: #3fb950; --neg: #f27272; --warn: #e0a339;
+  --rail: #070c0b; --rail-hi: rgba(255, 255, 255, 0.06);
+  --c-eq: #4a8be6; --c-bond: #9a83e0; --c-cash: #8a9a94; --c-re: #d98a52; --c-pm: #35a88f; --c-alt: #d06e9a; --c-crypto: #e0a93a; --c-pen: #6f9cc0; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.num { font-variant-numeric: tabular-nums; }
+.pos { color: var(--pos); } .neg { color: var(--neg); } .muted { color: var(--ink3); }
+
+.shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
+.rail { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; height: 100vh; background: var(--rail); color: var(--rail-ink); display: flex; flex-direction: column; gap: 24px; padding-block: 22px 18px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: 16px; }
+.logo { display: flex; align-items: center; gap: 10px; padding: 0 6px; }
+.logo svg { flex: none; }
+.logo b { font: 600 19px var(--display); letter-spacing: 0.01em; }
+.logo small { display: block; font: 500 10px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--rail-ink2); }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav a { display: flex; align-items: center; gap: 11px; color: var(--rail-ink2); text-decoration: none; padding: 9px 10px; border-radius: 8px; font-weight: 500; }
+.nav a:hover { color: var(--rail-ink); background: var(--rail-hi); }
+.nav a[aria-current="page"] { color: var(--rail-ink); background: var(--rail-hi); }
+.nav a[aria-current="page"] svg { color: #7fd1bd; }
+.rail .hh { margin-top: auto; padding: 0 6px; font-size: 12px; color: var(--rail-ink2); }
+.rail .hh b { display: block; color: var(--rail-ink); font-weight: 600; font-size: 13px; }
+.main { min-width: 0; padding-block: 0 64px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); max-width: 1360px; width: 100%; }
+.topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; padding-block: 18px; border-bottom: 1px solid var(--line); }
+.topbar .who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.topbar .who b { font-weight: 600; }
+.badge { display: inline-flex; align-items: center; gap: 6px; font: 500 11px var(--mono); letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line2); color: var(--ink2); background: var(--surface); }
+.badge.demo { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
+.badge.live { color: var(--pos); border-color: color-mix(in srgb, var(--pos) 45%, transparent); }
+.badge.brass { color: var(--brass); border-color: color-mix(in srgb, var(--brass) 50%, transparent); background: var(--brass-soft); }
+.seg { display: inline-flex; border: 1px solid var(--line2); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: none; padding: 6px 12px; font-size: 13px; font-weight: 500; color: var(--ink2); border-right: 1px solid var(--line); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.seg button.prem[aria-pressed="true"] { background: var(--brass); color: #fff; }
+.btn { border: 1px solid var(--line2); background: var(--surface); border-radius: 8px; padding: 6px 12px; font-weight: 500; font-size: 13px; }
+.btn:hover { background: var(--inset); }
+.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn[disabled] { opacity: 0.55; cursor: default; }
+
+.view { padding-top: 24px; display: grid; gap: 16px; }
+.vh { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 20px; }
+.vh h1 { margin: 0; font: 600 26px/1.15 var(--display); letter-spacing: -0.01em; text-wrap: balance; }
+.vh p { margin: 4px 0 0; color: var(--ink2); max-width: 70ch; }
+.lbl { font: 500 10.5px var(--mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink3); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; min-width: 0; }
+.card h2 { margin: 0 0 12px; font: 600 15px var(--font); }
+.card h2 small { font-weight: 400; color: var(--ink3); margin-left: 6px; }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(12, minmax(0, 1fr)); }
+.grid > * { grid-column: span 12; }
+@media (min-width: 1000px) { .s8 { grid-column: span 8; } .s7 { grid-column: span 7; } .s6 { grid-column: span 6; } .s5 { grid-column: span 5; } .s4 { grid-column: span 4; } }
+
+/* hero */
+.hero { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px) { .hero { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: stretch; } }
+.nw .big { font: 600 clamp(40px, 6vw, 60px)/1 var(--display); letter-spacing: -0.02em; margin: 6px 0 10px; font-variant-numeric: tabular-nums; }
+.nw .row { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--ink2); }
+.nw .row b { color: var(--ink); font-weight: 600; }
+.mtm { margin-top: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--ink2); }
+.kv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); margin-top: 16px; }
+.kv div { padding: 10px 12px 2px 0; }
+.kv b { display: block; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { font: 11px var(--font); fill: var(--ink3); }
+.gl { stroke: var(--line); stroke-width: 1; }
+
+/* allocation strip and lists */
+.strip { display: flex; height: 14px; border-radius: 7px; overflow: hidden; gap: 2px; }
+.strip i { display: block; height: 100%; }
+.leg { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px 18px; margin-top: 12px; }
+.leg div { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; font-size: 13px; }
+.leg i { width: 10px; height: 10px; border-radius: 3px; align-self: center; }
+.leg b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.leg small { color: var(--ink3); margin-left: 4px; font-weight: 400; }
+.ladder { display: grid; gap: 10px; }
+.ladder .r { display: grid; grid-template-columns: 112px minmax(0, 1fr) 84px; gap: 12px; align-items: center; font-size: 13px; }
+.ladder .t { height: 12px; background: var(--inset); border-radius: 6px; overflow: hidden; }
+.ladder .t i { display: block; height: 100%; background: var(--accent); border-radius: 6px; }
+.ladder .r b { text-align: right; font-variant-numeric: tabular-nums; }
+.ins { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+.in { border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; background: var(--surface); display: grid; gap: 4px; }
+.in .tag { justify-self: start; font: 600 10.5px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; }
+.in .tag.money { color: var(--pos); background: color-mix(in srgb, var(--pos) 12%, transparent); }
+.in .tag.risk { color: var(--neg); background: color-mix(in srgb, var(--neg) 11%, transparent); }
+.in .tag.cash { color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, transparent); }
+.in b { font-size: 15px; }
+.in p { margin: 0; color: var(--ink2); font-size: 13px; }
+
+/* tables */
+.tw { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; font-size: 13px; }
+th { font: 500 10.5px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink3); }
+th:first-child, td:first-child { text-align: left; padding-left: 0; }
+td.nm { white-space: normal; min-width: 210px; }
+td.nm b { font-weight: 600; } td.nm small { display: block; color: var(--ink3); font-size: 12px; }
+tr.grp td { background: var(--inset); font-weight: 600; font-size: 12.5px; padding-left: 8px; }
+.cl { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink2); }
+.cl i { width: 8px; height: 8px; border-radius: 2px; }
+.vm { font: 500 11px var(--mono); padding: 2px 7px; border-radius: 4px; border: 1px solid var(--line2); color: var(--ink2); }
+.vm.live { color: var(--pos); border-color: color-mix(in srgb, var(--pos) 40%, transparent); }
+.vm.mtm { color: var(--brass); border-color: color-mix(in srgb, var(--brass) 50%, transparent); background: var(--brass-soft); }
+.vm.book { color: var(--ink3); }
+.delta { font-size: 12px; color: var(--brass); }
+input[type="number"], input[type="text"], select { background: var(--surface); border: 1px solid var(--line2); border-radius: 6px; padding: 5px 8px; font-size: 13px; }
+input[type="number"] { width: 72px; text-align: right; }
+.drift { display: inline-block; width: 120px; height: 8px; position: relative; background: var(--inset); border-radius: 4px; vertical-align: middle; }
+.drift i { position: absolute; top: 0; height: 8px; border-radius: 4px; }
+.drift em { position: absolute; left: 50%; top: -3px; width: 1px; height: 14px; background: var(--ink3); }
+.addf { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+
+/* backtest */
+.bt { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px) { .bt { grid-template-columns: 320px minmax(0, 1fr); } }
+.wrow { display: grid; grid-template-columns: 10px minmax(0, 1fr) 64px; gap: 8px; align-items: center; padding: 5px 0; font-size: 13px; }
+.wrow i { width: 10px; height: 10px; border-radius: 3px; }
+.wrow input { width: 64px; }
+.wsum { display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid var(--line); margin-top: 6px; font-size: 13px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.stat { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.stat b { display: block; font: 600 20px var(--font); font-variant-numeric: tabular-nums; }
+.stat small { color: var(--ink3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.lg { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink2); margin-bottom: 8px; }
+.lg span { display: inline-flex; align-items: center; gap: 6px; }
+.lg i { width: 14px; height: 3px; border-radius: 2px; }
+
+/* opportunities */
+.ops { display: grid; gap: 8px; }
+.op { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.op i { width: 10px; height: 10px; border-radius: 50%; }
+.op b { font-weight: 600; } .op small { color: var(--ink3); display: block; }
+.op .u { font-weight: 600; color: var(--pos); font-variant-numeric: tabular-nums; text-align: right; }
+.op .fit { font: 500 10.5px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+.dot { cursor: pointer; }
+.dot:hover { stroke: var(--ink); stroke-width: 2; }
+#tip { position: fixed; z-index: 60; pointer-events: none; background: var(--surface); border: 1px solid var(--line2); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14); max-width: 280px; opacity: 0; }
+#tip.on { opacity: 1; }
+
+/* plans */
+.plans { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.plan { display: flex; flex-direction: column; gap: 10px; }
+.plan.feat { border-color: var(--brass); box-shadow: 0 0 0 1px var(--brass); }
+.plan .pr { font: 600 34px var(--display); font-variant-numeric: tabular-nums; }
+.plan .pr small { font: 400 14px var(--font); color: var(--ink3); }
+.plan ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; color: var(--ink2); font-size: 13.5px; }
+.plan .who { color: var(--ink2); font-size: 13px; }
+
+/* phone */
+@media (max-width: 860px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .rail { position: fixed; inset: auto 0 0 0; top: auto; height: auto; z-index: 40; flex-direction: row; gap: 0; padding-block: 6px calc(6px + env(safe-area-inset-bottom, 0px)); padding-left: max(6px, env(safe-area-inset-left, 0px)); padding-right: max(6px, env(safe-area-inset-right, 0px)); }
+  .logo, .rail .hh { display: none; }
+  .nav { flex-direction: row; justify-content: space-between; width: 100%; }
+  .nav a { flex-direction: column; gap: 2px; font-size: 10.5px; padding: 6px 4px; }
+  .main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+  .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ladder .r { grid-template-columns: 90px minmax(0, 1fr) 70px; }
+  .op { grid-template-columns: 10px minmax(0, 1fr) auto; } .op .fit { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="logo"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="8" fill="#1d6b5c"/><path d="M8 22V8h7.5a4.5 4.5 0 0 1 0 9H8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="21.5" cy="21.5" r="2.2" fill="#d6ad55"/></svg><div><b>Patrimonium</b><small>All your wealth, one ledger</small></div></div>
+    <nav class="nav" id="nav" aria-label="Sections"></nav>
+    <div class="hh"><b id="hh-name"></b><span id="hh-sub"></span></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div class="who"><b id="tb-name"></b><span class="badge demo" id="tb-demo">Demo household</span><span class="badge" id="tb-sync"></span></div>
+      <div class="who"><span class="lbl">Plan</span><div class="seg" role="group" aria-label="Plan"><button data-plan="base">Base</button><button class="prem" data-plan="premium">Premium</button></div></div>
+    </div>
+    <div id="view"></div>
+  </main>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const MARKET = /*__MARKET__*/null;
+const RESEARCH = /*__RESEARCH__*/null;
+
+/* ---------- formatting ---------- */
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const eur = (x, d) => { const a = Math.abs(x), s = x < 0 ? '−' : ''; if (d === 'full') return s + '€' + Math.round(a).toLocaleString('en-GB'); if (a >= 1e6) return `${s}€${(a / 1e6).toFixed(a >= 1e7 ? 1 : 2)}m`; if (a >= 1e3) return `${s}€${Math.round(a / 1e3)}k`; return `${s}€${Math.round(a)}`; };
+const sEur = (x) => (x >= 0 ? '+' : '') + eur(x);
+const pct = (x, d = 1) => `${(x * 100).toFixed(d)}%`;
+const sPct = (x, d = 1) => `${x >= 0 ? '+' : '−'}${Math.abs(x * 100).toFixed(d)}%`;
+const cls = (x) => (x > 0.00001 ? 'pos' : x < -0.00001 ? 'neg' : '');
+const store = { get(k, d) { try { const v = localStorage.getItem('pm-' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem('pm-' + k, JSON.stringify(v)); } catch (e) { /* optional */ } } };
+
+/* ---------- asset classes ---------- */
+const CLASSES = {
+  cash: ['Cash & deposits', 'var(--c-cash)'], eq: ['Listed equities', 'var(--c-eq)'], bond: ['Bonds', 'var(--c-bond)'], re: ['Real estate', 'var(--c-re)'],
+  pm: ['Private markets', 'var(--c-pm)'], alt: ['Collectibles', 'var(--c-alt)'], crypto: ['Crypto', 'var(--c-crypto)'], pen: ['Pension & insurance', 'var(--c-pen)'],
+};
+const M = MARKET, NOW = M.months.length - 1;
+const px = (k, i) => { const s = M.series[k]; for (let j = Math.min(i, s.length - 1); j >= 0; j--) if (s[j] != null) return s[j]; return null; };
+const monthIdx = (ym) => Math.max(0, M.months.indexOf(ym) >= 0 ? M.months.indexOf(ym) : M.months.findIndex((m) => m >= ym));
+const btcEur = px('btc', NOW);
+
+/* ---------- the demo household (illustrative figures, not a real family) ---------- */
+const HH = { name: 'Rossi household', sub: 'Marco & Giulia · Milan', spend: 22000 };
+const ACCOUNTS = [
+  ['mandate', 'Discretionary mandate', 'Private bank, Lugano', 'Daily feed', 0.009],
+  ['broker', 'Self-directed brokerage', 'Online broker', 'Daily feed', 0.0012],
+  ['bank', 'Current accounts', 'Retail bank, Milan', 'Daily feed', 0],
+  ['treasury', 'Treasury portfolio', 'Private bank, Milan', 'Daily feed', 0.003],
+  ['pm', 'Private markets', 'Fund administrators', 'Quarterly statements', 0.02],
+  ['realty', 'Property', 'Entered by you', 'Manual', 0],
+  ['coll', 'Collectibles', 'Entered by you', 'Manual', 0],
+  ['wallet', 'Crypto wallet', 'Cold storage', 'Address watch', 0],
+  ['pension', 'Pension & insurance', 'Insurer', 'Annual statement', 0.012],
+];
+// mark: Base value, its date and source. mtm: how Premium rolls the mark forward to today.
+const ASSETS = [
+  { id: 'cur', n: 'Current account', a: 'bank', c: 'cash', v: 380000, ccy: { EUR: 1 }, days: 0, src: 'live' },
+  { id: 'usd', n: 'USD deposit', a: 'bank', c: 'cash', v: 290000, ccy: { USD: 1 }, days: 0, src: 'live' },
+  { id: 'mmf', n: 'Euro money-market fund', a: 'treasury', c: 'cash', v: 650000, ccy: { EUR: 1 }, days: 2, src: 'live', proxy: 'cash' },
+  { id: 'wld', n: 'Global equity mandate', s: 'MSCI World, active, 46 lines', a: 'mandate', c: 'eq', v: 3350000, ccy: { USD: 0.66, EUR: 0.2, GBP: 0.06, CHF: 0.04, JPY: 0.04 }, days: 5, src: 'live', proxy: { usEq: 0.66, intlEq: 0.34 } },
+  { id: 'eur', n: 'European equities', s: 'Mandate sleeve, 22 lines', a: 'mandate', c: 'eq', v: 820000, ccy: { EUR: 0.75, CHF: 0.15, GBP: 0.1 }, days: 5, src: 'live', proxy: 'intlEq' },
+  { id: 'tech', n: 'US tech & AI basket', s: '9 stocks', a: 'broker', c: 'eq', v: 640000, ccy: { USD: 1 }, days: 2, src: 'live', proxy: 'usEq' },
+  { id: 'em', n: 'Emerging markets ETF', a: 'broker', c: 'eq', v: 210000, ccy: { USD: 0.3, CNY: 0.3, INR: 0.2, TWD: 0.2 }, days: 2, src: 'live', proxy: 'emEq' },
+  { id: 'gov', n: 'Bund & BTP ladder 2027–2032', a: 'treasury', c: 'bond', v: 1450000, ccy: { EUR: 1 }, days: 2, src: 'live', proxy: 'bonds' },
+  { id: 'ig', n: 'Investment-grade corporate fund', a: 'treasury', c: 'bond', v: 600000, ccy: { EUR: 0.7, USD: 0.3 }, days: 3, src: 'live', proxy: 'bonds' },
+  { id: 'brera', n: 'Home, Milan Brera', s: '210 m², appraisal Mar 2025', a: 'realty', c: 're', v: 2400000, ccy: { EUR: 1 }, days: 180, mark: '2025-03', mtm: { how: 'Area price index', rate: 0.041 } },
+  { id: 'como', n: 'Holiday home, Lake Como', s: 'Appraisal Sep 2024', a: 'realty', c: 're', v: 3100000, ccy: { EUR: 1 }, days: 240, mark: '2024-09', mtm: { how: 'Area price index', rate: 0.05 } },
+  { id: 'berlin', n: 'Rental flat, Berlin', s: 'Bought Jun 2021 · €2,450 a month rent', a: 'realty', c: 're', v: 850000, ccy: { EUR: 1 }, days: 180, mark: '2021-06', mtm: { how: 'Area price index', rate: -0.012 } },
+  { id: 'buyout', n: 'Buyout Fund VII (2021)', s: 'Committed €1.0m · called €680k', a: 'pm', c: 'pm', v: 790000, ccy: { EUR: 0.6, USD: 0.4 }, days: 1800, mark: '2026-06', commit: 1000000, called: 680000, mtm: { how: 'NAV rolled forward on listed private equity', proxy: 'listedPE', beta: 0.6 } },
+  { id: 'growth', n: 'Growth Equity Fund III (2023)', s: 'Committed €500k · called €260k', a: 'pm', c: 'pm', v: 280000, ccy: { USD: 1 }, days: 2500, mark: '2026-06', commit: 500000, called: 260000, mtm: { how: 'NAV rolled forward on listed private equity', proxy: 'listedPE', beta: 0.7 } },
+  { id: 'credit', n: 'Senior private credit fund (2024)', s: 'Fully called · 9.1% running yield', a: 'pm', c: 'pm', v: 615000, ccy: { EUR: 1 }, days: 365, mark: '2026-06', commit: 600000, called: 600000, mtm: { how: 'NAV plus accrued yield', rate: 0.091 } },
+  { id: 'famco', n: 'Family company, 12% stake', s: 'Industrial valves · valued at cost 2023', a: 'pm', c: 'pm', v: 1700000, ccy: { EUR: 1 }, days: 3650, mark: '2023-12', mtm: { how: 'Peer EBITDA multiple', ebitda: 4100000, mult: 7.0, debt: 8000000, share: 0.12 } },
+  { id: 'angel', n: 'Angel portfolio, 9 start-ups', s: 'At cost', a: 'pm', c: 'pm', v: 360000, ccy: { EUR: 1 }, days: 3650, mark: '2024-12', mtm: { how: 'Last funding round', value: 455000 } },
+  { id: 'art', n: 'Art collection, 14 works', s: 'Insurance appraisal Nov 2023', a: 'coll', c: 'alt', v: 620000, ccy: { EUR: 1 }, days: 120, mark: '2023-11', mtm: { how: 'Auction price index', rate: 0.025 } },
+  { id: 'watch', n: 'Watches, 6 pieces', s: 'At purchase price', a: 'coll', c: 'alt', v: 175000, ccy: { CHF: 1 }, days: 30, mark: '2023-06', mtm: { how: 'Secondary-market index', rate: -0.06 } },
+  { id: 'car', n: '1972 Porsche 911 S', s: 'Bought 2022', a: 'coll', c: 'alt', v: 290000, ccy: { EUR: 1 }, days: 60, mark: '2022-05', mtm: { how: 'Classic-car index', rate: 0.03 } },
+  { id: 'wine', n: 'Wine cellar, 420 bottles', a: 'coll', c: 'alt', v: 110000, ccy: { EUR: 1 }, days: 60, mark: '2024-03', mtm: { how: 'Fine-wine index', rate: -0.03 } },
+  { id: 'btc', n: 'Bitcoin, 2.1 BTC', a: 'wallet', c: 'crypto', v: 2.1 * btcEur, ccy: { USD: 1 }, days: 1, src: 'live', proxy: 'btc' },
+  { id: 'fpen', n: 'Supplementary pension fund', s: 'Locked until 2049', a: 'pension', c: 'pen', v: 240000, ccy: { EUR: 1 }, days: 9000, mark: '2025-12' },
+  { id: 'life', n: 'Unit-linked life policy', s: 'Surrender value', a: 'pension', c: 'pen', v: 420000, ccy: { EUR: 0.6, USD: 0.4 }, days: 30, mark: '2025-12' },
+];
+const DEBTS = [
+  { n: 'Mortgage, Lake Como', s: '2.1% fixed to 2034', v: 880000 },
+  { n: 'Lombard credit line', s: 'Against the mandate, 3.4%', v: 300000 },
+];
+
+/* ---------- state ---------- */
+const S = {
+  plan: store.get('plan', 'premium'), view: 'overview', manual: store.get('manual', []), live: null,
+  targets: store.get('targets', { cash: 0.05, eq: 0.35, bond: 0.12, re: 0.25, pm: 0.15, alt: 0.03, crypto: 0.02, pen: 0.03 }),
+  mix: store.get('mix', null), btFrom: store.get('btFrom', '2010-01'),
+};
+
+/* ---------- valuation ---------- */
+const monthsBetween = (a, b) => { const [y1, m1] = a.split('-').map(Number), [y2, m2] = b.split('-').map(Number); return (y2 - y1) * 12 + (m2 - m1); };
+function premiumValue(x) {
+  const m = x.mtm; if (!m || !x.mark) return x.v;
+  const span = monthsBetween(x.mark, M.months[NOW]) / 12;
+  if (m.proxy) { const p0 = px(m.proxy, monthIdx(x.mark)), p1 = px(m.proxy, NOW); return x.v * (1 + (p1 / p0 - 1) * (m.beta || 1)); }
+  if (m.ebitda) return (m.ebitda * m.mult - m.debt) * m.share;
+  if (m.value) return m.value;
+  if (m.rate != null) return x.v * (1 + m.rate) ** span;
+  return x.v;
+}
+function assets() {
+  let list = ASSETS.concat(S.manual.map((x) => ({ ...x, a: 'manual', mark: x.mark || M.months[NOW], user: true })));
+  if (S.live) list = list.filter((x) => x.a !== 'broker').concat(S.live.rows);
+  return list.map((x) => { const pv = S.plan === 'premium' ? premiumValue(x) : x.v; return { ...x, val: pv, uplift: pv - x.v }; });
+}
+const accountOf = (id) => { const a = ACCOUNTS.find((x) => x[0] === id); if (a) return a; if (id === 'manual') return ['manual', 'Added by you', 'Manual entry', 'Manual', 0]; if (id === 'live') return ['live', 'Scalable Capital', 'Connected live', 'Live', 0.0012]; return [id, id, '', '', 0]; };
+function totals() {
+  const A = assets(), gross = A.reduce((s, x) => s + x.val, 0), debt = DEBTS.reduce((s, x) => s + x.v, 0);
+  const byClass = Object.fromEntries(Object.keys(CLASSES).map((k) => [k, A.filter((x) => x.c === k).reduce((s, x) => s + x.val, 0)]));
+  const uplift = A.reduce((s, x) => s + x.uplift, 0);
+  return { A, gross, debt, net: gross - debt, byClass, uplift };
+}
+// net worth over the last 36 months: liquid holdings follow their market proxy; illiquid ones move only at their marks
+function history(n) {
+  const T = totals(), out = [];
+  for (let k = n; k >= 0; k--) {
+    const i = NOW - k; let v = 0;
+    T.A.forEach((x) => {
+      const p = x.proxy;
+      if (p) { const w = typeof p === 'string' ? { [p]: 1 } : p; let f = 0; Object.entries(w).forEach(([key, wt]) => { f += wt * px(key, i) / px(key, NOW); }); v += x.val * f; return; }
+      if (x.mark && monthIdx(x.mark) > i && S.plan === 'base') { v += x.val; return; }
+      const q = Math.floor(i / 3) * 3, back = (NOW - q) / 12; // quarterly steps
+      const r = x.mtm && x.mtm.rate != null ? x.mtm.rate : x.mtm && x.mtm.proxy ? null : 0;
+      if (S.plan === 'premium' && x.mtm && x.mtm.proxy) { const f = 1 + (px(x.mtm.proxy, q) / px(x.mtm.proxy, NOW) - 1) * (x.mtm.beta || 1); v += x.val * f; return; }
+      v += S.plan === 'premium' && r ? x.val / (1 + r) ** back : x.val;
+    });
+    out.push({ m: M.months[i], v: v - T.debt });
+  }
+  return out;
+}
+
+/* ---------- small SVG charts ---------- */
+function areaChart(host, rows, opts = {}) {
+  const w = host.clientWidth || 600, h = opts.h || 220, m = { l: 52, r: 12, t: 10, b: 24 };
+  const lines = opts.lines || [{ v: rows.map((r) => r.v), color: 'var(--accent)', fill: true }];
+  const all = lines.flatMap((l) => l.v).filter((x) => x != null);
+  let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * 0.08 || hi * 0.05; lo -= pad; hi += pad;
+  const X = (i) => m.l + (i / (rows.length - 1)) * (w - m.l - m.r), Y = (v) => m.t + (1 - (v - lo) / (hi - lo)) * (h - m.t - m.b);
+  const step = (hi - lo) / 4, ticks = [0, 1, 2, 3, 4].map((k) => lo + step * k);
+  const fmt = opts.fmt || ((v) => eur(v));
+  let svg = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(opts.aria || 'Chart')}">`;
+  ticks.forEach((t) => { svg += `<line class="gl" x1="${m.l}" x2="${w - m.r}" y1="${Y(t)}" y2="${Y(t)}"/><text x="${m.l - 8}" y="${Y(t) + 4}" text-anchor="end">${fmt(t)}</text>`; });
+  const every = Math.max(1, Math.ceil(rows.length / (w < 500 ? 4 : 8)));
+  rows.forEach((r, i) => { if ((i % every === 0 && rows.length - 1 - i >= every / 2) || i === rows.length - 1) svg += `<text x="${X(i)}" y="${h - 6}" text-anchor="${i === 0 ? 'start' : i === rows.length - 1 ? 'end' : 'middle'}">${esc(opts.xl ? opts.xl(r) : r.m)}</text>`; });
+  lines.forEach((l) => {
+    const pts = l.v.map((v, i) => (v == null ? null : [X(i), Y(v)])).filter(Boolean);
+    const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
+    if (l.fill) svg += `<path d="${d}L${pts[pts.length - 1][0]} ${h - m.b}L${pts[0][0]} ${h - m.b}Z" fill="${l.color}" opacity="0.1"/>`;
+    svg += `<path d="${d}" fill="none" stroke="${l.color}" stroke-width="${l.width || 2}" ${l.dash ? `stroke-dasharray="${l.dash}"` : ''} stroke-linejoin="round"/>`;
+    const e = pts[pts.length - 1]; svg += `<circle cx="${e[0]}" cy="${e[1]}" r="3.5" fill="${l.color}"/>`;
+  });
+  host.innerHTML = svg + '</svg>';
+}
+const tip = (html, e) => { const t = $('#tip'); if (!html) { t.classList.remove('on'); return; } t.innerHTML = html; t.classList.add('on'); const r = t.getBoundingClientRect(); let x = e.clientX + 14, y = e.clientY + 14; if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14; if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 14; t.style.left = Math.max(8, x) + 'px'; t.style.top = Math.max(8, y) + 'px'; };
+
+/* ---------- navigation ---------- */
+const VIEWS = [
+  ['overview', 'Overview', '<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 7h6V4h-6z"/>'],
+  ['accounts', 'Accounts', '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/>'],
+  ['allocation', 'Allocation', '<circle cx="12" cy="12" r="8"/><path d="M12 4v8l6 5"/>'],
+  ['backtest', 'Backtest', '<path d="M4 18l5-6 4 3 7-9"/>'],
+  ['opportunities', 'Opportunities', '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>'],
+  ['plans', 'Plans', '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>'],
+];
+function renderNav() {
+  $('#nav').innerHTML = VIEWS.map(([id, l, ic]) => `<a href="#${id}" ${S.view === id ? 'aria-current="page"' : ''}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ic}</svg><span>${l}</span></a>`).join('');
+  $('#hh-name').textContent = HH.name; $('#hh-sub').textContent = HH.sub; $('#tb-name').textContent = HH.name;
+  $('#tb-sync').textContent = S.live ? `Scalable live · ${S.live.at}` : `Prices ${M.months[NOW]}`; $('#tb-sync').className = 'badge' + (S.live ? ' live' : '');
+  $$('[data-plan]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.plan === S.plan)));
+}
+function render() {
+  renderNav();
+  const v = $('#view'); tip(null);
+  ({ overview, accounts: accountsView, allocation, backtest, opportunities, plans })[S.view](v);
+}
+
+/* ---------- overview ---------- */
+function liquidity(T) {
+  const B = [['Today', 1], ['Within a month', 31], ['Within a year', 366], ['Locked over a year', Infinity]];
+  const out = B.map(([l]) => ({ l, v: 0 })); T.A.forEach((x) => { const k = B.findIndex((b) => x.days < b[1]); out[k].v += x.val; }); return out;
+}
+function insights(T) {
+  const out = [], buf = HH.spend * 6;
+  const idle = T.A.filter((x) => x.c === 'cash' && x.days === 0).reduce((s, x) => s + x.val, 0);
+  if (idle > buf) out.push(['cash', 'Idle cash', `${eur(idle - buf)} above six months of spending`, `Earns nothing in current accounts. At a 2% money-market yield that is about ${eur((idle - buf) * 0.02)} a year.`]);
+  const pm = T.A.filter((x) => x.commit), unf = pm.reduce((s, x) => s + (x.commit - x.called), 0);
+  const liq = liquidity(T); const near = liq[0].v + liq[1].v;
+  if (unf) out.push(['cash', 'Capital calls ahead', `${eur(unf)} still to be called`, `Your private funds can draw this over the next 2–4 years. Liquid assets within a month cover it ${(near / unf).toFixed(0)} times.`]);
+  const fees = T.A.reduce((s, x) => s + x.val * (accountOf(x.a)[4] || 0), 0);
+  out.push(['money', 'What you pay', `${eur(fees)} a year in fees`, `${pct(fees / T.net, 2)} of net worth. The mandate alone costs ${eur(T.A.filter((x) => x.a === 'mandate').reduce((s, x) => s + x.val * 0.009, 0))} at 0.9%.`]);
+  const big = T.A.slice().sort((a, b) => b.val - a.val)[0];
+  out.push(['risk', 'Largest single exposure', `${esc(big.n)}: ${pct(big.val / T.net, 0)} of net worth`, `${eur(big.val)} in one asset you cannot sell within ${big.days >= 180 ? 'six months' : 'a month'}.`]);
+  const usd = T.A.reduce((s, x) => s + x.val * ((x.ccy && x.ccy.USD) || 0), 0);
+  out.push(['risk', 'Dollar exposure', `${pct(usd / T.gross, 0)} of assets in US dollars`, `A 10% fall in the dollar would cost about ${eur(usd * 0.1)}.`]);
+  return out;
+}
+function overview(v) {
+  const T = totals(), H = history(36), first = H[0].v, chg = T.net - first, ytdI = H.findIndex((r) => r.m === M.months[NOW].slice(0, 4) + '-01'), ytd = ytdI >= 0 ? T.net - H[ytdI].v : null;
+  const liq = liquidity(T), lmax = Math.max(...liq.map((x) => x.v));
+  v.innerHTML = `<div class="view">
+    <div class="hero">
+      <div class="card nw"><span class="lbl">Net worth</span><div class="big">${eur(T.net, 'full')}</div>
+        <div class="row"><span>Assets <b>${eur(T.gross)}</b></span><span>Debts <b>${eur(T.debt)}</b></span><span>${T.A.length} holdings in ${new Set(T.A.map((x) => x.a)).size} places</span></div>
+        <div class="mtm">${S.plan === 'premium' ? `<span class="badge brass">Marked to market</span><span>Illiquid assets revalued to today: <b class="num" style="color:var(--brass)">${sEur(T.uplift)}</b> against their book values</span>` : `<span class="badge">Book values</span><span>Illiquid assets at the last value you entered. Premium revalues them to today.</span>`}</div>
+        <div class="kv"><div><span class="lbl">3 years</span><b class="${cls(chg)}">${sEur(chg)}</b></div><div><span class="lbl">This year</span><b class="${cls(ytd)}">${ytd == null ? '–' : sEur(ytd)}</b></div><div><span class="lbl">Liquid today</span><b>${eur(liq[0].v + liq[1].v)}</b></div></div></div>
+      <div class="card"><h2>Net worth, last 36 months</h2><div class="chart" id="nwc"></div></div>
+    </div>
+    <div class="card"><h2>What needs a look</h2><div class="ins">${insights(T).map(([t, k, b, p]) => `<div class="in"><span class="tag ${t}">${k}</span><b>${b}</b><p>${p}</p></div>`).join('')}</div></div>
+    <div class="grid">
+      <div class="card s7"><h2>Where it is</h2>
+        <div class="strip" role="img" aria-label="Allocation by asset class">${Object.entries(T.byClass).filter(([, x]) => x > 0).map(([k, x]) => `<i style="width:${(x / T.gross) * 100}%;background:${CLASSES[k][1]}" title="${CLASSES[k][0]} ${pct(x / T.gross, 0)}"></i>`).join('')}</div>
+        <div class="leg">${Object.entries(T.byClass).filter(([, x]) => x > 0).sort((a, b) => b[1] - a[1]).map(([k, x]) => `<div><i style="background:${CLASSES[k][1]}"></i><span>${CLASSES[k][0]}</span><b>${eur(x)}<small>${pct(x / T.gross, 0)}</small></b></div>`).join('')}</div></div>
+      <div class="card s5"><h2>How fast it turns into cash</h2><div class="ladder">${liq.map((x) => `<div class="r"><span>${x.l}</span><span class="t"><i style="width:${(x.v / lmax) * 100}%"></i></span><b>${eur(x.v)}</b></div>`).join('')}</div></div>
+    </div></div>`;
+  areaChart($('#nwc'), H, { aria: 'Net worth over 36 months', xl: (r) => { const [y, m] = r.m.split('-'); return m === '01' || r === H[0] ? y : new Date(Date.UTC(+y, +m - 1, 1)).toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' }); } });
+}
+
+/* ---------- accounts ---------- */
+function accountsView(v) {
+  const T = totals(), groups = {};
+  T.A.forEach((x) => { (groups[x.a] = groups[x.a] || []).push(x); });
+  const method = (x) => {
+    if (x.src === 'live') return '<span class="vm live">Live price</span>';
+    if (S.plan === 'premium' && x.mtm) return `<span class="vm mtm" title="${esc(x.mtm.how)}">${esc(x.mtm.how)}</span>`;
+    return `<span class="vm book">${x.user ? 'Your entry' : 'Statement'} ${esc(x.mark || '')}</span>`;
+  };
+  v.innerHTML = `<div class="view">
+    <div class="vh"><div><h1>${eur(T.gross)} across ${Object.keys(groups).length} accounts</h1><p>Banks, brokers and wallets update themselves. Property, private funds and collectibles carry the value you give them${S.plan === 'premium' ? ', revalued to today with the method shown' : ''}.</p></div>
+      <button class="btn primary" id="connect">${S.live ? 'Refresh Scalable Capital' : 'Connect Scalable Capital'}</button></div>
+    <div class="card"><div class="tw"><table>
+      <thead><tr><th>Holding</th><th>Class</th><th>Valuation</th>${S.plan === 'premium' ? '<th>Change from book</th>' : ''}<th>Value</th></tr></thead>
+      <tbody>${Object.entries(groups).map(([a, rows]) => { const ac = accountOf(a); return `<tr class="grp"><td colspan="${S.plan === 'premium' ? 5 : 4}">${esc(ac[1])} <span class="muted">· ${esc(ac[2])} · ${esc(ac[3])}</span></td></tr>` + rows.sort((p, q) => q.val - p.val).map((x) => `<tr><td class="nm"><b>${esc(x.n)}</b>${x.s ? `<small>${esc(x.s)}</small>` : ''}</td><td><span class="cl"><i style="background:${CLASSES[x.c][1]}"></i>${CLASSES[x.c][0]}</span></td><td>${method(x)}</td>${S.plan === 'premium' ? `<td>${Math.abs(x.uplift) > 1 ? `<span class="delta">${sEur(x.uplift)}</span>` : '<span class="muted">–</span>'}</td>` : ''}<td><b>${eur(x.val, 'full')}</b></td></tr>`).join(''); }).join('')}
+      <tr class="grp"><td colspan="${S.plan === 'premium' ? 5 : 4}">Debts</td></tr>${DEBTS.map((d) => `<tr><td class="nm"><b>${esc(d.n)}</b><small>${esc(d.s)}</small></td><td><span class="cl">Liability</span></td><td></td>${S.plan === 'premium' ? '<td></td>' : ''}<td class="neg"><b>${eur(-d.v, 'full')}</b></td></tr>`).join('')}
+      </tbody></table></div>
+      <form class="addf" id="addf"><span class="lbl">Add an asset</span><input type="text" id="af-n" placeholder="Name, e.g. Ski chalet" required><select id="af-c">${Object.entries(CLASSES).map(([k, [l]]) => `<option value="${k}">${l}</option>`).join('')}</select><input type="number" id="af-v" placeholder="€" min="0" step="1000" required style="width:120px"><button class="btn" type="submit">Add</button>${S.manual.length ? '<button class="btn" type="button" id="af-clear">Remove what I added</button>' : ''}</form>
+      <p class="muted" id="conn-msg" style="margin:8px 0 0"></p></div></div>`;
+  $('#addf').addEventListener('submit', (e) => { e.preventDefault(); const n = $('#af-n').value.trim(), val = +$('#af-v').value; if (!n || !(val > 0)) return; S.manual.push({ id: 'u' + Date.now(), n, c: $('#af-c').value, v: val, ccy: { EUR: 1 }, days: 180 }); store.set('manual', S.manual); render(); });
+  const cl = $('#af-clear'); if (cl) cl.addEventListener('click', () => { S.manual = []; store.set('manual', []); render(); });
+  $('#connect').addEventListener('click', connectScalable);
+}
+async function connectScalable() {
+  const msg = $('#conn-msg'), b = $('#connect'); b.disabled = true; msg.textContent = 'Asking Scalable Capital for your holdings…';
+  try {
+    const mcp = window.claude && window.claude.use ? await window.claude.use('mcp') : null;
+    if (!mcp) throw new Error('This page can reach Scalable Capital only inside claude.ai, with the Scalable Capital connector on.');
+    const call = async (t) => { const r = await mcp.callTool('Scalable Capital', t, {}); let p = r && r.payload; if (typeof p === 'string') p = JSON.parse(p); return p; };
+    const h = await call('get_portfolio_holdings'); let cash = 0; try { const c = await call('get_portfolio_cash_breakdown'); cash = (c && c.cash && c.cash.cashBalance) || 0; } catch (e) { /* cash is optional */ }
+    const rows = ((h && h.holdings) || []).filter((x) => x.position && x.position.filled > 0).map((x) => ({ id: x.isin, n: x.name, s: `${x.position.filled} shares · bought at €${(+x.fifoPrice).toFixed(2)}`, a: 'live', c: 'eq', v: +x.valuation, ccy: { USD: /^US|^CA|^KY/.test(x.isin) ? 1 : 0, EUR: /^US|^CA|^KY/.test(x.isin) ? 0 : 1 }, days: 2, src: 'live', proxy: /^US/.test(x.isin) ? 'usEq' : 'intlEq' }));
+    if (cash) rows.push({ id: 'scash', n: 'Cash at Scalable Capital', a: 'live', c: 'cash', v: cash, ccy: { EUR: 1 }, days: 0, src: 'live' });
+    S.live = { rows, at: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) };
+    render(); $('#conn-msg').textContent = `Connected: ${rows.length} holdings from your Scalable Capital account replace the demo brokerage.`;
+  } catch (e) { b.disabled = false; msg.textContent = (e && e.message) || 'Scalable Capital did not answer. Try again in a minute.'; }
+}
+
+/* ---------- allocation ---------- */
+function allocation(v) {
+  const T = totals(), tg = S.targets, tsum = Object.values(tg).reduce((s, x) => s + x, 0);
+  const rows = Object.keys(CLASSES).map((k) => { const cur = T.byClass[k] / T.gross, t = tg[k] || 0; return { k, cur, t, move: (t - cur) * T.gross }; });
+  const ccy = {}; T.A.forEach((x) => Object.entries(x.ccy || { EUR: 1 }).forEach(([c, w]) => { ccy[c] = (ccy[c] || 0) + x.val * w; }));
+  const pm = T.A.filter((x) => x.commit);
+  const top = T.A.slice().sort((a, b) => b.val - a.val).slice(0, 8);
+  v.innerHTML = `<div class="view">
+    <div class="vh"><div><h1>Your mix against your plan</h1><p>Set a target for each class. The gap shows what to move; nothing is traded from here.</p></div><span class="badge ${Math.abs(tsum - 1) < 0.001 ? '' : 'demo'}">Targets add up to ${pct(tsum, 0)}</span></div>
+    <div class="card"><div class="tw"><table>
+      <thead><tr><th>Asset class</th><th>Now</th><th>Target</th><th>Gap</th><th style="text-align:center">Under · over</th><th>To reach target</th></tr></thead>
+      <tbody>${rows.map((r) => { const d = r.cur - r.t, w = Math.min(50, Math.abs(d) * 250); return `<tr><td><span class="cl"><i style="background:${CLASSES[r.k][1]}"></i>${CLASSES[r.k][0]}</span></td><td>${pct(r.cur, 1)}</td><td><input type="number" min="0" max="100" step="1" value="${Math.round(r.t * 100)}" data-tg="${r.k}" aria-label="Target for ${CLASSES[r.k][0]}, per cent"> %</td><td class="${Math.abs(d) < 0.02 ? '' : d > 0 ? 'neg' : 'pos'}">${d >= 0 ? '+' : '−'}${Math.abs(d * 100).toFixed(1)} pts</td><td style="text-align:center"><span class="drift"><em></em><i style="${d < 0 ? `right:50%;width:${w}%;background:var(--pos)` : `left:50%;width:${w}%;background:var(--neg)`}"></i></span></td><td><b class="${cls(r.move)}">${Math.abs(r.move) < 5000 ? 'On target' : (r.move > 0 ? 'Add ' : 'Reduce by ') + eur(Math.abs(r.move))}</b></td></tr>`; }).join('')}</tbody></table></div></div>
+    <div class="grid">
+      <div class="card s6"><h2>Currency</h2><div class="ladder">${Object.entries(ccy).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([c, x]) => `<div class="r"><span>${c}</span><span class="t"><i style="width:${(x / T.gross) * 100}%;background:var(--c-pen)"></i></span><b>${pct(x / T.gross, 0)}</b></div>`).join('')}</div></div>
+      <div class="card s6"><h2>Biggest positions</h2><div class="ladder">${top.map((x) => `<div class="r"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(x.n)}">${esc(x.n)}</span><span class="t"><i style="width:${(x.val / top[0].val) * 100}%;background:${CLASSES[x.c][1]}"></i></span><b>${pct(x.val / T.net, 1)}</b></div>`).join('')}</div></div>
+    </div>
+    <div class="card"><h2>Private-market commitments</h2><div class="tw"><table><thead><tr><th>Fund</th><th>Committed</th><th>Called</th><th>Still to call</th><th>Value now</th><th>Value ÷ paid in</th></tr></thead><tbody>${pm.map((x) => `<tr><td class="nm"><b>${esc(x.n)}</b></td><td>${eur(x.commit)}</td><td>${eur(x.called)}</td><td><b>${eur(x.commit - x.called)}</b></td><td>${eur(x.val)}</td><td class="${cls(x.val / x.called - 1)}">${(x.val / x.called).toFixed(2)}×</td></tr>`).join('')}<tr><td><b>Total</b></td><td>${eur(pm.reduce((s, x) => s + x.commit, 0))}</td><td>${eur(pm.reduce((s, x) => s + x.called, 0))}</td><td><b>${eur(pm.reduce((s, x) => s + x.commit - x.called, 0))}</b></td><td>${eur(pm.reduce((s, x) => s + x.val, 0))}</td><td></td></tr></tbody></table></div></div>
+  </div>`;
+  $$('[data-tg]').forEach((i) => i.addEventListener('change', () => { S.targets[i.dataset.tg] = Math.max(0, Math.min(100, +i.value || 0)) / 100; store.set('targets', S.targets); render(); }));
+}
+
+/* ---------- backtest ---------- */
+const PROXY_COLOR = { usEq: 'var(--c-eq)', intlEq: '#6fa0e8', emEq: '#9cc0f0', bonds: 'var(--c-bond)', gold: 'var(--brass)', reits: 'var(--c-re)', listedPE: 'var(--c-pm)', cash: 'var(--c-cash)', btc: 'var(--c-crypto)' };
+function yourMix() {
+  const T = totals(), w = {}; const add = (k, x) => { w[k] = (w[k] || 0) + x; };
+  T.A.forEach((x) => { if (x.proxy) { const p = typeof x.proxy === 'string' ? { [x.proxy]: 1 } : x.proxy; Object.entries(p).forEach(([k, f]) => add(k, x.val * f)); } else if (x.c === 'cash') add('cash', x.val); else if (x.c === 're') add('reits', x.val); else if (x.c === 'pm') add(x.id === 'credit' ? 'bonds' : 'listedPE', x.val); else if (x.c === 'pen') { add('bonds', x.val * 0.5); add('usEq', x.val * 0.5); } });
+  const s = Object.values(w).reduce((a, b) => a + b, 0); return Object.fromEntries(Object.entries(w).map(([k, x]) => [k, Math.round((x / s) * 100)]));
+}
+const PRESETS = { yours: ['Your wealth, proxied', null], sixty: ['60 / 40', { usEq: 36, intlEq: 24, bonds: 40 }], endow: ['Endowment style', { usEq: 20, intlEq: 15, emEq: 10, bonds: 15, listedPE: 20, reits: 10, gold: 5, cash: 5 }], allw: ['All-weather', { usEq: 18, intlEq: 12, bonds: 55, gold: 15 }] };
+function simulate(w, from) {
+  const keys = Object.keys(w).filter((k) => w[k] > 0), tot = keys.reduce((s, k) => s + w[k], 0) || 1;
+  let i0 = monthIdx(from); keys.forEach((k) => { const f = M.series[k].findIndex((x) => x != null); if (f > i0) i0 = f; });
+  let val = 1e6, hold = Object.fromEntries(keys.map((k) => [k, val * w[k] / tot])); const curve = [{ m: M.months[i0], v: val }];
+  for (let i = i0 + 1; i <= NOW; i++) {
+    keys.forEach((k) => { hold[k] *= px(k, i) / px(k, i - 1); });
+    val = keys.reduce((s, k) => s + hold[k], 0);
+    if (M.months[i].endsWith('-12')) hold = Object.fromEntries(keys.map((k) => [k, val * w[k] / tot])); // rebalance each December
+    curve.push({ m: M.months[i], v: val });
+  }
+  const r = curve.slice(1).map((c, j) => c.v / curve[j].v - 1), yrs = (curve.length - 1) / 12;
+  const mean = r.reduce((s, x) => s + x, 0) / r.length, vol = Math.sqrt(r.reduce((s, x) => s + (x - mean) ** 2, 0) / (r.length - 1)) * Math.sqrt(12);
+  let peak = 0, mdd = 0; curve.forEach((c) => { peak = Math.max(peak, c.v); mdd = Math.min(mdd, c.v / peak - 1); });
+  let w12 = Infinity; for (let j = 12; j < curve.length; j++) w12 = Math.min(w12, curve[j].v / curve[j - 12].v - 1);
+  return { curve, cagr: (val / 1e6) ** (1 / yrs) - 1, vol, mdd, w12, end: val, from: curve[0].m };
+}
+function backtest(v) {
+  if (!S.mix) S.mix = { preset: 'yours', w: yourMix() };
+  const w = S.mix.w, tot = Object.values(w).reduce((s, x) => s + (+x || 0), 0);
+  const a = simulate(w, S.btFrom), b = simulate(PRESETS.sixty[1], a.from);
+  const years = ['2008-01', '2010-01', '2015-01', '2020-01'];
+  v.innerHTML = `<div class="view">
+    <div class="vh"><div><h1>€1m in this mix since ${a.from.slice(0, 4)} became ${eur(a.end)}</h1><p>Real monthly returns in euro, dividends reinvested, rebalanced every December. Illiquid assets are stood in for by their listed cousins.</p></div>
+      <div class="who"><div class="seg" role="group" aria-label="Start">${years.map((y) => `<button data-from="${y}" aria-pressed="${S.btFrom === y}">From ${y.slice(0, 4)}</button>`).join('')}</div>${a.from > S.btFrom ? `<span class="badge demo">Starts ${a.from}: Bitcoin prices begin then</span>` : ''}</div></div>
+    <div class="bt">
+      <div class="card"><h2>The mix</h2><div class="seg" role="group" aria-label="Preset" style="flex-wrap:wrap;margin-bottom:10px">${Object.entries(PRESETS).map(([k, [l]]) => `<button data-pre="${k}" aria-pressed="${S.mix.preset === k}">${l}</button>`).join('')}</div>
+        ${Object.keys(PROXY_COLOR).map((k) => `<label class="wrow"><i style="background:${PROXY_COLOR[k]}"></i><span>${esc(M.meta[k].name)}${k === 'btc' ? ' <small class="muted">from 2014</small>' : ''}</span><input type="number" min="0" max="100" step="1" value="${w[k] || 0}" data-w="${k}" aria-label="${esc(M.meta[k].name)} weight, per cent"></label>`).join('')}
+        <div class="wsum"><span>Total</span><b class="${Math.abs(tot - 100) < 0.5 ? '' : 'neg'}">${tot}%${Math.abs(tot - 100) < 0.5 ? '' : ' · scaled to 100%'}</b></div></div>
+      <div class="card"><div class="lg"><span><i style="background:var(--accent)"></i>This mix</span><span><i style="background:var(--ink3)"></i>60 / 40 for comparison</span></div><div class="chart" id="btc"></div>
+        <div class="stats" style="margin-top:14px">
+          <div class="stat"><span class="lbl">A year, on average</span><b class="${cls(a.cagr)}">${sPct(a.cagr)}</b><small>60/40: ${sPct(b.cagr)}</small></div>
+          <div class="stat"><span class="lbl">Swings (volatility)</span><b>${pct(a.vol)}</b><small>60/40: ${pct(b.vol)}</small></div>
+          <div class="stat"><span class="lbl">Deepest fall</span><b class="neg">${sPct(a.mdd)}</b><small>60/40: ${sPct(b.mdd)}</small></div>
+          <div class="stat"><span class="lbl">Worst 12 months</span><b class="neg">${sPct(a.w12)}</b><small>60/40: ${sPct(b.w12)}</small></div>
+          <div class="stat"><span class="lbl">€1m became</span><b>${eur(a.end)}</b><small>60/40: ${eur(b.end)}</small></div>
+        </div></div>
+    </div></div>`;
+  areaChart($('#btc'), a.curve, { h: 280, aria: 'Growth of €1m', lines: [{ v: a.curve.map((c) => c.v), color: 'var(--accent)', fill: true }, { v: b.curve.map((c) => c.v), color: 'var(--ink3)', width: 1.5, dash: '4 4' }], xl: (r) => r.m.slice(0, 4) });
+  $$('[data-from]').forEach((x) => x.addEventListener('click', () => { S.btFrom = x.dataset.from; store.set('btFrom', S.btFrom); render(); }));
+  $$('[data-pre]').forEach((x) => x.addEventListener('click', () => { const k = x.dataset.pre; S.mix = { preset: k, w: k === 'yours' ? yourMix() : { ...PRESETS[k][1] } }; store.set('mix', S.mix); render(); }));
+  $$('[data-w]').forEach((x) => x.addEventListener('change', () => { S.mix.w[x.dataset.w] = Math.max(0, +x.value || 0); S.mix.preset = 'custom'; store.set('mix', S.mix); render(); }));
+}
+
+/* ---------- opportunities ---------- */
+const DEALS = [ // private-market examples for the demo; Premium sources these from partner platforms
+  { n: 'LP secondary, 2019 buyout fund', c: 'pm', r: 0.15, days: 1460, t: 'Bought at 86% of NAV · from €250k', fit: 'pm' },
+  { n: 'Senior private credit, semi-liquid', c: 'pm', r: 0.088, days: 120, t: 'Quarterly redemptions · from €25k', fit: 'pm' },
+  { n: 'Milan residential refurbishment, club deal', c: 're', r: 0.14, days: 1100, t: 'Target IRR · from €200k', fit: 're' },
+  { n: 'European infrastructure ELTIF', c: 'pm', r: 0.08, days: 30, t: 'Monthly liquidity · from €10k', fit: 'pm' },
+  { n: 'Venture co-investment, AI tooling Series B', c: 'pm', r: 0.25, days: 2600, t: 'Target multiple 3× · from €100k', fit: 'pm' },
+];
+function opportunities(v) {
+  const T = totals(), under = Object.keys(CLASSES).filter((k) => (S.targets[k] || 0) - T.byClass[k] / T.gross > 0.02);
+  const listed = RESEARCH ? RESEARCH.ideas.map((x, i) => ({ n: x.name, tk: x.ticker, c: 'eq', r: parseUp(x.upside), days: 2, t: x.oneLiner, top: i < 5, src: 'research' })).concat((RESEARCH.shortlist || []).map((x) => ({ n: x.name, tk: x.ticker, c: 'eq', r: parseUp(x.upside), days: 2, t: x.reason, src: 'research' }))) : [];
+  const all = listed.filter((x) => x.r != null).concat(DEALS.map((d) => ({ ...d, src: 'deal' })));
+  v.innerHTML = `<div class="view">
+    <div class="vh"><div><h1>${all.length} opportunities, mapped by return and how long your money is tied up</h1><p>Listed ideas come from this week's screen of 20 stocks, with the upside to the analysts' average target. Private deals are examples of what partner platforms offer.</p></div>${RESEARCH ? `<span class="badge">Screen of ${esc(RESEARCH.asOf)}</span>` : ''}</div>
+    <div class="card"><div class="lg">${['eq', 'pm', 're'].map((k) => `<span><i style="background:${CLASSES[k][1]};height:10px;width:10px;border-radius:50%"></i>${CLASSES[k][0]}</span>`).join('')}<span>Bigger dot: in this week's top five</span></div><div class="chart" id="opm"></div></div>
+    <div class="grid">
+      <div class="card s7"><h2>Listed stocks <small>upside to analyst target</small></h2><div class="ops">${listed.filter((x) => x.r != null).slice(0, 12).map((x) => `<div class="op"><i style="background:${CLASSES.eq[1]}"></i><span><b>${esc(x.n)}</b> <span class="muted">${esc(x.tk)}</span><small>${esc(x.t)}</small></span>${x.top ? '<span class="fit">Top five</span>' : '<span></span>'}<span class="u">${sPct(x.r, 0)}</span></div>`).join('')}</div></div>
+      <div class="card s5"><h2>Private deals <small>target return a year</small></h2><div class="ops">${DEALS.map((x) => `<div class="op"><i style="background:${CLASSES[x.c][1]}"></i><span><b>${esc(x.n)}</b><small>${esc(x.t)}</small></span>${under.includes(x.fit) ? '<span class="fit">Fills a gap</span>' : '<span></span>'}<span class="u">${sPct(x.r, 0)}</span></div>`).join('')}</div><p class="muted" style="margin:10px 0 0;font-size:12.5px">Examples for the demo, not live offers.</p></div>
+    </div></div>`;
+  scatter($('#opm'), all);
+}
+function parseUp(s) { const m = /([+−-]\s?\d+(?:\.\d+)?)%/.exec(String(s || '')); return m ? parseFloat(m[1].replace('−', '-').replace(/\s/g, '')) / 100 : null; }
+function scatter(host, pts) {
+  const w = host.clientWidth || 700, h = 320, m = { l: 48, r: 16, t: 14, b: 34 };
+  const xs = [1, 30, 365, 3650], lx = (d) => Math.log10(Math.max(1, d)), X = (d) => m.l + (lx(d) / lx(4000)) * (w - m.l - m.r);
+  const hi = Math.max(1.2, ...pts.map((p) => p.r)), Y = (r) => m.t + (1 - r / hi) * (h - m.t - m.b);
+  let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Opportunities by expected return and lock-up">`;
+  [0, 0.25, 0.5, 0.75, 1].filter((t) => t <= hi).forEach((t) => { s += `<line class="gl" x1="${m.l}" x2="${w - m.r}" y1="${Y(t)}" y2="${Y(t)}"/><text x="${m.l - 8}" y="${Y(t) + 4}" text-anchor="end">${Math.round(t * 100)}%</text>`; });
+  [['1 day', 1], ['1 month', 30], ['1 year', 365], ['10 years', 3650]].forEach(([l, d]) => { s += `<text x="${X(d)}" y="${h - 14}" text-anchor="middle">${l}</text>`; });
+  s += `<text x="${w - m.r}" y="${h - 1}" text-anchor="end">money tied up →</text>`;
+  pts.forEach((p, i) => { const jit = p.days < 5 ? ((i * 37) % 23) - 11 : 0; s += `<circle class="dot" data-i="${i}" cx="${X(p.days) + jit * 2.2}" cy="${Y(p.r)}" r="${p.top ? 8 : 5.5}" fill="${CLASSES[p.c][1]}" fill-opacity="0.82"/>`; });
+  host.innerHTML = s + '</svg>';
+  $$('.dot', host).forEach((d) => { const p = pts[+d.dataset.i]; d.addEventListener('pointermove', (e) => tip(`<b>${esc(p.n)}</b>${p.tk ? ' ' + esc(p.tk) : ''}<br>${sPct(p.r, 0)} · ${esc(p.t || '')}`, e)); d.addEventListener('pointerleave', () => tip(null)); });
+}
+
+/* ---------- plans ---------- */
+function plans(v) {
+  v.innerHTML = `<div class="view">
+    <div class="vh"><div><h1>One ledger for everything you own</h1><p>Viewing, analysing and planning only. We never hold your money and never place a trade.</p></div></div>
+    <div class="plans">
+      <div class="card plan"><span class="lbl">Base</span><div class="pr">€99<small> a year</small></div><p class="who">For investors who want every account in one place.</p><ul><li>Banks, brokers and crypto wallets, synced daily</li><li>Property, private funds and collectibles at the value you enter</li><li>Net worth, allocation, liquidity and currency</li><li>Backtests on 20 years of real market data</li><li>Weekly listed-stock opportunities</li></ul><button class="btn" data-plan="base">Use Base</button></div>
+      <div class="card plan feat"><span class="lbl" style="color:var(--brass)">Premium</span><div class="pr">€999<small> a year</small></div><p class="who">For families whose wealth sits mostly outside the stock market.</p><ul><li>Everything in Base</li><li>Mark to market: property on area price indices, private funds rolled forward from their last NAV, family companies on peer multiples, art, watches, cars and wine on auction indices</li><li>Capital-call forecast and cash-flow planning</li><li>Statement inbox: forward fund reports and appraisals, values are read for you</li><li>Fee audit across every provider</li><li>Private-deal opportunities from partner platforms</li></ul><button class="btn primary" data-plan="premium">Use Premium</button></div>
+      <div class="card plan"><span class="lbl">Family office</span><div class="pr">€4,900<small> a year</small></div><p class="who">For several entities, generations or advisers.</p><ul><li>Everything in Premium</li><li>Holding companies, trusts and foundations, consolidated</li><li>Up to 10 users with roles: family, adviser, accountant</li><li>Quarterly report pack and year-end tax schedules</li><li>A named relationship manager</li></ul><button class="btn" disabled>Talk to us</button></div>
+    </div>
+    <div class="card"><h2>Add-ons</h2><div class="ins">
+      <div class="in"><span class="tag money">One-off</span><b>Certified appraisal</b><p>Property, art or company valuations by partner appraisers, booked from the app.</p></div>
+      <div class="in"><span class="tag money">One-off · €490</span><b>White-glove onboarding</b><p>We connect every account and enter every illiquid asset for you.</p></div>
+      <div class="in"><span class="tag money">For advisers</span><b>White label</b><p>Wealth managers and private banks give it to their clients under their own brand.</p></div>
+    </div></div></div>`;
+  $$('.plans [data-plan]').forEach((b) => b.addEventListener('click', () => { setPlan(b.dataset.plan); location.hash = 'overview'; }));
+}
+
+/* ---------- boot ---------- */
+function setPlan(p) { S.plan = p; store.set('plan', p); render(); }
+function route() { const h = location.hash.slice(1); S.view = VIEWS.some((x) => x[0] === h) ? h : 'overview'; render(); window.scrollTo(0, 0); }
+$$('.topbar [data-plan]').forEach((b) => b.addEventListener('click', () => setPlan(b.dataset.plan)));
+addEventListener('hashchange', route);
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(render, 150); });
+route();
+</script>
