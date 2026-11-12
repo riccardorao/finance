@@ -7,17 +7,20 @@ const root = path.join(__dirname, '..');
 const rd = (f) => fs.readFileSync(path.join(root, f), 'utf8');
 
 const body = `
-<div class="app">
-  <header class="top">
-    <div class="brand"><h1 id="mh-name">Equity Portfolio Dashboard</h1><p id="mh-strategy"></p><div class="aum" id="mh-value"></div><p class="aum-sub" id="mh-sub"></p></div>
+<div class="shell">
+  <aside class="side">
+    <div class="brand"><span class="mark" aria-hidden="true">FF</span><div><h1 id="mh-name">Equity Portfolio Dashboard</h1><p id="mh-strategy"></p></div></div>
+    <nav class="nav" id="tabs" role="tablist" aria-label="Sections"></nav>
     <div class="status" id="status" data-mode="snapshot" role="status"><span class="dot"></span><span id="status-text"></span><button class="btn" id="btn-refresh" hidden>Refresh</button></div>
-  </header>
-  <div class="bar"><nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav></div>
-  <section class="tabpage" id="t-record" role="tabpanel" aria-labelledby="tab-record" hidden></section>
-  <section class="tabpage" id="t-book" role="tabpanel" aria-labelledby="tab-book" hidden></section>
-  <section class="tabpage" id="t-risk" role="tabpanel" aria-labelledby="tab-risk" hidden></section>
-  <section class="tabpage" id="t-ideas" role="tabpanel" aria-labelledby="tab-ideas" hidden></section>
-  <div id="notes"></div>
+  </aside>
+  <main class="main">
+    <header class="top"><div class="worth"><span class="lbl">Portfolio value</span><div class="aum" id="mh-value"></div></div><div class="pills" id="mh-sub"></div></header>
+    <section class="tabpage" id="t-record" role="tabpanel" aria-labelledby="tab-record" hidden></section>
+    <section class="tabpage" id="t-book" role="tabpanel" aria-labelledby="tab-book" hidden></section>
+    <section class="tabpage" id="t-risk" role="tabpanel" aria-labelledby="tab-risk" hidden></section>
+    <section class="tabpage" id="t-ideas" role="tabpanel" aria-labelledby="tab-ideas" hidden></section>
+    <div id="notes"></div>
+  </main>
 </div>
 <div id="tip" role="tooltip"></div>`;
 
@@ -26,6 +29,7 @@ function assemble(data, scriptFiles) {
   const scripts = scriptFiles.map(rd).join('\n');
   const json = data.replace(/<\//g, '<\\/').replace(/<!--/g, '<\\!--');
   return `<title>Equity Portfolio Dashboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 ${rd('src/page/style.css')}

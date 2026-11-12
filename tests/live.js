@@ -99,17 +99,17 @@ function chart(isin) {
     latest: ((document.querySelector('#t-book .pd-side') || {}).innerText || '').split('\n').filter((l) => /Test headline|Item one|Bad link|LATEST/i.test(l)),
     links: [...document.querySelectorAll('#t-book .news a')].map((a) => a.href),
     judgedT: ((document.querySelector('#t-book .pd') || {}).innerText || '').slice(0, 400), judged: (() => { const t = (document.querySelector('#t-book .pd') || {}).innerText || ''; return /JUDGED THESIS/.test(t) && /JUDGED KILL/.test(t) && /strengthened/i.test(t) && !/draft/i.test(t) && /Assess <i>x<\/i>/.test(t); })(),
-    cols: [...document.querySelectorAll('#t-book .book-h span')].map((e) => e.textContent).join('|'),
+    cols: [...document.querySelectorAll('#t-book .book-h > span')].map((e) => (e.querySelector('b') || e).textContent).join('|'),
     injected: document.querySelectorAll('#t-book .news script, #t-book .pd-side b b').length,
     status: document.getElementById('status-text').textContent,
     // the performance history must run to the refresh date, not stop at the last build
     historyTo: (() => { const p = M.perf.pts; return new Date(p[p.length - 1].t).toISOString().slice(0, 10); })(),
     historyFrom: (() => { const p = M.perf.pts; return new Date(p[0].t).toISOString().slice(0, 10); })(),
     book: document.getElementById('mh-value').textContent,
-    rows: [...document.querySelectorAll('#t-book .pos-row')].map((r) => { const n = r.querySelectorAll('.n'); return [r.querySelector('.nm b').textContent, n[0].textContent.trim(), n[1].textContent.trim(), n[6] ? n[6].textContent.trim() : ''].join(' '); }),
+    rows: [...document.querySelectorAll('#t-book .pos-row')].map((r) => { const n = r.querySelectorAll('.n'); return [r.querySelector('.nm b').textContent, n[0].textContent.trim(), n[1].textContent.trim(), n[5] ? n[5].textContent.trim() : ''].join(' '); }),
   }));
   console.log(scenario, 'saved', firstSave, JSON.stringify(reload), JSON.stringify(out, null, 1), errs.length ? '\nERRORS ' + errs.join('\n') : '\nno errors');
-  const bad = errs.length || (scenario === 'ok' && (!out.judged || !out.rows.some((r) => / 123 /.test(r) && /−9\d%$/.test(r)) || !/^Position\|Consensus\|Value\|1D\|Total return \(%\)\|Total return \(€\)\|Bear case\|Bull case\|$/.test(out.cols))) || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && (out.historyTo !== '2026-10-02' || firstSave !== '2026-10-02' || reload.saves < 2 || reload.historyTo !== '2026-10-02')) || (scenario !== 'ok' && saves > 0 && scenario === 'denied');
+  const bad = errs.length || (scenario === 'ok' && (!out.judged || !out.rows.some((r) => / 123 /.test(r) && /−9\d%$/.test(r)) || !/^Position\|Consensus\|Value\|1D\|Total return \(%\)\|Total return \(€\)\|Bull case\|Bear case\|$/.test(out.cols))) || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && (out.historyTo !== '2026-10-02' || firstSave !== '2026-10-02' || reload.saves < 2 || reload.historyTo !== '2026-10-02')) || (scenario !== 'ok' && saves > 0 && scenario === 'denied');
   await browser.close();
   process.exit(bad ? 1 : 0);
 })();
