@@ -4,13 +4,32 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const MS = 864e5;
+
+/* ---------- language and theme ----------
+   English and Italian. The interface is translated; company research written in English stays in English.
+   The choice is remembered in this browser; the first visit follows the browser's language. */
+const LANGS = { en: 'English', it: 'Italiano' };
+const pref = { get(k) { try { return localStorage.getItem('pm-' + k); } catch (e) { return null; } }, set(k, v) { try { if (v == null) localStorage.removeItem('pm-' + k); else localStorage.setItem('pm-' + k, v); } catch (e) { /* a convenience */ } } };
+let LANG = (() => { const s = pref.get('lang'); if (LANGS[s]) return s; return /^it\b/i.test((typeof navigator !== 'undefined' && navigator.language) || '') ? 'it' : 'en'; })();
+const LOC = () => (LANG === 'it' ? 'it-IT' : 'en-GB');
+setNumLocale(LOC());
+// tl('English text', {n: 3}) returns the text in the current language, with {n} filled in
+const tl = (s, v) => { let o = LANG === 'it' && I18N_IT[s] != null ? I18N_IT[s] : s; if (v) o = o.replace(/\{(\w+)\}/g, (m, k) => (v[k] != null ? v[k] : m)); return o; };
+function setLang(l) { if (!LANGS[l] || l === LANG) return; LANG = l; pref.set('lang', l); setNumLocale(LOC()); document.documentElement.lang = l; if (typeof rerenderAll === 'function') rerenderAll(); }
+// light or dark: an explicit choice wins; otherwise the device's setting
+let THEME = (() => { const s = pref.get('theme'); return s === 'light' || s === 'dark' ? s : null; })();
+const isDark = () => (THEME ? THEME === 'dark' : !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches));
+function applyTheme() { document.documentElement.setAttribute('data-theme', isDark() ? 'dark' : 'light'); }
+function toggleTheme() { THEME = isDark() ? 'light' : 'dark'; pref.set('theme', THEME); applyTheme(); if (typeof renderPrefs === 'function') renderPrefs(); }
+applyTheme(); document.documentElement.lang = LANG;
+if (window.matchMedia) { try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (!THEME) { applyTheme(); if (typeof renderPrefs === 'function') renderPrefs(); } }); } catch (e) { /* older browsers */ } }
 const PERIODS = ['1D', '1W', '1M', '3M', '6M', 'YTD', '1Y'];
 const PLABEL = { '1D': 'Today', '1W': '1 week', '1M': '1 month', '3M': '3 months', '6M': '6 months', YTD: 'Year to date', '1Y': '1 year', MAX: 'Since Feb 2024' };
 const cls = (x) => (x > 0 ? 'pos' : x < 0 ? 'neg' : '');
 const arrow = (x) => (x > 0 ? '▲' : x < 0 ? '▼' : '◆');
-const dfmt = (s, o) => new Date(s.length === 10 ? s + 'T12:00:00Z' : s).toLocaleDateString('en-GB', Object.assign({ day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }, o || {}));
+const dfmt = (s, o) => new Date(s.length === 10 ? s + 'T12:00:00Z' : s).toLocaleDateString(LOC(), Object.assign({ day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }, o || {}));
 const dfmtS = (s) => dfmt(s, { year: '2-digit' });
-const tfmt = (iso) => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+const tfmt = (iso) => new Date(iso).toLocaleString(LOC(), { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
 const qtyFmt = (q) => (Math.abs(q - Math.round(q)) < 1e-9 ? String(Math.round(q)) : fmtNum(q, 4));
 const px = (x) => (x >= 100 ? fmtNum(x, 2) : x >= 10 ? fmtNum(x, 2) : fmtNum(x, 3));
 const dayMs = (s) => Date.parse(s.length === 10 ? s + 'T12:00:00Z' : s.length === 16 ? s + ':00Z' : s);
@@ -264,7 +283,7 @@ function monthTicks(x0, x1, maxN) {
   for (let i = 0; i < all.length; i += step) out.push(all[i]);
   return out;
 }
-const mlabel = (t) => new Date(t).toLocaleDateString('en-GB', { month: 'short', year: '2-digit', timeZone: 'UTC' });
+const mlabel = (x) => new Date(x).toLocaleDateString(LOC(), { month: 'short', year: '2-digit', timeZone: 'UTC' });
 
 /* ---------- line chart ---------- */
 function lineChart(host, w, o) {
@@ -389,7 +408,7 @@ function fanChart(host, w, o) {
   let g = '';
   ticks.forEach((tv) => { const y = Math.round(Y(tv)) + 0.5; g += `<line class="gl" x1="${m.l}" x2="${m.l + iw}" y1="${y}" y2="${y}"/><text x="${m.l - 8}" y="${y + 4}" text-anchor="end">${Math.round(tv / 1000)}k</text>`; });
   const fit = Math.max(2, Math.floor(iw / 62)), step = [1, 2, 3, 4, 6, 12].find((s) => N / s <= fit) || 12; // as many month labels as fit
-  for (let k = 0; k <= N; k += step) g += `<text x="${X(k)}" y="${h - 6}" text-anchor="middle">${k === 0 ? 'Today' : esc(mlabel(mt(k)))}</text>`;
+  for (let k = 0; k <= N; k += step) g += `<text x="${X(k)}" y="${h - 6}" text-anchor="middle">${k === 0 ? tl('Today') : esc(mlabel(mt(k)))}</text>`;
   const yb = Math.round(Y(o.V0)) + 0.5;
   g += `<line class="base" x1="${m.l}" x2="${m.l + iw}" y1="${yb}" y2="${yb}" stroke-dasharray="2 3"/>`;
   g += `<path d="${area(0, 4)}" fill="${C}" opacity="0.07"/><path d="${area(1, 3)}" fill="${C}" opacity="0.16"/>`;
@@ -398,7 +417,7 @@ function fanChart(host, w, o) {
   // end labels in the right margin, top to bottom, spaced so they never overlap
   const ends = Zq.map((_, j) => ({ j, y: Y(F[N][j]) + 4 })).reverse();
   ends.forEach((e, i) => { if (i && e.y - ends[i - 1].y < 13) e.y = ends[i - 1].y + 13; });
-  ends.forEach((e) => { const med = e.j === MEDIAN; g += `<text x="${X(N) + 6}" y="${e.y.toFixed(1)}" style="fill:${med ? C : 'var(--ink2)'};font-weight:${med ? 700 : 500}">${med ? '' : ZL[e.j] + ' '}${fmtEUR0(F[N][e.j])}</text>`; });
+  ends.forEach((e) => { const med = e.j === MEDIAN; g += `<text x="${X(N) + 6}" y="${e.y.toFixed(1)}" style="fill:${med ? C : 'var(--ink2)'};font-weight:${med ? 700 : 500}">${med ? '' : tl(ZL[e.j]) + ' '}${fmtEUR0(F[N][e.j])}</text>`; });
   const k0 = Math.max(0, Math.min(N, o.k == null ? N : o.k));
   g += `<line class="xh" id="fxh" x1="${X(k0)}" x2="${X(k0)}" y1="${m.t}" y2="${m.t + ih}"/><rect id="fov" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" tabindex="0" role="img" aria-label="${esc(o.aria)}"/>`;
   host.innerHTML = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${g}</svg>`;

@@ -58,6 +58,12 @@ npm run test:sample     # sample build
 because the host wraps the page in its own skeleton. Open it directly in a browser and it still renders, with
 the browser filling in the missing tags.
 
+## Language, theme and reported results
+
+- **English and Italian.** Every interface string goes through `tl()`; the Italian text lives in `src/page/i18n.js`, keyed by the English. Numbers and dates follow the language (`1,234.5` or `1.234,5`). Company research written in English stays in English. The first visit follows the browser's language; the choice is remembered in that browser.
+- **Light and dark.** The switch beside the language sets the theme; without a choice the page follows the device.
+- **Reported results.** `node pipeline/fetch_financials.js data/private/financials.json ISIN:TICKER ...` reads the last fiscal quarter and the last fiscal year (revenue, operating and gross margin, diluted EPS, free cash flow, each with the change on a year earlier) from stockanalysis.com. Each position and each opportunity shows them.
+
 ## Two editions
 
 | | Personal edition | Viewer edition |

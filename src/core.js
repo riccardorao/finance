@@ -158,14 +158,18 @@ function mwrWindow(v0, t0, v1, t1, flows) {
 const periodFromAnnual = (r, t0, t1) => (r == null ? null : Math.pow(1 + r, (t1 - t0) / (365 * 864e5)) - 1);
 
 /* ---------- formatting ---------- */
-const nfEUR = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' });
-const nfEUR0 = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
-const fmtEUR = (x) => (x < 0 ? '−' : '') + nfEUR.format(Math.abs(x));
-const fmtEUR0 = (x) => (x < 0 ? '−' : '') + nfEUR0.format(Math.abs(x));
-const fmtSignedEUR = (x) => (x > 0 ? '+' : x < 0 ? '−' : '') + nfEUR.format(Math.abs(x));
-const fmtPct = (x, d = 1) => (x == null || !isFinite(x) ? '–' : (x < 0 ? '−' : '') + Math.abs(x * 100).toFixed(d) + '%');
-const fmtSignedPct = (x, d = 1) => (x == null || !isFinite(x) ? '–' : (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x * 100).toFixed(d) + '%');
-const fmtNum = (x, d = 2) => (x == null || !isFinite(x) ? '–' : new Intl.NumberFormat('en-GB', { minimumFractionDigits: d, maximumFractionDigits: d }).format(x));
+// numbers follow the reader's language: 1,234.5 in English, 1.234,5 in Italian (setNumLocale switches it)
+let NUM_LOCALE = 'en-GB';
+const NFC = {};
+// thousands are always grouped, so 1.236 € reads like 30.831 € (Italian otherwise leaves four-digit numbers ungrouped)
+const nf = (k, o) => NFC[NUM_LOCALE + k] || (NFC[NUM_LOCALE + k] = new Intl.NumberFormat(NUM_LOCALE, Object.assign({ useGrouping: 'always' }, o)));
+const setNumLocale = (l) => { NUM_LOCALE = l; };
+const fmtEUR = (x) => (x < 0 ? '−' : '') + nf('e2', { style: 'currency', currency: 'EUR' }).format(Math.abs(x));
+const fmtEUR0 = (x) => (x < 0 ? '−' : '') + nf('e0', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Math.abs(x));
+const fmtSignedEUR = (x) => (x > 0 ? '+' : x < 0 ? '−' : '') + nf('e2', { style: 'currency', currency: 'EUR' }).format(Math.abs(x));
+const fmtNum = (x, d = 2) => (x == null || !isFinite(x) ? '–' : nf('n' + d, { minimumFractionDigits: d, maximumFractionDigits: d }).format(x));
+const fmtPct = (x, d = 1) => (x == null || !isFinite(x) ? '–' : (x < 0 ? '−' : '') + fmtNum(Math.abs(x * 100), d) + '%');
+const fmtSignedPct = (x, d = 1) => (x == null || !isFinite(x) ? '–' : (x > 0 ? '+' : x < 0 ? '−' : '') + fmtNum(Math.abs(x * 100), d) + '%');
 
 if (typeof module !== 'undefined') {
   module.exports = { twrIndex, mwrWindow, periodFromAnnual, OBS_PER_YEAR, sum, mean, std, cov, corr, beta, rets, annVol, maxDrawdown, underwater, backcast, riskContrib, modifiedDietz, xirr, treemap, fmtEUR, fmtEUR0, fmtSignedEUR, fmtPct, fmtSignedPct, fmtNum };

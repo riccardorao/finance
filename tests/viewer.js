@@ -49,8 +49,8 @@ const loaded = (p) => p.waitForFunction(() => document.getElementById('status').
       const val = await p.$eval('#mh-value', (e) => e.textContent);
       check(/€2[0-9],[0-9]{3}/.test(val), `${name}: header value ${val}`);
       await p.click('#tab-record'); await p.waitForSelector('#perfchart svg', { timeout: 5000 }).catch(() => fails.push(`${name}: no performance chart`));
-      const lede = await p.$eval('#t-record .lede h2', (e) => e.textContent).catch(() => '');
-      check(/My portfolio is (up|down)/.test(lede), `${name}: lede "${lede}"`);
+      const lede = await p.$eval('#t-record .lead', (e) => e.textContent).catch(() => '');
+      check(/^My portfolio: [+−]/.test(lede), `${name}: lede "${lede}"`);
       await p.click('#tab-risk'); await p.waitForSelector('#fan svg', { timeout: 5000 }).catch(() => fails.push(`${name}: no outlook chart`));
       await p.click('#tab-book');
     });

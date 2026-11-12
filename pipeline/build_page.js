@@ -12,6 +12,7 @@ const body = `
     <div class="brand"><span class="mark" aria-hidden="true">FF</span><div><h1 id="mh-name">Equity Portfolio Dashboard</h1><p id="mh-strategy"></p></div></div>
     <nav class="nav" id="tabs" role="tablist" aria-label="Sections"></nav>
     <div class="status" id="status" data-mode="snapshot" role="status"><span class="dot"></span><span id="status-text"></span><button class="btn" id="btn-refresh" hidden>Refresh</button></div>
+    <div class="prefs" id="prefs"></div>
   </aside>
   <main class="main">
     <header class="top"><div class="worth"><span class="lbl">Portfolio value</span><div class="aum" id="mh-value"></div></div><div class="pills" id="mh-sub"></div></header>
@@ -47,5 +48,5 @@ module.exports = { assemble, writePage };
 if (require.main === module) {
   const dataDir = path.resolve(process.argv[2] || path.join(root, 'data', 'private'));
   const out = path.resolve(process.argv[3] || path.join(root, 'dist', 'portfolio.html'));
-  writePage(assemble(fs.readFileSync(path.join(dataDir, 'data.json'), 'utf8'), ['src/core.js', 'src/client/feed.js', 'src/page/model.js', 'src/page/views.js', 'src/page/trade.js', 'src/page/live.js']), out);
+  writePage(assemble(fs.readFileSync(path.join(dataDir, 'data.json'), 'utf8'), ['src/core.js', 'src/client/feed.js', 'src/page/i18n.js', 'src/page/model.js', 'src/page/views.js', 'src/page/trade.js', 'src/page/live.js']), out);
 }

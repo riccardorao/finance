@@ -1,0 +1,98 @@
+/* ===== Italian for every interface string; the English text is the key ===== */
+const I18N_IT = {
+  // navigation, header, preferences
+  'Portfolio': 'Portafoglio', 'Performance': 'Rendimenti', 'Outlook': 'Prospettive', 'Opportunities': 'Opportunità',
+  'Portfolio value': 'Valore del portafoglio', 'Today': 'Oggi', 'Total return': 'Rendimento totale', 'Positions': 'Posizioni', '{x} cash': '{x} di liquidità',
+  'Prices at {d}': 'Prezzi al {d}', 'Syncing with Scalable…': 'Sincronizzazione con Scalable…', 'Synced {d}': 'Sincronizzato il {d}', 'Refresh': 'Aggiorna',
+  'Language': 'Lingua', 'Switch to dark mode': 'Passa al tema scuro', 'Switch to light mode': 'Passa al tema chiaro',
+  '{n} item kept from the last update': '{n} dato mantenuto dall’ultimo aggiornamento', '{n} items kept from the last update': '{n} dati mantenuti dall’ultimo aggiornamento',
+  'Reconnect Scalable Capital in claude.ai under Settings, Connectors.': 'Ricollega Scalable Capital in claude.ai, in Impostazioni, Connettori.',
+  'Live data was not allowed for this page. Choose Refresh to be asked again.': 'I dati in tempo reale non sono stati autorizzati per questa pagina. Scegli Aggiorna per rispondere di nuovo.',
+  'Choose which Scalable Capital connector to use.': 'Scegli quale connettore Scalable Capital usare.',
+  'Scalable did not answer. Try again in a moment.': 'Scalable non ha risposto. Riprova tra poco.',
+  'Scalable reported an error': 'Scalable ha segnalato un errore', 'Live refresh did not complete.': 'L’aggiornamento non è stato completato.',
+
+  // periods and horizons
+  '1 day': '1 giorno', '1 week': '1 settimana', '1 month': '1 mese', '3 months': '3 mesi', '6 months': '6 mesi', 'Year to date': 'Da inizio anno',
+  '1 year': '1 anno', '2 years': '2 anni', '3 years': '3 anni', 'Since I started': 'Da quando ho iniziato', '{n} month': '{n} mese', '{n} months': '{n} mesi',
+
+  // portfolio
+  'Holdings': 'Posizioni', '{n} positions': '{n} posizioni', '{x} this year': '{x} da inizio anno',
+  '{n} leveraged or crypto position left out': '{n} posizione a leva o cripto esclusa', '{n} leveraged or crypto positions left out': '{n} posizioni a leva o cripto escluse',
+  'Price change': 'Variazione di prezzo', 'Position': 'Titolo', 'Share of portfolio': 'Peso in portafoglio', 'Consensus': 'Consenso',
+  'Sell': 'Vendi', 'Hold': 'Mantieni', 'Buy': 'Compra', 'Value': 'Valore', 'At last close': 'All’ultima chiusura',
+  'Total return (%)': 'Rendimento totale (%)', 'Total return (€)': 'Rendimento totale (€)', 'Since bought': 'Dall’acquisto',
+  'Bull case': 'Scenario rialzista', 'Top target': 'Target più alto', 'Bear case': 'Scenario ribassista', '12-month downside': 'Ribasso a 12 mesi',
+  'No coverage': 'Nessuna copertura', '{s} sell, {h} hold, {b} buy': '{s} vendi, {h} mantieni, {b} compra',
+  'Buy more': 'Compra ancora', 'Kill-switch': 'Condizione di uscita', 'Current judgement': 'Giudizio attuale', 'Reassessed {d}': 'Rivisto il {d}', 'Updated {d}': 'Aggiornato il {d}',
+  'Intact': 'Confermato', 'Strengthened': 'Rafforzato', 'Weakened': 'Indebolito', 'Under review': 'In revisione', 'Evidence ({n})': 'Evidenze ({n})',
+  "Set by the past year's worst fall": 'Basato sul peggior calo dell’ultimo anno', '{n} analysts': '{n} analisti',
+  'Average target {t}, {u} from {p}': 'Target medio {t}, {u} da {p}', 'Latest': 'Ultime notizie', 'Watch next': 'Da seguire',
+  'Company profile': 'Profilo della società', 'Competitors': 'Concorrenti', "Scalable's news summary": 'Sintesi delle notizie di Scalable', 'Sources': 'Fonti',
+
+  // reported results
+  'Results': 'Risultati', 'Source': 'Fonte', 'Last quarter': 'Ultimo trimestre', 'Last fiscal year': 'Ultimo esercizio', 'To {d}': 'Chiuso il {d}',
+  'Revenue': 'Ricavi', 'Operating margin': 'Margine operativo', 'Op. margin': 'Margine op.', 'Gross {x}': 'Lordo {x}', 'EPS (diluted)': 'Utile/azione dil.', 'EPS': 'Utile/azione',
+  'Free cash flow': 'Free cash flow', '{x} of revenue': '{x} dei ricavi', 'y/y': 'a/a', 'Loss narrowed': 'Perdita ridotta', 'Loss widened': 'Perdita aumentata',
+  'Swung to a loss': 'Passata in perdita', 'Back to profit': 'Tornata in utile',
+
+  // performance
+  '{f}: {x} {when}, {p} points ahead of the {b}': '{f}: {x} {when}, {p} punti sopra l’{b}', '{f}: {x} {when}, {p} points behind the {b}': '{f}: {x} {when}, {p} punti sotto l’{b}',
+  'over the last 12 months': 'negli ultimi 12 mesi', 'since I started': 'da quando ho iniziato',
+  'Last 12 months': 'Ultimi 12 mesi', 'This year': 'Da inizio anno', 'Every euro since I started': 'Ogni euro investito', 'a year': 'l’anno',
+  'Winning calls': 'Scelte vincenti', 'of {n}': 'su {n}', 'Closed positions sold at a profit': 'Posizioni chiuse in utile', '{x} pts': '{x} punti',
+  'Period': 'Periodo', 'Measure': 'Misura', 'Return on picks': 'Rendimento delle scelte', 'Return on my money': 'Rendimento del mio capitale',
+  'Time-weighted: the return on the picks, however much money was in': 'Ponderato nel tempo: il rendimento delle scelte, qualunque fosse il capitale investito',
+  'Money-weighted: what the actual money is worth, against the same money in the S&P 500': 'Ponderato per il capitale: quanto vale il denaro realmente investito, rispetto allo stesso denaro nell’S&P 500',
+  'Time-weighted': 'Ponderato nel tempo', 'Money-weighted, {x}': 'Ponderato per il capitale, {x}',
+  'Estimated from month-end prices, before {d}': 'Stimato da prezzi di fine mese, prima di {d}', 'Show chart': 'Mostra grafico', 'View as table': 'Mostra tabella',
+  'Every period at a glance': 'Tutti i periodi a colpo d’occhio', 'Points ahead (+) or behind (−) the S&P 500': 'Punti sopra (+) o sotto (−) l’S&P 500',
+  'Same money in {b}': 'Stesso capitale in {b}', 'Money in': 'Capitale versato', 'Date': 'Data', '{f} against the S&P 500': '{f} rispetto all’S&P 500',
+  'Rebuilding your performance history…': 'Ricostruzione dello storico dei rendimenti…', 'No performance history yet': 'Ancora nessuno storico dei rendimenti',
+  'Reading your transactions and prices from Scalable Capital.': 'Lettura di operazioni e prezzi da Scalable Capital.',
+  'Performance needs your trades and a benchmark price series, and they could not be read.': 'I rendimenti richiedono le tue operazioni e i prezzi di un indice di riferimento, che non è stato possibile leggere.',
+
+  // outlook
+  'Where {f} could be a year from now': 'Dove potrebbe essere {f} tra un anno', 'Where {f} could be in {h}': 'Dove potrebbe essere {f} tra {h}',
+  'Horizon': 'Orizzonte', 'Scenario odds': 'Probabilità degli scenari', 'Cautious': 'Prudente', 'Stress': 'Stress',
+  'Expected return': 'Rendimento atteso', '{x}× the {b}': '{x}× l’{b}', '{p} against the {b}': '{p} rispetto all’{b}', 'Over {h}': 'In {h}',
+  'Likely range': 'Intervallo probabile', '{a} to {b}': 'da {a} a {b}', 'Half of outcomes land here': 'Metà dei risultati cade qui', '9 in 10: {a} to {b}': '9 su 10: da {a} a {b}',
+  'Chance of beating the {b}': 'Probabilità di battere l’{b}', 'About {n} in 10': 'Circa {n} su 10', 'Over {h} · Correlation {c}': 'In {h} · Correlazione {c}',
+  'Risk': 'Rischio', '{x}× as volatile as the {b}': '{x}× la volatilità dell’{b}', 'Annual volatility · Beta {b}': 'Volatilità annua · Beta {b}',
+  'Range of outcomes, next {h}': 'Intervallo dei risultati, prossimi {h}', 'Starts at {v}': 'Parte da {v}', 'Expected {x} a year': 'Atteso {x} l’anno',
+  'Volatility {x} a year': 'Volatilità {x} l’anno', 'No analyst targets: S&P 500 pace assumed': 'Nessun target degli analisti: si assume il ritmo dell’S&P 500',
+  'Bull / base / bear odds {o}': 'Probabilità rialzo / base / ribasso {o}', 'Targets cover {n} of {m} positions': 'Target disponibili per {n} posizioni su {m}',
+  '{b} at {x} a year since {y}': '{b} al {x} l’anno dal {y}', '{b} median': 'Mediana {b}', 'Median': 'Mediana',
+  'Nothing to project yet': 'Ancora nulla da proiettare', 'The outlook needs at least one stock or ETF position.': 'Le prospettive richiedono almeno un’azione o un ETF.',
+  'Loading your prices…': 'Caricamento dei prezzi…', 'Not enough price history': 'Storico dei prezzi insufficiente',
+  'The outlook needs 12 months of prices for every position.': 'Le prospettive richiedono 12 mesi di prezzi per ogni posizione.',
+  'The outlook needs 12 months of prices for every position and for the S&P 500.': 'Le prospettive richiedono 12 mesi di prezzi per ogni posizione e per l’S&P 500.',
+
+  // opportunities
+  'Top 5 of {n} screened': 'Le migliori 5 su {n} analizzate', 'Researched {d}': 'Analisi del {d}', 'New screen every Monday': 'Nuova selezione ogni lunedì',
+  'Cheap': 'Economico', 'Fair': 'Equo', 'Demanding': 'Caro', 'Forward P/E': 'P/E prospettico', "Price ÷ next year's earnings": 'Prezzo ÷ utili del prossimo anno',
+  'P/E ÷ earnings growth · Under 1 is cheap': 'P/E ÷ crescita degli utili · Sotto 1 è economico', 'Catalyst': 'Catalizzatore', 'Risks': 'Rischi', 'Risks and kill-switch': 'Rischi e condizione di uscita',
+  'Also screened this week': 'Analizzate anche questa settimana', 'Fwd P/E': 'P/E prosp.', 'N/A': 'N/D', 'No opportunities researched yet.': 'Ancora nessuna opportunità analizzata.',
+  'Patience': 'Pazienza', 'Informational': 'Informativo',
+
+  // orders
+  'Side': 'Operazione', 'Size by': 'Quantità in', 'Shares': 'Azioni', 'Amount in €': 'Importo in €', 'Amount (€)': 'Importo (€)', '{n} held': '{n} in portafoglio',
+  'Order type': 'Tipo di ordine', 'Market': 'Al mercato', 'Limit': 'Limite', 'Stop': 'Stop', 'Trailing stop': 'Trailing stop',
+  'Limit price (€)': 'Prezzo limite (€)', 'Stop price (€)': 'Prezzo stop (€)', 'Trail by': 'Distanza in', 'Distance': 'Distanza', 'Venue': 'Sede di esecuzione',
+  'Portfolio default': 'Predefinita del portafoglio', 'Last price': 'Ultimo prezzo', 'About': 'Circa', 'Cancel': 'Annulla',
+  'Asking Scalable…': 'Richiesta a Scalable…', 'Review order': 'Rivedi l’ordine', "This is Scalable's review of the order. Nothing has been sent yet.": 'Questo è il riepilogo dell’ordine di Scalable. Non è ancora stato inviato nulla.',
+  'It is valid until {t}.': 'È valido fino alle {t}.', 'Change order': 'Modifica ordine', 'Sending…': 'Invio…',
+  'Confirm and send buy order': 'Conferma e invia l’ordine di acquisto', 'Confirm and send sell order': 'Conferma e invia l’ordine di vendita',
+  'Scalable asks you to accept a statement this page cannot show in full, so the order stops here and nothing was sent.': 'Scalable chiede di accettare una dichiarazione che questa pagina non può mostrare per intero: l’ordine si ferma qui e non è stato inviato nulla.',
+  'You can place it in the Scalable app instead, with a fresh review there:': 'Puoi inserirlo nell’app di Scalable, con un nuovo riepilogo:', 'Open Scalable': 'Apri Scalable',
+  'Order sent to Scalable Capital.': 'Ordine inviato a Scalable Capital.', 'Scalable reference': 'Riferimento Scalable', 'Shows in the Scalable app shortly': 'Visibile a breve nell’app di Scalable',
+  'Order ID': 'ID ordine', 'Status': 'Stato', 'Done': 'Fatto', 'Close': 'Chiudi', 'Review again': 'Rivedi di nuovo',
+  'Scalable did not return a review for this order.': 'Scalable non ha restituito un riepilogo per questo ordine.', 'Scalable could not review this order.': 'Scalable non è riuscita a verificare questo ordine.',
+  'That review has expired, so nothing was sent. Review the order again.': 'Il riepilogo è scaduto, quindi non è stato inviato nulla. Rivedi l’ordine.',
+  'Nothing was sent: the order was stopped before it reached Scalable.': 'Non è stato inviato nulla: l’ordine è stato fermato prima di raggiungere Scalable.',
+  'Scalable did not place the order: {m}. Review it again to try once more.': 'Scalable non ha inserito l’ordine: {m}. Rivedilo per riprovare.',
+  'It is not clear whether the order reached Scalable. Check your orders in the Scalable app before placing it again.': 'Non è chiaro se l’ordine abbia raggiunto Scalable. Controlla gli ordini nell’app di Scalable prima di ripeterlo.',
+  'Enter the amount in euro.': 'Inserisci l’importo in euro.', 'Enter the number of shares.': 'Inserisci il numero di azioni.',
+  'Buy whole shares, or switch to an amount in euro.': 'Acquista azioni intere, oppure indica un importo in euro.', 'You hold {n} shares.': 'Hai {n} azioni.',
+  'Enter the limit price.': 'Inserisci il prezzo limite.', 'Enter the stop price.': 'Inserisci il prezzo stop.', 'Enter the trailing distance.': 'Inserisci la distanza del trailing stop.',
+};

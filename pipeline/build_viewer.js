@@ -39,4 +39,4 @@ const DATA = {
   researchAt: asOfDay,
 };
 DATA.profile.valueNote = DATA.static.profile.valueNote;
-writePage(assemble(JSON.stringify(DATA), ['src/core.js', 'src/client/feed.js', 'src/page/model.js', 'src/page/views.js', 'src/page/viewer.js']), out);
+writePage(assemble(JSON.stringify(DATA), ['src/core.js', 'src/client/feed.js', 'src/page/i18n.js', 'src/page/model.js', 'src/page/views.js', 'src/page/viewer.js']), out);

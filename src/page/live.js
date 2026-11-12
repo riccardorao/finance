@@ -9,12 +9,12 @@ function prepare(D) {
 }
 function explain(err) {
   const c = err && err.code;
-  if (c === 'needs_reauth' || c === 'server_not_connected') return 'Reconnect Scalable Capital in claude.ai under Settings, Connectors.';
-  if (c === 'not_in_manifest' || c === 'consent_required' || c === 'not_granted') return 'Live data was not allowed for this page. Choose Refresh to be asked again.';
-  if (c === 'selection_required') return 'Choose which Scalable Capital connector to use.';
-  if (c === 'server_unavailable' || c === 'upstream_error' || c === 'rate_limited') return 'Scalable did not answer. Try again in a moment.';
-  if (c === 'tool_error') return 'Scalable reported an error' + (err.message ? ': ' + String(err.message).slice(0, 80) : '.');
-  return 'Live refresh did not complete.';
+  if (c === 'needs_reauth' || c === 'server_not_connected') return tl('Reconnect Scalable Capital in claude.ai under Settings, Connectors.');
+  if (c === 'not_in_manifest' || c === 'consent_required' || c === 'not_granted') return tl('Live data was not allowed for this page. Choose Refresh to be asked again.');
+  if (c === 'selection_required') return tl('Choose which Scalable Capital connector to use.');
+  if (c === 'server_unavailable' || c === 'upstream_error' || c === 'rate_limited') return tl('Scalable did not answer. Try again in a moment.');
+  if (c === 'tool_error') return tl('Scalable reported an error') + (err.message ? ': ' + String(err.message).slice(0, 80) : '.');
+  return tl('Live refresh did not complete.');
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 async function callRead(tool, input) {
@@ -74,7 +74,7 @@ async function liveRefresh() {
     // the stored history stops at the last build: rebuild the days since from this account's own transactions and prices
     const secs = {}; all.forEach((i, k) => { if (qs[k].status === 'fulfilled' && qs[k].value) secs[i] = qs[k].value; });
     if (!(await extendHistory({ holdings: h.value, overview: o.status === 'fulfilled' ? o.value : null, cash: c.status === 'fulfilled' ? c.value : null, secs }))) failed++;
-    state.mode = 'live'; state.statusMsg = failed ? `${failed} ${failed === 1 ? 'item' : 'items'} kept from the snapshot` : '';
+    state.mode = 'live'; state.statusMsg = failed ? tl(failed === 1 ? '{n} item kept from the last update' : '{n} items kept from the last update', { n: failed }) : '';
     render();
   } catch (err) {
     state.mode = 'error'; state.statusMsg = explain(err); renderHeader();
