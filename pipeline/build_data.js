@@ -43,6 +43,8 @@ const d10 = (s) => s.slice(0, 10);
 // Instrument type for the realised-results bridge. Optional <data>/types.json overrides by ISIN
 // (for leveraged ETPs that do not carry an issuer prefix, for example).
 const TYPES = fs.existsSync(path.join(dir, 'types.json')) ? rd('types.json') : {};
+const LOGOS = fs.existsSync(path.join(dir, 'logos.json')) ? rd('logos.json') : {}; // from fetch_logos.js
+const OPPS = fs.existsSync(path.join(dir, 'opportunities.json')) ? rd('opportunities.json') : null;
 const { instrumentType } = require('./holdings_history.js');
 const type = (isin) => instrumentType(isin, TYPES);
 
@@ -87,6 +89,8 @@ const DATA = {
   },
   profile: { ...PROFILE, positions: undefined },
   types: TYPES,
+  logos: LOGOS,
+  ...(OPPS ? { opportunities: OPPS } : {}),
 };
 fs.writeFileSync(path.join(dir, 'data.json'), JSON.stringify(DATA));
 console.log('data.json', (fs.statSync(path.join(dir, 'data.json')).size / 1024).toFixed(1) + ' KB,', holdings.length, 'holdings,', realised.length, 'closed instruments');

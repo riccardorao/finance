@@ -443,7 +443,7 @@ ul.criteria li span, ul.rejected li span { color: var(--ink2); }
 .lesson .k, .kill .k { display: block; font: 500 11px var(--mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--accent); margin-bottom: 2px; }
 
 /* book */
-.book-h, .pos-row { display: grid; grid-template-columns: minmax(120px, 1fr) 104px 84px 72px 84px 92px 64px 64px 14px; gap: 14px; align-items: center; }
+.book-h, .pos-row { display: grid; grid-template-columns: minmax(150px, 210px) minmax(96px, 1fr) repeat(6, minmax(70px, 1fr)) 14px; gap: 14px; align-items: center; }
 .book-h { padding: 12px 18px; border-bottom: 1px solid var(--line2); font: 500 10.5px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink3); align-items: end; }
 .book-h span:nth-child(n+2) { text-align: right; }
 .pos-row .c-na { grid-column: span 2; text-align: right; }
@@ -455,7 +455,10 @@ ul.criteria li span, ul.rejected li span { color: var(--ink2); }
 .pos-row:hover { background: var(--inset); }
 .posn.open .pos-row { background: var(--accent-soft); }
 .pos-row small { display: block; font-size: 12px; color: var(--ink3); }
-.pos-row .nm { min-width: 0; }
+.pos-row .nm { min-width: 0; display: flex; align-items: center; gap: 10px; }
+.pos-row .nt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.logo { flex: none; border-radius: 6px; display: inline-block; vertical-align: middle; object-fit: contain; background: #fff; }
+.logo.mono { display: inline-grid; place-items: center; color: #fff; font-family: var(--mono); font-weight: 600; }
 .pos-row .nm b { font-size: 14px; font-weight: 600; }
 .pos-row .nm small { font-family: var(--mono); display: inline; margin-left: 6px; }
 .pos-row .n { text-align: right; font-variant-numeric: tabular-nums; font-size: 13.5px; }
@@ -580,7 +583,8 @@ ul.rules { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 8px; font-si
 /* opportunities */
 .ideas { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 980px) { .ideas { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ideas .idea:first-child { grid-column: span 2; } }
-.idea .ih { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+.idea .ih { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+.idea .up { margin: 10px 0 0; font-weight: 600; color: var(--pos); font-variant-numeric: tabular-nums; }
 .idea .rk { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--panel); font: 600 12px var(--mono); }
 .idea h3 { margin: 0; font: 600 17px var(--font); letter-spacing: -0.01em; text-transform: none; color: var(--ink); }
 .idea h3 small { font: 500 12px var(--mono); color: var(--ink3); margin-left: 4px; }
@@ -592,3 +596,10 @@ ul.rules { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 8px; font-si
 .idea .if .k { font: 500 10.5px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink3); }
 .idea .if p { margin: 1px 0 0; font-size: 13px; color: var(--ink2); }
 .idea .srcs { margin-top: 10px; }
+.sl { margin-top: 14px; }
+.sl-row { display: grid; grid-template-columns: 22px 22px minmax(140px, 220px) minmax(0, 1fr) minmax(90px, auto); gap: 12px; align-items: center; padding: 9px 18px; border-top: 1px solid var(--line); font-size: 13px; }
+.sl-n { font: 600 11px var(--mono); color: var(--ink3); text-align: right; }
+.sl-nm small { font: 500 11.5px var(--mono); color: var(--ink3); }
+.sl-r { color: var(--ink2); }
+.sl-u { text-align: right; font-weight: 600; color: var(--pos); white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .sl-row { grid-template-columns: 22px 22px minmax(0, 1fr) auto; padding-inline: 14px; } .sl-r { grid-column: 3 / -1; grid-row: 2; } }

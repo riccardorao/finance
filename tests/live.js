@@ -109,7 +109,7 @@ function chart(isin) {
     rows: [...document.querySelectorAll('#t-book .pos-row')].map((r) => { const n = r.querySelectorAll('.n'); return [r.querySelector('.nm b').textContent, n[0].textContent.trim(), n[1].textContent.trim(), n[6] ? n[6].textContent.trim() : ''].join(' '); }),
   }));
   console.log(scenario, 'saved', firstSave, JSON.stringify(reload), JSON.stringify(out, null, 1), errs.length ? '\nERRORS ' + errs.join('\n') : '\nno errors');
-  const bad = errs.length || (scenario === 'ok' && (!out.judged || !out.rows.some((r) => / 123 /.test(r) && /−9\d%$/.test(r)) || !/^Position\|Analysts\|Value\|1D\|Return %\|Return €\|Bear\|Bull\|$/.test(out.cols))) || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && (out.historyTo !== '2026-10-02' || firstSave !== '2026-10-02' || reload.saves < 2 || reload.historyTo !== '2026-10-02')) || (scenario !== 'ok' && saves > 0 && scenario === 'denied');
+  const bad = errs.length || (scenario === 'ok' && (!out.judged || !out.rows.some((r) => / 123 /.test(r) && /−9\d%$/.test(r)) || !/^Position\|Consensus\|Value\|1D\|Total return \(%\)\|Total return \(€\)\|Bear case\|Bull case\|$/.test(out.cols))) || out.injected || out.links.some((l) => !l.startsWith('https:')) || (scenario === 'ok' && (out.historyTo !== '2026-10-02' || firstSave !== '2026-10-02' || reload.saves < 2 || reload.historyTo !== '2026-10-02')) || (scenario !== 'ok' && saves > 0 && scenario === 'denied');
   await browser.close();
   process.exit(bad ? 1 : 0);
 })();

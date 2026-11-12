@@ -206,6 +206,16 @@ function scenarios(h, risk) {
 }
 const expOf = (sc, pr) => (sc ? pr[0] * sc.bull + pr[1] * sc.base + pr[2] * sc.bear : null);
 
+// a logo is drawn only from an inline PNG, JPEG or WebP data URI; anything else falls back to a monogram
+const safeLogo = (u) => (typeof u === 'string' && u.length < 60000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(u) ? u : null);
+const MONO = ['#2a78d6', '#eb6834', '#1baf7a', '#c98500', '#d55181', '#4a3aa7', '#008300', '#e34948'];
+function logoTag(isin, name, uri, size) {
+  const src = safeLogo(uri) || safeLogo(M && M.D && M.D.logos ? M.D.logos[isin] : null), z = size || 22;
+  if (src) return `<img class="logo" src="${src}" width="${z}" height="${z}" alt="" loading="lazy">`;
+  const t = String(name || '?').replace(/[^A-Za-z0-9 ]/g, '').trim(), ini = (t.split(/\s+/).length > 1 ? t.split(/\s+/)[0][0] + t.split(/\s+/)[1][0] : t.slice(0, 2)).toUpperCase();
+  let h = 0; for (const c of String(isin || name)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return `<span class="logo mono" style="width:${z}px;height:${z}px;background:${MONO[h % MONO.length]};font-size:${Math.round(z * 0.42)}px" aria-hidden="true">${esc(ini || '?')}</span>`;
+}
 const safeUrl = (u) => (/^https:\/\/[^\s"'<>]+$/.test(u || '') ? u : null);
 
 /* ---------- tooltip ---------- */
