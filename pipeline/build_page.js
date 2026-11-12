@@ -30,7 +30,7 @@ function assemble(data, scriptFiles) {
   const json = data.replace(/<\//g, '<\\/').replace(/<!--/g, '<\\!--');
   return `<title>Equity Portfolio Dashboard</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
 ${rd('src/page/style.css')}
 </style>
